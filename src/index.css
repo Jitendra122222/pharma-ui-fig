@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #F0F3F7;
+  --color-surface: #FFFFFF;
+  --color-sidebar: #0C1B33;
+  --color-sidebar-hover: #162544;
+  --color-sidebar-active: #1B6CA8;
+  --color-primary: #1B6CA8;
+  --color-primary-dark: #0F4C7A;
+  --color-accent: #00ACC1;
+  --color-success: #2E7D32;
+  --color-warning: #E65100;
+  --color-danger: #C62828;
+  --color-text: #0C1B33;
+  --color-muted: #6B7280;
+  --color-border: #DDE3EC;
+  --color-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #F0F3F7;
+  color: #0C1B33;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+}
+
+.font-mono-data {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #DDE3EC;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* App shell fills the visual viewport. Under `zoom: N`, everything inside
+   is scaled by N, so we inflate the shell height by 1/N to compensate and
+   still land at 100vh visually — no blank strip below the footer. */
+.app-shell {
+  height: 100vh;
+}
+
+/* Auto-scale the whole app down on smaller monitors so 13" screens
+   (~1280–1440px wide) can see the full layout without horizontal scroll. */
+@media (max-width: 1440px) {
+  body { zoom: 0.9; }
+  .app-shell { height: calc(100vh / 0.9); }
+}
+@media (max-width: 1280px) {
+  body { zoom: 0.82; }
+  .app-shell { height: calc(100vh / 0.82); }
+}
+@media (max-width: 1100px) {
+  body { zoom: 0.75; }
+  .app-shell { height: calc(100vh / 0.75); }
+}
