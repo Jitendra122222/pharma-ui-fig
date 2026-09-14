@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { PrinterProvider } from "./components/shared/PrinterContext";
+import Login from "./components/Login";
+import LoadingScreen from "./components/LoadingScreen";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
 import Inventory from "./components/Inventory";
@@ -40,13 +42,55 @@ const MODULE_LABELS: Record<Module, string> = {
   settings: "Settings",
 };
 
+interface AuthUser { name: string; role: string; phone: string; }
+
 export default function App() {
   const [module, setModule] = useState<Module>("dashboard");
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const pendingModule = useRef<Module | null>(null);
+
+  function navigateTo(m: Module) {
+    if (m === module || loading) return;
+    pendingModule.current = m;
+    setExiting(false);
+    setLoading(true);
+    setTimeout(() => {
+      setExiting(true);
+      setTimeout(() => {
+        setModule(pendingModule.current!);
+        setLoading(false);
+        setExiting(false);
+      }, 300);
+    }, 1100);
+  }
+
+  function handleLogin(u: AuthUser) {
+    setLoading(true);
+    setExiting(false);
+    setTimeout(() => {
+      setExiting(true);
+      setTimeout(() => {
+        setUser(u);
+        setLoading(false);
+        setExiting(false);
+      }, 300);
+    }, 1500);
+  }
+
+  if (loading) {
+    return <LoadingScreen exiting={exiting} module={pendingModule.current ?? undefined} />;
+  }
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <PrinterProvider>
     <div className="app-shell" style={{ display: "flex", overflow: "hidden", background: "#F0F3F7" }}>
-      <Sidebar active={module} onChange={(m) => setModule(m as Module)} />
+      <Sidebar active={module} onChange={(m) => navigateTo(m as Module)} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Topbar */}
@@ -73,7 +117,25 @@ export default function App() {
             </div>
             <div style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "JetBrains Mono" }}>28 Jul 2025</div>
             <div style={{ width: 1, height: 20, background: "#E8ECF4" }} />
-            <div style={{ fontSize: 12, color: "#6B7280" }}>v2.1.0</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 28, height: 28, background: "#1B6CA8", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", fontFamily: "Inter" }}>
+                  {user.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("")}
+                </span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#1A2436", fontFamily: "Inter" }}>{user.name}</span>
+                <span style={{ fontSize: 10, color: "#9CA3AF", fontFamily: "Inter" }}>{user.role}</span>
+              </div>
+              <button
+                onClick={() => setUser(null)}
+                style={{ border: "1px solid #E8ECF4", background: "#fff", borderRadius: 4, padding: "4px 10px", fontSize: 11, color: "#6B7280", fontFamily: "Inter", cursor: "pointer", marginLeft: 4 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#FFF0F0"; (e.currentTarget as HTMLButtonElement).style.color = "#C62828"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff"; (e.currentTarget as HTMLButtonElement).style.color = "#6B7280"; }}
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </header>
 

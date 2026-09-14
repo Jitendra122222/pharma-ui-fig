@@ -82,7 +82,7 @@ export default function Reports() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
               <CartesianGrid vertical={false} stroke="#F0F3F7" />
-              <Tooltip contentStyle={{ border: "1px solid #DDE3EC", borderRadius: 0, fontSize: 12 }} formatter={(v: number) => [`₹${v.toLocaleString()}`, ""]} />
+              <Tooltip contentStyle={{ border: "1px solid #DDE3EC", borderRadius: 0, fontSize: 12 }} formatter={(v) => [`₹${(v as number).toLocaleString()}`, ""]} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="revenue" name="Revenue" fill="#1B6CA8" radius={0} />
               <Bar dataKey="profit" name="Profit" fill="#00ACC1" radius={0} />

@@ -5,55 +5,150 @@ type Module = string;
 interface NavItem {
   id: Module;
   label: string;
-  icon: string;
   badge?: number;
-  group?: string;
+}
+
+function NavIcon({ id, size = 18 }: { id: string; size?: number }) {
+  const p = {
+    width: size, height: size,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    viewBox: "-4 -4 32 32",
+    style: { display: "block", flexShrink: 0 },
+  };
+  switch (id) {
+    case "dashboard": return (
+      <svg {...p}>
+        <path d="M5 4h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1m0 12h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1m10-4h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1m0-8h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1" />
+      </svg>
+    );
+    case "sales": return (
+      <svg {...p}>
+        <path d="M18 5H7h3a4 4 0 0 1 0 8H7l6 6M7 9h11" />
+      </svg>
+    );
+    case "prescriptions": return (
+      <svg {...p}>
+        <path d="M6 19V3h4.5a4.5 4.5 0 1 1 0 9H6m13 9-9-9m3 9 6-6" />
+      </svg>
+    );
+    case "patients": return (
+      <svg {...p}>
+        <path d="M5 7a4 4 0 1 0 8 0 4 4 0 1 0-8 0M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2m1-17.87a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85" />
+      </svg>
+    );
+    case "inventory": return (
+      <svg {...p}>
+        <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zm0 9 8-4.5M12 12v9m0-9L4 7.5m12-2.25-8 4.5" />
+      </svg>
+    );
+    case "stock": return (
+      <svg {...p}>
+        <path d="M12 4 4 8l8 4 8-4zm-8 8 8 4 8-4M4 16l8 4 8-4" />
+      </svg>
+    );
+    case "shortbook": return (
+      <svg {...p}>
+        <path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1m3 0v18m4-14h2m-2 4h2" />
+      </svg>
+    );
+    case "expiry": return (
+      <svg {...p}>
+        <path d="M20.986 12.502a9 9 0 1 0-5.973 7.98" />
+        <path d="M12 7v5l3 3m4 1v3m0 3v.01" />
+      </svg>
+    );
+    case "purchases": return (
+      <svg {...p}>
+        <path d="M4 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0m11 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0" />
+        <path d="M17 17H6V3H4" />
+        <path d="m6 5 14 1-1 7H6" />
+      </svg>
+    );
+    case "suppliers": return (
+      <svg {...p}>
+        <path d="M5 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0" />
+        <path d="M5 17H3v-4M2 5h11v12m-4 0h6m4 0h2v-6h-8m0-5h5l3 5M3 9h4" />
+      </svg>
+    );
+    case "accounts": return (
+      <svg {...p}>
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+        <path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2m5 6h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3H10m2 0v1m0-8v1" />
+      </svg>
+    );
+    case "insurance": return (
+      <svg {...p}>
+        <path d="M11.46 20.846A12 12 0 0 1 3.5 6 12 12 0 0 0 12 3a12 12 0 0 0 8.5 3 12 12 0 0 1-.09 7.06M15 19l2 2 4-4" />
+      </svg>
+    );
+    case "reports": return (
+      <svg {...p}>
+        <path d="M3 13a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zm12-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1zM9 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1zM4 20h14" />
+      </svg>
+    );
+    case "hr": return (
+      <svg {...p}>
+        <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z" />
+      </svg>
+    );
+    case "settings": return (
+      <svg {...p}>
+        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    );
+    default: return null;
+  }
 }
 
 const navGroups = [
   {
     label: "Core Operations",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: "⊞" },
-      { id: "sales", label: "Sales", icon: "◈", badge: 2 },
-      { id: "prescriptions", label: "Prescriptions", icon: "℞", badge: 2 },
-      { id: "patients", label: "Patients", icon: "♡" },
+      { id: "dashboard", label: "Dashboard" },
+      { id: "sales", label: "Sales", badge: 2 },
+      { id: "prescriptions", label: "Prescriptions", badge: 2 },
+      { id: "patients", label: "Patients" },
     ],
   },
   {
     label: "Inventory & Stock",
     items: [
-      { id: "inventory", label: "Inventory", icon: "▤", badge: 3 },
-      { id: "stock", label: "Stock Management", icon: "◫" },
-      { id: "shortbook", label: "Short Book", icon: "◑", badge: 8 },
-      { id: "expiry", label: "Expiry Management", icon: "◷", badge: 12 },
+      { id: "inventory", label: "Inventory", badge: 3 },
+      { id: "stock", label: "Stock Management" },
+      { id: "shortbook", label: "Short Book", badge: 8 },
+      { id: "expiry", label: "Expiry Management", badge: 12 },
     ],
   },
   {
     label: "Purchasing",
     items: [
-      { id: "purchases", label: "Purchasing", icon: "⊕" },
-      { id: "suppliers", label: "Suppliers", icon: "◇" },
+      { id: "purchases", label: "Purchasing" },
+      { id: "suppliers", label: "Suppliers" },
     ],
   },
   {
     label: "Finance",
     items: [
-      { id: "accounts", label: "Accounts", icon: "▣" },
-      { id: "insurance", label: "Insurance & Claims", icon: "⊙" },
+      { id: "accounts", label: "Accounts" },
+      { id: "insurance", label: "Insurance & Claims" },
     ],
   },
   {
     label: "Analytics",
     items: [
-      { id: "reports", label: "Reports", icon: "▦" },
+      { id: "reports", label: "Reports" },
     ],
   },
   {
     label: "Administration",
     items: [
-      { id: "hr", label: "HR & Payroll", icon: "◎" },
-      { id: "settings", label: "Settings", icon: "⚙" },
+      { id: "hr", label: "HR & Payroll" },
+      { id: "settings", label: "Settings" },
     ],
   },
 ];
@@ -221,8 +316,8 @@ function NavBtn({
       className="w-full flex items-center text-left"
       title={collapsed ? item.label : undefined}
       style={{
-        gap: 12,
-        padding: collapsed ? "8px 0" : "7px 20px",
+        gap: 10,
+        padding: collapsed ? "8px 0" : "7px 16px 7px 18px",
         justifyContent: collapsed ? "center" : "flex-start",
         background: active ? "#1B6CA8" : "transparent",
         color: active ? "#FFFFFF" : "rgba(255,255,255,0.5)",
@@ -233,13 +328,13 @@ function NavBtn({
       onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
     >
       <span style={{
-        fontSize: 15,
-        width: collapsed ? 24 : 18,
-        textAlign: "center",
-        opacity: active ? 1 : 0.65,
+        width: 18, height: 18,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexShrink: 0,
+        opacity: active ? 1 : 0.6,
         position: "relative",
       }}>
-        {item.icon}
+        <NavIcon id={item.id} size={18} />
         {collapsed && item.badge != null && (
           <span style={{
             position: "absolute",
