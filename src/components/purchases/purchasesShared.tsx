@@ -1800,3 +1800,96 @@ export function EditableChip({ label, value, onChange, editable, prefix, allowNe
   );
 }
 
+// ─── Verify-flow cards ────────────────────────────────────────────────────────
+
+export function OptionCard({
+  icon, title, desc, subSteps, badge, btnLabel, btnPrimary, onSelect,
+}: {
+  icon: React.ReactNode; title: string; desc: string; subSteps?: string[];
+  badge?: string; btnLabel: string; btnPrimary?: boolean; onSelect: () => void;
+}) {
+  return (
+    <div
+      onMouseEnter={e => { e.currentTarget.style.borderColor = "#1B6CA8"; e.currentTarget.style.background = "#F8FBFF"; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "#E8ECF4"; e.currentTarget.style.background = "#fff"; }}
+      style={{ border: "1px solid #E8ECF4", background: "#fff", padding: "16px 18px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flex: 1 }}>
+          <div style={{ flexShrink: 0, marginTop: 1 }}>{icon}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>{title}</span>
+              {badge && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#1B6CA8", background: "#EFF6FF", border: "1px solid #BFDBFE", padding: "1px 7px", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{badge}</span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5, fontFamily: "Inter" }}>{desc}</div>
+            {subSteps && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
+                {subSteps.map((s, i) => (
+                  <span key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 10, background: "#F0F3F7", color: "#6B7280", padding: "2px 8px", fontFamily: "Inter" }}>{i + 1}. {s}</span>
+                    {i < subSteps.length - 1 && <span style={{ color: "#DDE3EC", fontSize: 10 }}>→</span>}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={onSelect}
+          style={{
+            flexShrink: 0, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+            fontFamily: "Inter", whiteSpace: "nowrap",
+            border: btnPrimary ? "none" : "1px solid #DDE3EC",
+            background: btnPrimary ? "#1B6CA8" : "#fff",
+            color: btnPrimary ? "#fff" : "#1A2436",
+          }}>
+          {btnLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function MethodCard({ icon, title, desc, badge, btnLabel, onSelect }: {
+  icon: React.ReactNode; title: string; desc: string; badge?: string; btnLabel: string; onSelect: () => void;
+}) {
+  return (
+    <div
+      onMouseEnter={e => { e.currentTarget.style.borderColor = "#1B6CA8"; e.currentTarget.style.background = "#F8FBFF"; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "#E8ECF4"; e.currentTarget.style.background = "#fff"; }}
+      style={{ border: "1px solid #E8ECF4", background: "#fff", padding: "20px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+        <div style={{ flexShrink: 0, width: 36, height: 36, border: "1px solid #EEF1F6", background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {icon}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>{title}</span>
+            {badge && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#1B6CA8", background: "#EFF6FF", border: "1px solid #BFDBFE", padding: "1px 6px", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{badge}</span>
+            )}
+          </div>
+          <div style={{ fontSize: 11, color: "#6B7280", lineHeight: 1.5, fontFamily: "Inter" }}>{desc}</div>
+        </div>
+      </div>
+      <button
+        onClick={onSelect}
+        style={{ alignSelf: "flex-start", padding: "6px 14px", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>
+        {btnLabel}
+      </button>
+    </div>
+  );
+}
+
+export function CenteredModal({ children, width = 620 }: { children: React.ReactNode; width?: number }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}>
+      <div style={{ background: "#fff", width, maxWidth: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 12px 40px rgba(0,0,0,0.18)", border: "1px solid #E8ECF4" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+

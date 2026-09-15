@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import PurchaseVerifyFlow from "./PurchaseVerifyFlow";
 import { suppliers, drugs } from "../../data/mockData";
 import MultiStepper from "../shared/MultiStepper";
 import { Pill } from "../shared/Pill";
@@ -9,7 +10,7 @@ import { DateRangePicker } from "../shared/DateRangePicker";
 import { SearchIcon, ChevronDown } from "../shared/Icons";
 import {
   type PurchaseLine, type InvoiceInitialData, type ImportKind, type AttachedFile,
-  purchaseInvoices, purchaseOrders, MOCK_INVOICE_LINES, MOCK_EMAILS, MOCK_OCR_HEADERS, SYSTEM_FIELDS,
+  purchaseInvoices, MOCK_INVOICE_LINES, MOCK_EMAILS, MOCK_OCR_HEADERS, SYSTEM_FIELDS,
   CLEAN_CSV_HEADERS, MESSY_CSV_HEADERS, TODAY,
   formatDMY, money, newEmptyLine, calcLineSubtotal, calcLineDiscount, calcLineTax,
   normalizeHeader, autoMapHeader, classifyImportedLine,
@@ -604,14 +605,8 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
   const [barcodeHeaderTip, setBarcodeHeaderTip] = useState<"ptq" | "ptr" | null>(null);
   const [printing, setPrinting] = useState(false);
   const [printProgress, setPrintProgress] = useState(0);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [poVerified, setPoVerified] = useState(false);
-  const [physVerified, setPhysVerified] = useState(false);
-  const [physChecks, setPhysChecks] = useState<Record<number, boolean>>({});
-  const [verifyReceiver, setVerifyReceiver] = useState("");
-  const [verifyRemarks, setVerifyRemarks] = useState("");
-  const [verifyTab, setVerifyTab] = useState<"po" | "physical">("po");
-  const purchaseVerified = poVerified && physVerified;
+  const [showVerifyFlow, setShowVerifyFlow] = useState(false);
+  const [purchaseVerified, setPurchaseVerified] = useState(false);
   const [mappingItemId, setMappingItemId] = useState<number | null>(null);
   const [showAddMedForMap, setShowAddMedForMap] = useState(false);
   const [showManual, setShowManual] = useState(!!initialData);
@@ -774,7 +769,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                     <button disabled={!hasItems} onClick={() => onSaveDraft?.({ supplier, invoiceNo, invoiceDate, dueDate, poRef, items, cashDiscount, adjustment })} style={{ padding: "7px 16px", border: `1px solid ${hasItems ? "#E8ECF4" : "#F0F0F0"}`, background: hasItems ? "#fff" : "#F5F5F5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#1A2436" : "#BDBDBD", fontFamily: "Inter" }}>Save Draft</button>
                     <button
                       disabled={!hasItems}
-                      onClick={() => { setVerifyTab("po"); setShowVerifyModal(true); }}
+                      onClick={() => setShowVerifyFlow(true)}
                       style={{ padding: "7px 16px", border: `1px solid ${hasItems ? (purchaseVerified ? "#2E7D32" : "#1B6CA8") : "#F0F0F0"}`, background: purchaseVerified ? "#E8F5E9" : (hasItems ? "#EFF6FF" : "#F5F5F5"), fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: purchaseVerified ? "#2E7D32" : (hasItems ? "#1B6CA8" : "#BDBDBD"), fontFamily: "Inter", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                       {purchaseVerified && (
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1324,240 +1319,35 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
         </div>
       )}
 
-      {showVerifyModal && (() => {
-        const linkedPO = purchaseOrders.find(p => p.id === poRef);
-        const medicineItems = items.filter(i => i.medicineName.trim() !== "");
-        const allPhysChecked = medicineItems.length > 0 && medicineItems.every(i => physChecks[i.id]);
-        const canConfirmPhys = allPhysChecked && verifyReceiver.trim().length > 0;
-
+      {showVerifyFlow && (() => {
+        const invoiceTotal = items.reduce((sum, item) => {
+          const sub = calcLineSubtotal(item);
+          const disc = calcLineDiscount(item);
+          const tax = calcLineTax(item);
+          return sum + sub - disc + tax;
+        }, 0) - cashDiscount + adjustment;
         return (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ background: "#fff", width: 700, border: "1px solid #E8ECF4", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 12px 40px rgba(0,0,0,0.18)" }}>
-              {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #EEF1F6", flexShrink: 0 }}>
-                <div>
-                  <div style={{ fontFamily: "Outfit", fontSize: 17, fontWeight: 700, color: "#1A2436" }}>Verify Purchase</div>
-                  <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{invoiceNo || "New Invoice"} &mdash; {supplier || "No supplier"}</div>
-                </div>
-                <button onClick={() => setShowVerifyModal(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#6B7280", fontSize: 20, lineHeight: 1, padding: "0 4px" }}>×</button>
-              </div>
-
-              {/* Tab bar */}
-              <div style={{ display: "flex", borderBottom: "1px solid #EEF1F6", flexShrink: 0 }}>
-                {([["po", "PO Verification", poVerified], ["physical", "Physical Verification", physVerified]] as const).map(([id, label, done]) => (
-                  <button key={id} onClick={() => setVerifyTab(id)}
-                    style={{ flex: 1, padding: "12px 16px", border: "none", borderBottom: verifyTab === id ? "2px solid #1B6CA8" : "2px solid transparent", background: verifyTab === id ? "#F0F6FF" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: verifyTab === id ? 700 : 500, color: verifyTab === id ? "#1B6CA8" : "#6B7280", fontFamily: "Inter" }}>{label}</span>
-                    {done && (
-                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: "#E8F5E9", border: "1px solid #A5D6A7" }}>
-                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {/* Body */}
-              <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "20px 22px" }}>
-
-                {/* ── PO Verification tab ── */}
-                {verifyTab === "po" && (
-                  <div>
-                    {/* PO info row */}
-                    <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
-                      {[
-                        { label: "PO Reference", value: poRef || "—" },
-                        { label: "Supplier on PO", value: linkedPO ? linkedPO.supplier : (poRef ? "Not found" : "—") },
-                        { label: "PO Date", value: linkedPO ? formatDMY(linkedPO.date) : "—" },
-                        { label: "PO Order Value", value: linkedPO ? `₹${linkedPO.orderValue.toFixed(2)}` : "—" },
-                      ].map(f => (
-                        <div key={f.label} style={{ flex: "1 1 140px", background: "#F8FAFC", border: "1px solid #EEF1F6", padding: "10px 14px" }}>
-                          <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>{f.label}</div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2436", fontFamily: f.label.includes("Value") ? "JetBrains Mono" : "Inter" }}>{f.value}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Supplier match indicator */}
-                    {linkedPO && (
-                      <div style={{ marginBottom: 16, padding: "10px 14px", background: linkedPO.supplier === supplier ? "#E8F5E9" : "#FFEBEE", border: `1px solid ${linkedPO.supplier === supplier ? "#A5D6A7" : "#FFCDD2"}`, display: "flex", alignItems: "center", gap: 8 }}>
-                        {linkedPO.supplier === supplier ? (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        ) : (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C62828" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        )}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: linkedPO.supplier === supplier ? "#2E7D32" : "#C62828", fontFamily: "Inter" }}>
-                          {linkedPO.supplier === supplier ? "Supplier matches PO" : `Supplier mismatch — PO has "${linkedPO.supplier}", invoice has "${supplier || "none"}"`}
-                        </span>
-                      </div>
-                    )}
-
-                    {!poRef && (
-                      <div style={{ padding: "14px 18px", background: "#FFF3E0", border: "1px solid #FFCC80", color: "#E65100", fontSize: 13, fontFamily: "Inter", marginBottom: 16 }}>
-                        No PO reference set on this invoice. You can still verify manually.
-                      </div>
-                    )}
-
-                    {/* Items comparison table */}
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Invoice Items</div>
-                    <div style={{ border: "1px solid #E8ECF4", overflow: "hidden" }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <thead>
-                          <tr style={{ background: "#F8FAFC" }}>
-                            {["Medicine", "Batch", "Qty", "Free", "Rate (₹)", "MRP (₹)", "Expiry"].map(h => (
-                              <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.06em", textTransform: "uppercase", borderBottom: "1px solid #E8ECF4", whiteSpace: "nowrap" }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {medicineItems.length === 0 ? (
-                            <tr><td colSpan={7} style={{ padding: "20px 12px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No items added yet</td></tr>
-                          ) : medicineItems.map((item, idx) => (
-                            <tr key={item.id} style={{ background: idx % 2 === 0 ? "#fff" : "#FAFBFD", borderBottom: "1px solid #EEF1F6" }}>
-                              <td style={{ padding: "9px 12px", fontSize: 13, color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>{item.medicineName}</td>
-                              <td style={{ padding: "9px 12px", fontSize: 12, color: "#6B7280", fontFamily: "JetBrains Mono" }}>{item.batchNo || "—"}</td>
-                              <td style={{ padding: "9px 12px", fontSize: 13, color: "#1A2436", fontFamily: "JetBrains Mono", textAlign: "right" }}>{item.qty}</td>
-                              <td style={{ padding: "9px 12px", fontSize: 13, color: "#6B7280", fontFamily: "JetBrains Mono", textAlign: "right" }}>{item.free}</td>
-                              <td style={{ padding: "9px 12px", fontSize: 13, color: "#1A2436", fontFamily: "JetBrains Mono", textAlign: "right" }}>₹{item.purchaseRate.toFixed(2)}</td>
-                              <td style={{ padding: "9px 12px", fontSize: 13, color: "#1A2436", fontFamily: "JetBrains Mono", textAlign: "right" }}>₹{item.mrp.toFixed(2)}</td>
-                              <td style={{ padding: "9px 12px", fontSize: 12, color: "#6B7280", fontFamily: "JetBrains Mono" }}>{item.expDate || "—"}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                      {poVerified ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: "50%", background: "#E8F5E9", border: "1px solid #A5D6A7" }}>
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                          </span>
-                          <span style={{ fontSize: 13, color: "#2E7D32", fontWeight: 600, fontFamily: "Inter" }}>PO Verified</span>
-                          <button onClick={() => setPoVerified(false)} style={{ marginLeft: 8, padding: "6px 14px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>Undo</button>
-                          <button onClick={() => setVerifyTab("physical")} style={{ padding: "6px 16px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Next: Physical →</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setPoVerified(true)} style={{ padding: "8px 20px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Mark PO Verified</button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Physical Verification tab ── */}
-                {verifyTab === "physical" && (
-                  <div>
-                    <div style={{ fontSize: 13, color: "#6B7280", fontFamily: "Inter", marginBottom: 16 }}>
-                      Confirm physical receipt of each item below, then fill in the receiver details.
-                    </div>
-
-                    {/* Per-item checkboxes */}
-                    <div style={{ border: "1px solid #E8ECF4", overflow: "hidden", marginBottom: 18 }}>
-                      <div style={{ display: "flex", background: "#F8FAFC", padding: "9px 14px", borderBottom: "1px solid #E8ECF4" }}>
-                        <div style={{ flex: "0 0 32px" }}>
-                          <input type="checkbox"
-                            checked={allPhysChecked}
-                            onChange={e => {
-                              const next: Record<number, boolean> = {};
-                              medicineItems.forEach(i => { next[i.id] = e.target.checked; });
-                              setPhysChecks(next);
-                            }}
-                            style={{ cursor: "pointer", width: 15, height: 15 }} />
-                        </div>
-                        <div style={{ flex: 1, fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.06em", textTransform: "uppercase" }}>Medicine</div>
-                        <div style={{ flex: "0 0 90px", fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.06em", textTransform: "uppercase" }}>Batch</div>
-                        <div style={{ flex: "0 0 60px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.06em", textTransform: "uppercase" }}>Qty</div>
-                        <div style={{ flex: "0 0 60px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.06em", textTransform: "uppercase" }}>Free</div>
-                        <div style={{ flex: "0 0 100px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.06em", textTransform: "uppercase" }}>Expiry</div>
-                      </div>
-                      {medicineItems.length === 0 ? (
-                        <div style={{ padding: "20px 14px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No items to verify</div>
-                      ) : medicineItems.map((item, idx) => {
-                        const checked = !!physChecks[item.id];
-                        return (
-                          <div key={item.id} onClick={() => setPhysChecks(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
-                            style={{ display: "flex", alignItems: "center", padding: "10px 14px", borderBottom: idx < medicineItems.length - 1 ? "1px solid #EEF1F6" : "none", background: checked ? "#F0FFF4" : (idx % 2 === 0 ? "#fff" : "#FAFBFD"), cursor: "pointer" }}>
-                            <div style={{ flex: "0 0 32px" }}>
-                              <input type="checkbox" checked={checked} onChange={() => {}} style={{ cursor: "pointer", width: 15, height: 15 }} />
-                            </div>
-                            <div style={{ flex: 1, fontSize: 13, color: "#1A2436", fontFamily: "Inter", fontWeight: checked ? 600 : 400 }}>{item.medicineName}</div>
-                            <div style={{ flex: "0 0 90px", fontSize: 12, color: "#6B7280", fontFamily: "JetBrains Mono" }}>{item.batchNo || "—"}</div>
-                            <div style={{ flex: "0 0 60px", textAlign: "right", fontSize: 13, color: "#1A2436", fontFamily: "JetBrains Mono" }}>{item.qty}</div>
-                            <div style={{ flex: "0 0 60px", textAlign: "right", fontSize: 13, color: "#6B7280", fontFamily: "JetBrains Mono" }}>{item.free}</div>
-                            <div style={{ flex: "0 0 100px", textAlign: "right", fontSize: 12, color: "#6B7280", fontFamily: "JetBrains Mono" }}>{item.expDate || "—"}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Receiver & remarks */}
-                    <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Received By <span style={{ color: "#C62828" }}>*</span></div>
-                        <input
-                          value={verifyReceiver}
-                          onChange={e => setVerifyReceiver(e.target.value)}
-                          placeholder="Name of person who received"
-                          style={{ width: "100%", padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", boxSizing: "border-box" }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Remarks</div>
-                        <input
-                          value={verifyRemarks}
-                          onChange={e => setVerifyRemarks(e.target.value)}
-                          placeholder="Any notes on physical receipt"
-                          style={{ width: "100%", padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", boxSizing: "border-box" }} />
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, alignItems: "center" }}>
-                      {!allPhysChecked && medicineItems.length > 0 && (
-                        <span style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter" }}>{medicineItems.filter(i => physChecks[i.id]).length} / {medicineItems.length} items checked</span>
-                      )}
-                      {physVerified ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: "50%", background: "#E8F5E9", border: "1px solid #A5D6A7" }}>
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                          </span>
-                          <span style={{ fontSize: 13, color: "#2E7D32", fontWeight: 600, fontFamily: "Inter" }}>Physically Verified</span>
-                          <button onClick={() => setPhysVerified(false)} style={{ marginLeft: 8, padding: "6px 14px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>Undo</button>
-                        </div>
-                      ) : (
-                        <button
-                          disabled={!canConfirmPhys}
-                          onClick={() => setPhysVerified(true)}
-                          title={!allPhysChecked ? "Check all items first" : !verifyReceiver.trim() ? "Enter receiver name" : undefined}
-                          style={{ padding: "8px 20px", border: "none", background: canConfirmPhys ? "#2E7D32" : "#C8D6E5", fontSize: 13, cursor: canConfirmPhys ? "pointer" : "not-allowed", color: canConfirmPhys ? "#fff" : "#8FA3B1", fontFamily: "Inter", fontWeight: 600 }}>
-                          Confirm Physical Receipt
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div style={{ borderTop: "1px solid #EEF1F6", padding: "14px 22px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, background: "#FAFBFD" }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  {[["po", poVerified], ["physical", physVerified]].map(([key, done]) => (
-                    <div key={key as string} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: done ? "#2E7D32" : "#DDE3EC" }} />
-                      <span style={{ fontSize: 11, color: done ? "#2E7D32" : "#9CA3AF", fontFamily: "Inter", textTransform: "capitalize" }}>{key === "po" ? "PO" : "Physical"}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button onClick={() => setShowVerifyModal(false)} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Close</button>
-                  <button
-                    disabled={!purchaseVerified}
-                    onClick={() => setShowVerifyModal(false)}
-                    style={{ padding: "7px 20px", border: "none", background: purchaseVerified ? "#2E7D32" : "#C8D6E5", fontSize: 13, cursor: purchaseVerified ? "pointer" : "not-allowed", color: purchaseVerified ? "#fff" : "#8FA3B1", fontFamily: "Inter", fontWeight: 600 }}>
-                    {purchaseVerified ? "Verification Complete" : "Complete Both Steps to Finish"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PurchaseVerifyFlow
+            supplier={supplier}
+            invoiceNo={invoiceNo}
+            invoiceDate={invoiceDate}
+            poRef={poRef}
+            items={items}
+            invoiceTotal={invoiceTotal}
+            onClose={() => setShowVerifyFlow(false)}
+            onPost={() => {
+              setPurchaseVerified(true);
+              setShowVerifyFlow(false);
+              onPostInvoice?.({ supplier, invoiceNo, invoiceDate, dueDate, poRef, items, cashDiscount, adjustment });
+              const medicineItems = items.filter(i => i.medicineName !== "");
+              const initSelected = new Set(medicineItems.map(i => i.id));
+              const initQty: Record<number, number> = {};
+              medicineItems.forEach(i => { initQty[i.id] = i.qty + i.free; });
+              setBarcodeSelected(initSelected);
+              setBarcodePrintQty(initQty);
+              setShowBarcodeSelect(true);
+            }}
+          />
         );
       })()}
 
