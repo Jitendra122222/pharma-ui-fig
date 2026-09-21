@@ -128,7 +128,7 @@ const navGroups = [
     label: "Purchasing",
     items: [
       { id: "purchases", label: "Purchasing" },
-      { id: "suppliers", label: "Suppliers" },
+      { id: "suppliers", label: "Distributors" },
     ],
   },
   {

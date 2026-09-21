@@ -15,6 +15,7 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ScreenView = "list" | "add" | "view" | "edit";
+type DetailTab = "overview" | "commercial" | "expiry" | "orders" | "invoices" | "returns" | "payments" | "audit";
 
 interface ContactPerson {
   id: number;
@@ -244,12 +245,13 @@ const DIST_TYPE_OPTIONS = ["Stockist", "Distributor", "Super Stockist", "C&F", "
 const PAYMENT_TERMS_OPTS = ["Cash on Delivery", "Credit 7 Days", "Credit 15 Days", "Credit 30 Days", "Credit 45 Days", "Credit 60 Days"];
 const STATUS_OPTS = ["Active", "Inactive", "Draft"];
 
-function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactivate }: {
+function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactivate, onViewWithTab }: {
   distributors: DistributorRecord[];
   onAdd: () => void;
   onView: (d: DistributorRecord) => void;
   onEdit: (d: DistributorRecord) => void;
   onDeactivate: (d: DistributorRecord) => void;
+  onViewWithTab: (d: DistributorRecord, tab: DetailTab) => void;
 }) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -413,6 +415,10 @@ function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactiva
                                   if (item === "View Details") onView(d);
                                   else if (item === "Edit") onEdit(d);
                                   else if (item === "Deactivate") onDeactivate(d);
+                                  else if (item === "View Purchase History") onViewWithTab(d, "orders");
+                                  else if (item === "View Commercial Terms") onViewWithTab(d, "commercial");
+                                  else if (item === "View Expiry Policy") onViewWithTab(d, "expiry");
+                                  else if (item === "View Audit History") onViewWithTab(d, "audit");
                                 }}
                                   style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 14px", border: "none", background: "transparent", fontSize: 12, color: item === "Deactivate" ? "#C62828" : "#1A2436", cursor: "pointer", fontFamily: "Inter", fontWeight: item === "Deactivate" ? 600 : 400 }}
                                   onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")}
@@ -563,22 +569,25 @@ function PurchaseTextArea({ value, onChange, placeholder, rows = 3 }: {
   );
 }
 
-function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData }: {
+function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData, onViewExisting, showToast }: {
   onBack: () => void;
   onSaved: (d: DistributorRecord, asDraft: boolean) => void;
   existingDistributors: DistributorRecord[];
   initialData?: DistributorRecord;
+  onViewExisting?: (d: DistributorRecord) => void;
+  showToast: (message: string, type: "success" | "error") => void;
 }) {
   const isEdit = !!initialData;
   const [form, setForm] = useState<AddDistributorForm>(initialData ? recordToForm(initialData) : { ...EMPTY_FORM });
   const [touched, setTouched] = useState(false);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
-  const [savedOk, setSavedOk] = useState(false);
   const [nextRuleId, setNextRuleId] = useState(1);
   const [nextContactId, setNextContactId] = useState(2);
+  const [ignoreDuplicate, setIgnoreDuplicate] = useState(false);
 
   function upd<K extends keyof AddDistributorForm>(key: K, val: AddDistributorForm[K]) {
     setTouched(true);
+    if (key === "name" || key === "gstin") setIgnoreDuplicate(false);
     setForm(f => ({ ...f, [key]: val }));
   }
 
@@ -641,10 +650,6 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
     companyPhone: validateMobile(form.companyPhone),
     pin: validatePIN(form.pin),
     email: validateEmail(form.email),
-    drugLicense: !form.drugLicense.trim() ? "Drug License No. is required" : "",
-    city: !form.city.trim() ? "City is required" : "",
-    state: !form.state.trim() ? "State is required" : "",
-    addrLine1: !form.addrLine1.trim() ? "Address is required" : "",
   };
   const hasErrors = Object.values(errors).some(e => !!e);
   const draftNameMissing = !form.name.trim();
@@ -675,7 +680,11 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
 
   function handleSave(asDraft = false) {
     if (asDraft && draftNameMissing) { setTouched(true); return; }
-    if (!asDraft && hasErrors) return;
+    if (!asDraft && hasErrors) {
+      setTouched(true);
+      showToast("Please fix the required fields before saving.", "error");
+      return;
+    }
     const id = initialData?.id ?? `DIST-${String(Math.floor(Math.random() * 900) + 100).padStart(3, "0")}`;
     const rec: DistributorRecord = {
       id, name: form.name, code: form.code, type: form.type,
@@ -705,8 +714,10 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
       distributorNotes: form.distributorNotes, contacts: form.contacts,
     };
     onSaved(rec, asDraft);
-    setSavedOk(true);
-    setTimeout(() => setSavedOk(false), 3000);
+    const msg = asDraft
+      ? "Saved as draft"
+      : isEdit ? "Distributor updated successfully" : "Distributor saved successfully";
+    showToast(msg, "success");
   }
 
   const primaryContact = form.contacts[0];
@@ -746,28 +757,22 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
             style={{ padding: "9px 18px", border: "1px solid #E8ECF4", background: draftNameMissing ? "#F8FAFC" : "#fff", fontSize: 13, cursor: draftNameMissing ? "not-allowed" : "pointer", color: draftNameMissing ? "#C8D6E5" : "#1A2436", fontFamily: "Inter" }}>
             Save Draft
           </button>
-          <PrimaryBtn disabled={hasErrors} onClick={() => handleSave(false)}>{isEdit ? "Update Distributor" : "Save Distributor"}</PrimaryBtn>
+          <PrimaryBtn onClick={() => handleSave(false)}>{isEdit ? "Update Distributor" : "Save Distributor"}</PrimaryBtn>
         </div>
       </div>
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
 
-        {savedOk && (
-          <div style={{ padding: "10px 16px", background: "#E8F5E9", border: "1px solid #A5D6A7", marginBottom: 16, fontSize: 13, color: "#2E7D32", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
-            ✓ {isEdit ? "Distributor updated successfully" : "Distributor created successfully"}
-          </div>
-        )}
-
-        {dupDetect && (
+        {dupDetect && !ignoreDuplicate && (
           <div style={{ padding: "10px 16px", background: "#FFF3E0", border: "1px solid #FFCC80", marginBottom: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span>⚠</span>
             <div style={{ flex: 1, fontSize: 13, color: "#1A2436" }}>
               <span style={{ fontWeight: 700, color: "#E65100" }}>Possible duplicate — </span>
               "{dupDetect.name}" already exists with the same details.
             </div>
-            <button style={{ padding: "5px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View Existing</button>
-            <button style={{ padding: "5px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, color: "#6B7280", cursor: "pointer", fontFamily: "Inter" }}>Continue Anyway</button>
+            <button onClick={() => onViewExisting?.(dupDetect)} style={{ padding: "5px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View Existing</button>
+            <button onClick={() => setIgnoreDuplicate(true)} style={{ padding: "5px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, color: "#6B7280", cursor: "pointer", fontFamily: "Inter" }}>Continue Anyway</button>
           </div>
         )}
 
@@ -1145,7 +1150,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
                 {([
                   ["Default Distributor", "isDefault"],
                   ["Allow PO", "allowPO"],
-                  ["Supplier Confirmation Required", "supplierConfirmation"],
+                  ["Distributor Confirmation Required", "supplierConfirmation"],
                   ["Allow Price Negotiation", "priceNegotiation"],
                   ["Allow Scheme Negotiation", "schemeNegotiation"],
                   ["Allow Substitute Product", "substituteProduct"],
@@ -1188,7 +1193,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
                 style={{ padding: "9px 18px", border: "1px solid #E8ECF4", background: draftNameMissing ? "#F8FAFC" : "#fff", fontSize: 13, cursor: draftNameMissing ? "not-allowed" : "pointer", color: draftNameMissing ? "#C8D6E5" : "#1A2436", fontFamily: "Inter" }}>
                 Save Draft
               </button>
-              <PrimaryBtn disabled={hasErrors} onClick={() => handleSave(false)}>{isEdit ? "Update Distributor" : "Save Distributor"}</PrimaryBtn>
+              <PrimaryBtn onClick={() => handleSave(false)}>{isEdit ? "Update Distributor" : "Save Distributor"}</PrimaryBtn>
             </div>
           </div>
 
@@ -1247,8 +1252,6 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
 }
 
 // ─── SCREEN 3: Distributor Detail Page ────────────────────────────────────────
-
-type DetailTab = "overview" | "commercial" | "expiry" | "orders" | "invoices" | "returns" | "payments" | "audit";
 
 // ── Date range helpers ──────────────────────────────────────────────────────
 
@@ -1412,13 +1415,14 @@ function DetailCard({ title, children }: { title: string; children: React.ReactN
   );
 }
 
-function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchases }: {
+function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchases, initialTab }: {
   distributor: DistributorRecord;
   onBack: () => void;
   onEdit: () => void;
   onNavigatePurchases?: (link: PurchasesDeepLink) => void;
+  initialTab?: DetailTab;
 }) {
-  const [tab, setTab] = useState<DetailTab>("overview");
+  const [tab, setTab] = useState<DetailTab>(initialTab ?? "overview");
 
   // ── per-tab filter state ────────────────────────────────────────────────
   const [ordDateRange, setOrdDateRange] = useState<DateRange>("all");
@@ -1581,7 +1585,6 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
           <Pill status={distributor.status} />
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <GhostBtn onClick={onBack}>← Back to List</GhostBtn>
           <PrimaryBtn onClick={onEdit}>Edit Distributor</PrimaryBtn>
         </div>
       </div>
@@ -2095,9 +2098,25 @@ export default function Suppliers({ onNavigatePurchases }: { onNavigatePurchases
   const [view, setView] = useState<ScreenView>("list");
   const [distributors, setDistributors] = useState<DistributorRecord[]>(MOCK_DISTRIBUTORS);
   const [selected, setSelected] = useState<DistributorRecord | null>(null);
+  const [selectedTab, setSelectedTab] = useState<DetailTab>("overview");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function showToast(message: string, type: "success" | "error") {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, type });
+    toastTimer.current = setTimeout(() => setToast(null), 2000);
+  }
 
   function handleView(d: DistributorRecord) {
     setSelected(d);
+    setSelectedTab("overview");
+    setView("view");
+  }
+
+  function handleViewWithTab(d: DistributorRecord, tab: DetailTab) {
+    setSelected(d);
+    setSelectedTab(tab);
     setView("view");
   }
 
@@ -2106,14 +2125,13 @@ export default function Suppliers({ onNavigatePurchases }: { onNavigatePurchases
     setView("edit");
   }
 
-  function handleSaved(rec: DistributorRecord, asDraft: boolean) {
+  function handleSaved(rec: DistributorRecord, _asDraft: boolean) {
     setDistributors(prev => {
       const idx = prev.findIndex(d => d.id === rec.id);
       if (idx >= 0) { const u = [...prev]; u[idx] = rec; return u; }
       return [rec, ...prev];
     });
-    setSelected(rec);
-    if (!asDraft) setView("view");
+    setView("list");
   }
 
   function handleBackFromAdd() {
@@ -2128,11 +2146,36 @@ export default function Suppliers({ onNavigatePurchases }: { onNavigatePurchases
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
+      {toast && (
+        <div style={{ position: "fixed", bottom: 28, left: "var(--sidebar-w, 228px)", right: 0, display: "flex", justifyContent: "center", zIndex: 1000, pointerEvents: "none" }}>
+          <div style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", minWidth: 320, maxWidth: 480, overflow: "hidden", background: toast.type === "success" ? "#2E7D32" : "#C62828", boxShadow: "0 6px 24px rgba(0,0,0,0.22)", animation: "toast-slide-up 0.22s ease-out" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}>
+              {toast.type === "success" ? (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
+                  <circle cx="10" cy="10" r="9" fill="rgba(255,255,255,0.2)" />
+                  <path d="M6 10l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
+                  <circle cx="10" cy="10" r="9" fill="rgba(255,255,255,0.2)" />
+                  <path d="M10 7v4M10 13.5h.01" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              )}
+              <span style={{ flex: 1, fontSize: 13, fontFamily: "Inter", fontWeight: 600, color: "#fff", lineHeight: 1.4 }}>{toast.message}</span>
+              <button onClick={() => setToast(null)} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.75)", cursor: "pointer", fontSize: 19, lineHeight: 1, padding: "0 0 0 8px", flexShrink: 0 }}>×</button>
+            </div>
+            <div style={{ height: 3, background: "rgba(255,255,255,0.25)", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, height: "100%", background: "rgba(255,255,255,0.6)", animation: "toast-progress 2s linear forwards" }} />
+            </div>
+          </div>
+        </div>
+      )}
       {view === "list" && (
         <DistributorMasterList
           distributors={distributors}
           onAdd={() => { setSelected(null); setView("add"); }}
           onView={handleView}
+          onViewWithTab={handleViewWithTab}
           onEdit={d => { setSelected(d); setView("edit"); }}
           onDeactivate={d => {
             setDistributors(prev => prev.map(x =>
@@ -2148,6 +2191,8 @@ export default function Suppliers({ onNavigatePurchases }: { onNavigatePurchases
           onBack={handleBackFromAdd}
           onSaved={handleSaved}
           existingDistributors={distributors}
+          onViewExisting={d => { setSelected(d); setSelectedTab("overview"); setView("view"); }}
+          showToast={showToast}
         />
       )}
       {view === "edit" && selected && (
@@ -2156,6 +2201,7 @@ export default function Suppliers({ onNavigatePurchases }: { onNavigatePurchases
           onSaved={handleSaved}
           existingDistributors={distributors}
           initialData={selected}
+          showToast={showToast}
         />
       )}
       {view === "view" && selected && (
@@ -2164,6 +2210,7 @@ export default function Suppliers({ onNavigatePurchases }: { onNavigatePurchases
           onBack={handleBackFromDetail}
           onEdit={() => handleEdit(selected)}
           onNavigatePurchases={onNavigatePurchases}
+          initialTab={selectedTab}
         />
       )}
     </div>

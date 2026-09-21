@@ -34,7 +34,7 @@ const MODULE_LABELS: Record<Module, string> = {
   prescriptions: "Prescriptions",
   patients: "Patients",
   purchases: "Purchasing",
-  suppliers: "Suppliers",
+  suppliers: "Distributors",
   accounts: "Accounts & Finance",
   insurance: "Insurance & Claims",
   reports: "Reports & Analytics",
