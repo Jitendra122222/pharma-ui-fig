@@ -84,7 +84,7 @@ const PO_ACTIVITY: Record<string, ActivityEntry[]> = {
 
 // ── Drawer tab sub-components ─────────────────────────────────────────────────
 
-function OverviewTab({ order, response }: { order: PurchaseOrderRecord; response: POSupplierResponse | undefined }) {
+function OverviewTab({ order, response, onReviewChanges }: { order: PurchaseOrderRecord; response: POSupplierResponse | undefined; onReviewChanges: () => void }) {
   const pct = order.items > 0 ? Math.round((order.received / order.items) * 100) : 0;
   const infoRows: { label: string; value: string; mono?: boolean; bold?: boolean }[] = [
     { label: "Distributor", value: order.supplier },
@@ -152,7 +152,7 @@ function OverviewTab({ order, response }: { order: PurchaseOrderRecord; response
               </div>
             )}
             <div style={{ padding: "12px 16px" }}>
-              <button style={{ fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1B6CA8", border: "1px solid #1B6CA8", background: "transparent", padding: "6px 14px", cursor: "pointer" }}>
+              <button onClick={onReviewChanges} style={{ fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1B6CA8", border: "1px solid #1B6CA8", background: "transparent", padding: "6px 14px", cursor: "pointer" }}>
                 Review Changes
               </button>
             </div>
@@ -545,7 +545,7 @@ function PODetailDrawer({ order, onClose, onEdit, onToast }: {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <GhostBtn onClick={onEdit}>Edit PO</GhostBtn>
+              <button onClick={onEdit} style={{ fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1B6CA8", border: "1px solid #1B6CA8", background: "transparent", padding: "6px 14px", cursor: "pointer" }}>Edit PO</button>
               <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22, lineHeight: 1, padding: "2px 4px" }}>×</button>
             </div>
           </div>
@@ -564,7 +564,7 @@ function PODetailDrawer({ order, onClose, onEdit, onToast }: {
         </div>
         {/* Tab body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-          {tab === "overview"  && <OverviewTab order={order} response={response} />}
+          {tab === "overview"  && <OverviewTab order={order} response={response} onReviewChanges={() => setTab("response")} />}
           {tab === "items"     && <ItemsTab lines={lines} />}
           {tab === "response"  && <ResponseTab response={response} order={order} onToast={onToast} />}
           {tab === "activity"  && <ActivityTab activity={activity} />}
@@ -679,7 +679,10 @@ function PurchaseOrderList({ onNew, onView }: {
 
 // ── Root export ───────────────────────────────────────────────────────────────
 
-export default function PurchaseOrders() {
+export default function PurchaseOrders({ initialViewId, onDeepLinkConsumed }: {
+  initialViewId?: string;
+  onDeepLinkConsumed?: () => void;
+} = {}) {
   const [view, setView] = useState<"list" | "new-order" | "view-order">("list");
   const [openOrder, setOpenOrder] = useState<PurchaseOrderRecord | null>(null);
   const [drawerOrder, setDrawerOrder] = useState<PurchaseOrderRecord | null>(null);
@@ -690,6 +693,14 @@ export default function PurchaseOrders() {
     const t = setTimeout(() => setToast(null), 5000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    if (!initialViewId) return;
+    const order = purchaseOrders.find(o => o.id === initialViewId) ?? null;
+    setOpenOrder(order);
+    setView("view-order");
+    onDeepLinkConsumed?.();
+  }, [initialViewId]);
 
   if (view === "new-order" || view === "view-order") {
     return (

@@ -218,7 +218,9 @@ function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: type
 
       <div style={{ background: "#fff", borderBottom: "1px solid #E8ECF4", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 50, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={onBack} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 18, padding: "0 4px", display: "flex", alignItems: "center" }}>←</button>
+          <button onClick={onBack} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28 }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="#1A2436" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
           <span style={{ fontSize: 12, color: "#9CA3AF" }}>Sales</span>
           <span style={{ fontSize: 12, color: "#C8CDD8" }}>›</span>
           <span style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>

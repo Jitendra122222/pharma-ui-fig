@@ -175,10 +175,12 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
           <div style={{ position: "relative", display: "inline-flex" }}>
             <button
               onClick={() => viewMode ? onBack() : setShowBackConfirm(true)}
-              style={{ border: "none", background: "transparent", cursor: "pointer", color: "#1A2436", fontSize: 20, fontWeight: 700, padding: "0 4px", display: "flex", alignItems: "center" }}
-              onMouseEnter={e => { (e.currentTarget.style.color = "#1B6CA8"); const tip = e.currentTarget.nextElementSibling as HTMLElement; if (tip) tip.style.opacity = "1"; }}
-              onMouseLeave={e => { (e.currentTarget.style.color = "#1A2436"); const tip = e.currentTarget.nextElementSibling as HTMLElement; if (tip) tip.style.opacity = "0"; }}
-            >←</button>
+              style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28 }}
+              onMouseEnter={e => { const tip = e.currentTarget.nextElementSibling as HTMLElement; if (tip) tip.style.opacity = "1"; }}
+              onMouseLeave={e => { const tip = e.currentTarget.nextElementSibling as HTMLElement; if (tip) tip.style.opacity = "0"; }}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="#1A2436" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
             <span style={{ position: "absolute", top: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)", background: "#1A2436", color: "#fff", fontSize: 11, fontFamily: "Inter", fontWeight: 600, padding: "3px 8px", whiteSpace: "nowrap", pointerEvents: "none", opacity: 0, transition: "opacity 0.15s", zIndex: 10 }}>
               Back
             </span>
@@ -561,7 +563,10 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
   );
 }
 
-export default function PurchaseReturns() {
+export default function PurchaseReturns({ initialViewId, onDeepLinkConsumed }: {
+  initialViewId?: string;
+  onDeepLinkConsumed?: () => void;
+} = {}) {
   const [view, setView] = useState<"list" | "new-return" | "view-return">("list");
   const [openReturn, setOpenReturn] = useState<typeof purchaseReturns[0] | null>(null);
   const [returns, setReturns] = useState([...purchaseReturns]);
@@ -572,6 +577,14 @@ export default function PurchaseReturns() {
     const t = setTimeout(() => setToast(null), 5000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    if (!initialViewId) return;
+    const ret = returns.find(r => r.id === initialViewId) ?? null;
+    setOpenReturn(ret);
+    setView("view-return");
+    onDeepLinkConsumed?.();
+  }, [initialViewId]);
 
   const addReturn = (data: ReturnFormData, status: "Draft" | "Posted") => {
     const filledItems = data.items.filter(i => i.medicineName);

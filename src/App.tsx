@@ -44,12 +44,33 @@ const MODULE_LABELS: Record<Module, string> = {
 
 interface AuthUser { name: string; role: string; phone: string; }
 
+export interface PurchasesDeepLink { tab: "orders" | "invoices" | "returns" | "payments"; id: string; }
+
 export default function App() {
   const [module, setModule] = useState<Module>("dashboard");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const [purchasesDeepLink, setPurchasesDeepLink] = useState<PurchasesDeepLink | null>(null);
+  const pendingDeepLink = useRef<PurchasesDeepLink | null>(null);
   const pendingModule = useRef<Module | null>(null);
+
+  function navigatePurchases(link: PurchasesDeepLink) {
+    pendingDeepLink.current = link;
+    pendingModule.current = "purchases";
+    setExiting(false);
+    setLoading(true);
+    setTimeout(() => {
+      setExiting(true);
+      setTimeout(() => {
+        setModule("purchases");
+        setPurchasesDeepLink(link);
+        setLoading(false);
+        setExiting(false);
+        pendingDeepLink.current = null;
+      }, 300);
+    }, 1100);
+  }
 
   function navigateTo(m: Module) {
     if (m === module || loading) return;
@@ -149,8 +170,8 @@ export default function App() {
           {module === "sales" && <Sales />}
           {module === "prescriptions" && <Prescriptions />}
           {module === "patients" && <Patients />}
-          {module === "purchases" && <Purchases />}
-          {module === "suppliers" && <Suppliers />}
+          {module === "purchases" && <Purchases deepLink={purchasesDeepLink} onDeepLinkConsumed={() => setPurchasesDeepLink(null)} />}
+          {module === "suppliers" && <Suppliers onNavigatePurchases={navigatePurchases} />}
           {module === "accounts" && <Accounts />}
           {module === "insurance" && <Insurance />}
           {module === "reports" && <Reports />}
