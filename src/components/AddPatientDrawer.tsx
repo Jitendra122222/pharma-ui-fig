@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import MultiStepper from "./shared/MultiStepper";
 
 type Props = {
   open: boolean;
@@ -249,59 +250,13 @@ function DrawerHeader({ onClose }: { onClose: () => void }) {
 
 function Stepper({ current }: { current: Step }) {
   return (
-    <div style={{ padding: "16px 32px 20px", flexShrink: 0 }}>
-      <div style={{ display: "flex", alignItems: "flex-start" }}>
-        {STEPS.map((s, i) => {
-          const state: "done" | "active" | "pending" =
-            current > s.n ? "done" : current === s.n ? "active" : "pending";
-          const circleBg = state === "pending" ? "#fff" : ACCENT;
-          const circleBorder = state === "pending" ? BORDER : ACCENT;
-          const circleColor = state === "pending" ? MUTED : "#fff";
-          const titleColor = state === "pending" ? MUTED : TEXT;
-          return (
-            <div key={s.n} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", minWidth: 0 }}>
-              {i < STEPS.length - 1 && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 14,
-                    left: "calc(50% + 20px)",
-                    right: "calc(-50% + 20px)",
-                    height: 2,
-                    background: current > s.n ? ACCENT : BORDER,
-                  }}
-                />
-              )}
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  background: circleBg,
-                  border: `2px solid ${circleBorder}`,
-                  color: circleColor,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: "Inter",
-                  position: "relative",
-                  zIndex: 1,
-                }}
-              >
-                {state === "done" ? "✓" : s.n}
-              </div>
-              <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: titleColor, textAlign: "center" }}>
-                {s.title}
-              </div>
-              <div style={{ fontSize: 11, color: MUTED, marginTop: 2, textAlign: "center" }}>
-                {s.subtitle}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <div style={{ padding: "2px 0", flexShrink: 0 }}>
+      <MultiStepper
+        steps={STEPS.map(s => ({ label: s.title, subtitle: s.subtitle }))}
+        current={current}
+        doneStyle="filled"
+        noBorder
+      />
     </div>
   );
 }

@@ -32,5 +32,5 @@ export function useTableSort<T extends Record<string, any>>(
     });
   }, [rows, sortCol, sortDir]);
 
-  return { sortCol, sortDir, handleSort, sorted };
+  return { sortCol, sortDir, handleSort, setSortCol, setSortDir, sorted };
 }

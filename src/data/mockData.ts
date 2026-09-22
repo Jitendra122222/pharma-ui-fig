@@ -36,11 +36,11 @@ export const prescriptions = [
 ];
 
 export const suppliers = [
-  { id: "SUP-001", name: "MedLine Pharma", contact: "John Harrison", email: "orders@medlinepharma.com", phone: "+1 (800) 555-1200", address: "2400 Industrial Blvd, Chicago, IL 60601", products: 145, lastOrder: "2025-07-20", balance: -3420.00, status: "Active", rating: 4.8 },
-  { id: "SUP-002", name: "GenPharm Ltd", contact: "Lisa Nakamura", email: "supply@genpharm.co", phone: "+1 (800) 555-3400", address: "88 Pharma Way, Boston, MA 02101", products: 82, lastOrder: "2025-07-15", balance: 0.00, status: "Active", rating: 4.5 },
-  { id: "SUP-003", name: "PharmaCo Inc", contact: "Carlos Rivera", email: "b2b@pharmacoinc.com", phone: "+1 (800) 555-5600", address: "1200 Health Drive, Dallas, TX 75201", products: 210, lastOrder: "2025-07-22", balance: -1850.00, status: "Active", rating: 4.2 },
-  { id: "SUP-004", name: "BioPharm AG", contact: "Inga Müller", email: "orders@biopharm.ag", phone: "+49 30 555 7800", address: "Hauptstraße 45, 10115 Berlin, Germany", products: 38, lastOrder: "2025-07-08", balance: 0.00, status: "Active", rating: 4.9 },
-  { id: "SUP-005", name: "RespiCare Ltd", contact: "Priya Sharma", email: "sales@respicare.co.uk", phone: "+44 20 7946 0000", address: "12 Medical Quarter, London EC1A 1BB", products: 24, lastOrder: "2025-06-30", balance: -620.00, status: "Active", rating: 4.6 },
+  { id: "SUP-001", name: "MedLine Pharma", contact: "John Harrison", email: "orders@medlinepharma.com", phone: "+1 (800) 555-1200", address: "2400 Industrial Blvd, Chicago, IL 60601", products: 145, lastOrder: "2025-07-20", balance: -3420.00, status: "Active", rating: 4.8, notifyChannel: "Email" as const },
+  { id: "SUP-002", name: "GenPharm Ltd", contact: "Lisa Nakamura", email: "supply@genpharm.co", phone: "+1 (800) 555-3400", address: "88 Pharma Way, Boston, MA 02101", products: 82, lastOrder: "2025-07-15", balance: 0.00, status: "Active", rating: 4.5, notifyChannel: "WhatsApp" as const },
+  { id: "SUP-003", name: "PharmaCo Inc", contact: "Carlos Rivera", email: "b2b@pharmacoinc.com", phone: "+1 (800) 555-5600", address: "1200 Health Drive, Dallas, TX 75201", products: 210, lastOrder: "2025-07-22", balance: -1850.00, status: "Active", rating: 4.2, notifyChannel: "WhatsApp" as const },
+  { id: "SUP-004", name: "BioPharm AG", contact: "Inga Müller", email: "orders@biopharm.ag", phone: "+49 30 555 7800", address: "Hauptstraße 45, 10115 Berlin, Germany", products: 38, lastOrder: "2025-07-08", balance: 0.00, status: "Active", rating: 4.9, notifyChannel: "Email" as const },
+  { id: "SUP-005", name: "RespiCare Ltd", contact: "Priya Sharma", email: "sales@respicare.co.uk", phone: "+44 20 7946 0000", address: "12 Medical Quarter, London EC1A 1BB", products: 24, lastOrder: "2025-06-30", balance: -620.00, status: "Active", rating: 4.6, notifyChannel: "Email" as const },
 ];
 
 export const purchaseOrders = [

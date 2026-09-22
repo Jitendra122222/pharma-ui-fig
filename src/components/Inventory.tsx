@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { drugs } from "../data/mockData";
 import { usePagination, PaginationFooter } from "./shared/usePagination";
+import { Th } from "./shared/Th";
+import { Pill } from "./shared/Pill";
+import { useTableSort } from "./shared/useTableSort";
+import MultiStepper from "./shared/MultiStepper";
 
 // ─── Types & form defaults ─────────────────────────────────────────────────────
 
@@ -179,33 +183,7 @@ function CheckCircleIcon() {
 // ─── Stepper ───────────────────────────────────────────────────────────────────
 
 function MedStepper({ current }: { current: number }) {
-  const steps = ["Medicine", "Compliance", "Operations", "Review"];
-  return (
-    <div style={{ display: "flex", alignItems: "center", padding: "14px 32px", background: "#FAFBFD", borderTop: "1px solid #EEF1F6", borderBottom: "1px solid #EEF1F6", flexShrink: 0 }}>
-      {steps.map((s, i) => {
-        const n = i + 1;
-        const state: "done" | "active" | "idle" = current > n ? "done" : current === n ? "active" : "idle";
-        const isLast = i === steps.length - 1;
-        return (
-          <div key={s} style={{ display: "flex", alignItems: "center", flex: isLast ? "0 0 auto" : 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: "50%",
-                background: state === "done" ? "#E8F5E9" : state === "active" ? "#EFF6FF" : "#F5F5F5",
-                border: `1.5px solid ${state === "done" ? "#2E7D32" : state === "active" ? "#1B6CA8" : "#DDE3EC"}`,
-                color: state === "done" ? "#2E7D32" : state === "active" ? "#1B6CA8" : "#9CA3AF",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontWeight: 700, fontFamily: "JetBrains Mono",
-                flexShrink: 0,
-              }}>{state === "done" ? "✓" : String(n).padStart(2, "0")}</div>
-              <span style={{ fontSize: 13, fontWeight: state === "idle" ? 500 : 700, color: state === "done" ? "#2E7D32" : state === "active" ? "#1B6CA8" : "#9CA3AF", whiteSpace: "nowrap" }}>{s}</span>
-            </div>
-            {!isLast && <div style={{ flex: 1, height: 1, background: state === "done" ? "#A5D6A7" : "#DDE3EC", margin: "0 14px", minWidth: 20 }} />}
-          </div>
-        );
-      })}
-    </div>
-  );
+  return <MultiStepper steps={["Medicine", "Compliance", "Operations", "Review"]} current={current} />;
 }
 
 // ─── Manufacturer combobox ─────────────────────────────────────────────────────
@@ -477,7 +455,9 @@ function CreateMedicinePage({ onBack, mode = "create", drug }: {
       {/* Header */}
       <div style={{ background: "#fff", borderBottom: "1px solid #E8ECF4", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 50, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={onBack} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 18, padding: "0 4px", display: "flex", alignItems: "center" }}>{"←"}</button>
+          <button onClick={onBack} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28 }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="#1A2436" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
           <span style={{ fontSize: 12, color: "#9CA3AF" }}>Inventory</span>
           <span style={{ fontSize: 12, color: "#C8CDD8" }}>{"›"}</span>
           <span style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>
@@ -903,14 +883,7 @@ function AddToShortBookDrawer({ drug, onClose }: { drug: (typeof drugs)[0]; onCl
   );
 }
 
-// ─── Status & risk styles ─────────────────────────────────────────────────────
-
-const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
-  "In Stock": { bg: "#E8F5E9", color: "#2E7D32" },
-  "Low Stock": { bg: "#FFF3E0", color: "#E65100" },
-  "Out of Stock": { bg: "#FFEBEE", color: "#C62828" },
-  "Near Expiry": { bg: "#FFF3E0", color: "#E65100" },
-};
+// ─── Expiry risk styles ───────────────────────────────────────────────────────
 
 const EXPIRY_RISK_STYLE: Record<string, { bg: string; color: string }> = {
   "High":    { bg: "#FFEBEE", color: "#C62828" },
@@ -1405,12 +1378,6 @@ export default function Inventory() {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [reorderDrug, setReorderDrug] = useState<(typeof drugs)[0] | null>(null);
   const [viewDrawerDrug, setViewDrawerDrug] = useState<(typeof drugs)[0] | null>(null);
-  const [sortCol, setSortCol] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const handleSort = (col: string) => {
-    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortCol(col); setSortDir("asc"); }
-  };
 
   useEffect(() => {
     function handle() { setOpenMenuId(null); }
@@ -1456,15 +1423,8 @@ export default function Inventory() {
     : sortBy === "Price (Low - High)"         ? [...preFiltered].sort((a, b) => a.price - b.price)
     : [...preFiltered].sort((a, b) => a.name.localeCompare(b.name));
 
-  const sortedRows = sortCol
-    ? [...filtered].sort((a: any, b: any) => {
-        let va = a[sortCol]; let vb = b[sortCol];
-        if (va == null) return 1; if (vb == null) return -1;
-        if (typeof va === "string") va = va.toLowerCase();
-        if (typeof vb === "string") vb = vb.toLowerCase();
-        return va < vb ? (sortDir === "asc" ? -1 : 1) : va > vb ? (sortDir === "asc" ? 1 : -1) : 0;
-      })
-    : filtered;
+  const { sortCol, sortDir, handleSort, setSortCol, setSortDir, sorted: sortedRows } =
+    useTableSort(filtered);
 
   const { pageRows, footerProps } = usePagination(sortedRows, 10);
 
@@ -1596,70 +1556,21 @@ export default function Inventory() {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1060 }}>
             <thead>
-              <tr style={{ background: "#F8FAFC" }}>
-                <th onClick={() => handleSort("name")} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" as const }}>
-                  MEDICINE
-                  <span style={{ display: "inline-flex", flexDirection: "column", gap: 1.5, marginLeft: 4, lineHeight: 1 }}>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "name" && sortDir === "asc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 0L6 4H0L3 0Z" /></svg>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "name" && sortDir === "desc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 4L0 0H6L3 4Z" /></svg>
-                  </span>
-                </th>
-                <th onClick={() => handleSort("category")} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" as const }}>
-                  CATEGORY
-                  <span style={{ display: "inline-flex", flexDirection: "column", gap: 1.5, marginLeft: 4, lineHeight: 1 }}>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "category" && sortDir === "asc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 0L6 4H0L3 0Z" /></svg>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "category" && sortDir === "desc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 4L0 0H6L3 4Z" /></svg>
-                  </span>
-                </th>
-                <th onClick={() => handleSort("location")} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" as const }}>
-                  LOCATION
-                  <span style={{ display: "inline-flex", flexDirection: "column", gap: 1.5, marginLeft: 4, lineHeight: 1 }}>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "location" && sortDir === "asc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 0L6 4H0L3 0Z" /></svg>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "location" && sortDir === "desc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 4L0 0H6L3 4Z" /></svg>
-                  </span>
-                </th>
-                <th onClick={() => handleSort("stock")} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" as const }}>
-                  STOCK
-                  <span style={{ display: "inline-flex", flexDirection: "column", gap: 1.5, marginLeft: 4, lineHeight: 1 }}>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "stock" && sortDir === "asc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 0L6 4H0L3 0Z" /></svg>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "stock" && sortDir === "desc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 4L0 0H6L3 4Z" /></svg>
-                  </span>
-                </th>
-                <th onClick={() => handleSort("minStock")} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" as const }}>
-                  REORDER LEVEL
-                  <span style={{ display: "inline-flex", flexDirection: "column", gap: 1.5, marginLeft: 4, lineHeight: 1 }}>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "minStock" && sortDir === "asc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 0L6 4H0L3 0Z" /></svg>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "minStock" && sortDir === "desc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 4L0 0H6L3 4Z" /></svg>
-                  </span>
-                </th>
-                <th style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap" }}>
-                  STOCK VALUE
-                </th>
-                <th onClick={() => handleSort("expiry")} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" as const }}>
-                  NEAREST EXPIRY
-                  <span style={{ display: "inline-flex", flexDirection: "column", gap: 1.5, marginLeft: 4, lineHeight: 1 }}>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "expiry" && sortDir === "asc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 0L6 4H0L3 0Z" /></svg>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "expiry" && sortDir === "desc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 4L0 0H6L3 4Z" /></svg>
-                  </span>
-                </th>
-                <th style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap" }}>
-                  EXPIRY RISK
-                </th>
-                <th onClick={() => handleSort("status")} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" as const }}>
-                  STATUS
-                  <span style={{ display: "inline-flex", flexDirection: "column", gap: 1.5, marginLeft: 4, lineHeight: 1 }}>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "status" && sortDir === "asc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 0L6 4H0L3 0Z" /></svg>
-                    <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "status" && sortDir === "desc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 4L0 0H6L3 4Z" /></svg>
-                  </span>
-                </th>
-                <th style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", borderBottom: "1px solid #DDE3EC", whiteSpace: "nowrap" }}>
-                  ACTION
-                </th>
+              <tr>
+                <Th onSort={() => handleSort("name")} sortDir={sortCol === "name" ? sortDir : null}>Medicine</Th>
+                <Th onSort={() => handleSort("category")} sortDir={sortCol === "category" ? sortDir : null}>Category</Th>
+                <Th onSort={() => handleSort("location")} sortDir={sortCol === "location" ? sortDir : null}>Location</Th>
+                <Th onSort={() => handleSort("stock")} sortDir={sortCol === "stock" ? sortDir : null}>Stock</Th>
+                <Th onSort={() => handleSort("minStock")} sortDir={sortCol === "minStock" ? sortDir : null}>Reorder Level</Th>
+                <Th>Stock Value</Th>
+                <Th onSort={() => handleSort("expiry")} sortDir={sortCol === "expiry" ? sortDir : null}>Nearest Expiry</Th>
+                <Th>Expiry Risk</Th>
+                <Th onSort={() => handleSort("status")} sortDir={sortCol === "status" ? sortDir : null}>Status</Th>
+                <Th>Action</Th>
               </tr>
             </thead>
             <tbody>
               {pageRows.map(d => {
-                const st = STATUS_STYLE[d.status] ?? { bg: "#F3F4F6", color: "#6B7280" };
                 const stockValue = d.stock * d.cost;
                 const { daysLeft, risk } = getExpiryInfo(d.expiry);
                 const riskStyle = EXPIRY_RISK_STYLE[risk] ?? { bg: "#F3F4F6", color: "#9CA3AF" };
@@ -1712,9 +1623,7 @@ export default function Inventory() {
                     </td>
 
                     {/* Status */}
-                    <td style={{ padding: "10px 12px" }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", background: st.bg, color: st.color }}>{d.status}</span>
-                    </td>
+                    <td style={{ padding: "10px 12px" }}><Pill status={d.status} /></td>
 
                     {/* Action */}
                     <td style={{ padding: "10px 12px", position: "relative" }}>
