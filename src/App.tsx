@@ -12,24 +12,18 @@ import Purchases from "./components/Purchases";
 import Suppliers from "./components/Suppliers";
 import Reports from "./components/Reports";
 import Settings from "./components/Settings";
-import StockManagement from "./components/StockManagement";
-import ShortBook from "./components/ShortBook";
-import ExpiryManagement from "./components/ExpiryManagement";
 import Accounts from "./components/Accounts";
 import HR from "./components/HR";
 import Insurance from "./components/Insurance";
 
 type Module =
-  | "dashboard" | "inventory" | "stock" | "shortbook" | "expiry" | "sales" | "prescriptions"
+  | "dashboard" | "inventory" | "sales" | "prescriptions"
   | "patients" | "purchases" | "suppliers" | "accounts" | "insurance"
   | "reports" | "hr" | "settings";
 
 const MODULE_LABELS: Record<Module, string> = {
   dashboard: "Dashboard",
   inventory: "Inventory",
-  stock: "Stock Management",
-  shortbook: "Short Book",
-  expiry: "Expiry Management",
   sales: "Sales",
   prescriptions: "Prescriptions",
   patients: "Patients",
@@ -48,6 +42,7 @@ export interface PurchasesDeepLink { tab: "orders" | "invoices" | "returns" | "p
 
 export default function App() {
   const [module, setModule] = useState<Module>("dashboard");
+  const [invSection, setInvSection] = useState("stock");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
   const [exiting, setExiting] = useState(false);
@@ -111,7 +106,7 @@ export default function App() {
   return (
     <PrinterProvider>
     <div className="app-shell" style={{ display: "flex", overflow: "hidden", background: "#F0F3F7" }}>
-      <Sidebar active={module} onChange={(m) => navigateTo(m as Module)} />
+      <Sidebar active={module} onChange={(m) => navigateTo(m as Module)} invSection={invSection} onInvSection={setInvSection} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Topbar */}
@@ -163,10 +158,7 @@ export default function App() {
         {/* Main */}
         <main style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", minHeight: 0 }}>
           {module === "dashboard" && <Dashboard />}
-          {module === "inventory" && <Inventory />}
-          {module === "stock" && <StockManagement />}
-          {module === "shortbook" && <ShortBook />}
-          {module === "expiry" && <ExpiryManagement />}
+          {module === "inventory" && <Inventory section={invSection} onSectionChange={setInvSection} />}
           {module === "sales" && <Sales />}
           {module === "prescriptions" && <Prescriptions />}
           {module === "patients" && <Patients />}

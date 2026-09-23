@@ -101,9 +101,28 @@ function NavIcon({ id, size = 18 }: { id: string; size?: number }) {
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
       </svg>
     );
+    case "verification": return (
+      <svg {...p}>
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2M8 13l3 3 5-5" />
+      </svg>
+    );
+    case "movement": return (
+      <svg {...p}>
+        <path d="m16 3 4 4-4 4M10 7h10M8 21l-4-4 4-4M14 17H4" />
+      </svg>
+    );
     default: return null;
   }
 }
+
+const INV_SUBSECTIONS = [
+  { id: "stock",        label: "Stock" },
+  { id: "shortbook",    label: "Short Book", badge: 8 },
+  { id: "verification", label: "Verification" },
+  { id: "expiry",       label: "Expiry & Risk", badge: 21 },
+  { id: "movement",     label: "Movement & Control" },
+  { id: "reports",      label: "Reports" },
+];
 
 const navGroups = [
   {
@@ -117,12 +136,7 @@ const navGroups = [
   },
   {
     label: "Inventory & Stock",
-    items: [
-      { id: "inventory", label: "Inventory", badge: 3 },
-      { id: "stock", label: "Stock Management" },
-      { id: "shortbook", label: "Short Book", badge: 8 },
-      { id: "expiry", label: "Expiry Management", badge: 12 },
-    ],
+    items: INV_SUBSECTIONS,
   },
   {
     label: "Purchasing",
@@ -156,12 +170,14 @@ const navGroups = [
 interface SidebarProps {
   active: Module;
   onChange: (m: Module) => void;
+  invSection?: string;
+  onInvSection?: (s: string) => void;
 }
 
 const EXPANDED_W = 228;
 const COLLAPSED_W = 56;
 
-export default function Sidebar({ active, onChange }: SidebarProps) {
+export default function Sidebar({ active, onChange, invSection, onInvSection }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const width = collapsed ? COLLAPSED_W : EXPANDED_W;
 
@@ -267,15 +283,26 @@ export default function Sidebar({ active, onChange }: SidebarProps) {
             {collapsed && (
               <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "10px 12px 6px" }} />
             )}
-            {group.items.map((item) => (
-              <NavBtn
-                key={item.id}
-                item={item}
-                active={active === item.id}
-                collapsed={collapsed}
-                onClick={() => onChange(item.id)}
-              />
-            ))}
+            {group.label === "Inventory & Stock"
+              ? group.items.map(item => (
+                  <NavBtn
+                    key={item.id}
+                    item={item}
+                    active={active === "inventory" && invSection === item.id}
+                    collapsed={collapsed}
+                    onClick={() => { onChange("inventory"); onInvSection?.(item.id); }}
+                  />
+                ))
+              : group.items.map(item => (
+                  <NavBtn
+                    key={item.id}
+                    item={item}
+                    active={active === item.id}
+                    collapsed={collapsed}
+                    onClick={() => onChange(item.id)}
+                  />
+                ))
+            }
           </div>
         ))}
       </nav>
