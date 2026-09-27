@@ -18,7 +18,7 @@ export function StatTile({
   return (
     <div style={{
       padding: accentBorder ? "16px 20px" : "10px 14px",
-      border: "1px solid #E8ECF4",
+      borderRadius: 6, border: "1px solid #E8ECF4",
       borderTop: accentBorder ? `3px solid ${color ?? "#1A2436"}` : undefined,
       background: "#fff",
       textAlign: align,

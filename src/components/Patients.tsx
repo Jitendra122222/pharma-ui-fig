@@ -24,7 +24,7 @@ export default function Patients() {
         </div>
         <button
           onClick={() => setDrawerOpen(true)}
-          style={{ padding: "8px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff" }}
+          style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff" }}
         >
           + Add Patient
         </button>
@@ -33,15 +33,13 @@ export default function Patients() {
       <AddPatientDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <div className="grid gap-4" style={{ gridTemplateColumns: selected ? "1fr 360px" : "1fr" }}>
-        <div style={{ background: "#fff", border: "1px solid #DDE3EC" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC" }}>
           <div style={{ padding: "14px 20px", borderBottom: "1px solid #DDE3EC" }}>
-            <input
-              type="text"
-              placeholder="Search by name, ID, or phone..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ width: "100%", padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter" }}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "5px 10px" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Search by name, ID, or phone..." value={search} onChange={(e) => setSearch(e.target.value)}
+                style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+            </div>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -97,7 +95,7 @@ export default function Patients() {
 
         {/* Patient detail */}
         {selected && (
-          <div style={{ background: "#fff", border: "1px solid #DDE3EC", padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="flex justify-between items-start">
               <div>
                 <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>{selected.name}</div>
@@ -143,8 +141,8 @@ export default function Patients() {
             )}
 
             <div className="flex gap-2">
-              <button style={{ flex: 1, padding: "9px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Rx History</button>
-              <button style={{ flex: 1, padding: "9px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontWeight: 600 }}>New Prescription</button>
+              <button style={{ flex: 1, padding: "9px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Rx History</button>
+              <button style={{ flex: 1, padding: "9px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontWeight: 600 }}>New Prescription</button>
             </div>
           </div>
         )}

@@ -184,7 +184,7 @@ const HOLDS: HoldRecord[] = [
 
 function KpiTile({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: string }) {
   return (
-    <div style={{ flex: 1, background: "#fff", border: "1px solid #E8ECF4", borderTop: `2px solid ${accent ?? "#1B6CA8"}`, padding: "12px 14px", minWidth: 0 }}>
+    <div style={{ flex: 1, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", borderTop: `2px solid ${accent ?? "#1B6CA8"}`, padding: "12px 14px", minWidth: 0 }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
       <div style={{ fontFamily: "JetBrains Mono", fontSize: 17, fontWeight: 700, color: accent ?? "#1A2436", marginTop: 5, letterSpacing: "-0.01em" }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 3 }}>{sub}</div>}
@@ -349,7 +349,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.6)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", width: modalWidth, border: "1px solid #E8ECF4", maxHeight: "92vh", overflowY: "auto", transition: "width 0.15s" }}>
+      <div style={{ background: "#fff", width: modalWidth, borderRadius: 6, border: "1px solid #E8ECF4", maxHeight: "92vh", overflowY: "auto", transition: "width 0.15s" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px", borderBottom: "1px solid #EEF1F6" }}>
           <div>
@@ -377,7 +377,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
                 {distributor && (
                   <div>
                     <FieldLabel>Outstanding</FieldLabel>
-                    <div style={{ padding: "9px 12px", border: "1px solid #E8ECF4", background: "#F8FAFC", fontSize: 13, fontFamily: "JetBrains Mono", color: outstanding > 0 ? "#C62828" : "#2E7D32", fontWeight: 600 }}>
+                    <div style={{ padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#F8FAFC", fontSize: 13, fontFamily: "JetBrains Mono", color: outstanding > 0 ? "#C62828" : "#2E7D32", fontWeight: 600 }}>
                       {money(outstanding)}
                     </div>
                   </div>
@@ -468,7 +468,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
 
               {/* Allocation table */}
               {allocation.length === 0 ? (
-                <div style={{ padding: "20px", textAlign: "center", color: "#9CA3AF", fontSize: 13, border: "1px solid #E8ECF4" }}>
+                <div style={{ padding: "20px", textAlign: "center", color: "#9CA3AF", fontSize: 13, borderRadius: 6, border: "1px solid #E8ECF4" }}>
                   No outstanding invoices for this distributor.
                 </div>
               ) : (
@@ -513,7 +513,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
               )}
 
               {/* Allocation summary */}
-              <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", padding: "12px 16px" }}>
+              <div style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 16px" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 16px", fontSize: 13 }}>
                   <span style={{ color: "#6B7280" }}>Payment Amount</span>
                   <span style={{ fontFamily: "JetBrains Mono", color: "#1A2436", textAlign: "right" }}>{money(payAmt)}</span>
@@ -531,7 +531,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
                   <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontSize: 12, color: "#E65100" }}>{money(allocDiff)} remains unallocated.</span>
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button style={{ padding: "4px 10px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Allocate Remaining</button>
+                      <button style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Allocate Remaining</button>
                       <button style={{ padding: "4px 10px", border: "none", background: "#E65100", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Keep as Advance</button>
                     </div>
                   </div>
@@ -575,7 +575,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
                           value={adj.amount || ""}
                           onChange={e => setAdjustments(prev => prev.map((a, i) => i === idx ? { ...a, amount: parseFloat(e.target.value) || 0 } : a))}
                           placeholder="0.00"
-                          style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", boxSizing: "border-box" }}
+                          style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", boxSizing: "border-box" }}
                           onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
                           onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
                         />
@@ -589,12 +589,12 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
                 </tbody>
               </table>
               <button onClick={() => setAdjustments(prev => [...prev, { type: "Purchase Return", reference: "", amount: 0 }])}
-                style={{ alignSelf: "flex-start", padding: "6px 14px", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
+                style={{ alignSelf: "flex-start", padding: "6px 14px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
                 + Add Adjustment
               </button>
 
               {/* Net payable summary */}
-              <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", padding: "14px 16px" }}>
+              <div style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "14px 16px" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "5px 16px", fontSize: 13 }}>
                   <span style={{ color: "#6B7280" }}>Invoice Outstanding</span>
                   <span style={{ fontFamily: "JetBrains Mono", color: "#1A2436", textAlign: "right" }}>{money(outstanding)}</span>
@@ -741,7 +741,7 @@ function ApplyAdvanceModal({ advance, onClose, onSuccess, onError }: { advance: 
                       type="number"
                       value={applyAmts[inv.id] || ""}
                       onChange={e => setApplyAmts(prev => ({ ...prev, [inv.id]: Math.min(inv.balance, parseFloat(e.target.value) || 0) }))}
-                      style={{ width: 100, padding: "5px 8px", border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none" }}
+                      style={{ width: 100, padding: "5px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none" }}
                       onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
                       onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
                     />
@@ -754,7 +754,7 @@ function ApplyAdvanceModal({ advance, onClose, onSuccess, onError }: { advance: 
           </tbody>
         </table>
       </div>
-      <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", padding: "12px 16px", marginBottom: 14 }}>
+      <div style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 16px", marginBottom: 14 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 16px", fontSize: 13 }}>
           <span style={{ color: "#6B7280" }}>Advance Available</span>
           <span style={{ fontFamily: "JetBrains Mono", color: "#1A2436", textAlign: "right" }}>{money(advance.available)}</span>
@@ -810,7 +810,7 @@ function ReversePaymentModal({ payment, onClose }: { payment: PaymentRecord; onC
         <div>
           <FieldLabel>Additional Remarks *</FieldLabel>
           <textarea value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Describe the reason for reversal..."
-            style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", resize: "vertical", minHeight: 72, boxSizing: "border-box" }}
+            style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", resize: "vertical", minHeight: 72, boxSizing: "border-box" }}
             onFocus={e => (e.currentTarget.style.borderColor = "#C62828")}
             onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")} />
         </div>
@@ -889,7 +889,7 @@ function PaymentDetailView({ payment, onClose, onReverse }: { payment: PaymentRe
             {payment.status === "Pending Approval" && (
               <button onClick={() => setShowApproval(true)} style={{ padding: "6px 12px", border: "none", background: "#E65100", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Review Approval</button>
             )}
-            <button style={{ padding: "6px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Print</button>
+            <button style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Print</button>
             {payment.status === "Posted" && (
               <button onClick={onReverse} style={{ padding: "6px 12px", border: "1px solid #EF9A9A", background: "#FFEBEE", fontSize: 12, cursor: "pointer", color: "#C62828", fontFamily: "Inter", fontWeight: 600 }}>Reverse</button>
             )}
@@ -925,7 +925,7 @@ function PaymentDetailView({ payment, onClose, onReverse }: { payment: PaymentRe
           {payment.allocation.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8, fontFamily: "Inter" }}>Allocation</div>
-              <div style={{ border: "1px solid #E8ECF4" }}>
+              <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 {payment.allocation.map((a, i) => (
                   <div key={a.invoiceId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 14px", borderBottom: i < payment.allocation.length - 1 ? "1px solid #F4F6FA" : "none" }}>
                     <span style={{ fontSize: 13, fontFamily: "JetBrains Mono", color: "#1B6CA8", fontWeight: 600 }}>{a.invoiceId}</span>
@@ -940,7 +940,7 @@ function PaymentDetailView({ payment, onClose, onReverse }: { payment: PaymentRe
           {payment.adjustments.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8, fontFamily: "Inter" }}>Adjustments</div>
-              <div style={{ border: "1px solid #E8ECF4" }}>
+              <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 {payment.adjustments.map((a, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 14px", borderBottom: i < payment.adjustments.length - 1 ? "1px solid #F4F6FA" : "none" }}>
                     <span style={{ fontSize: 13, color: "#6B7280", fontFamily: "Inter" }}>{a.type}{a.reference ? ` · ${a.reference}` : ""}</span>
@@ -972,7 +972,7 @@ function PaymentDetailView({ payment, onClose, onReverse }: { payment: PaymentRe
                 </div>
               )}
             </div>
-            <button onClick={() => setShowAudit(true)} style={{ padding: "7px 14px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
+            <button onClick={() => setShowAudit(true)} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
               View Audit Trail
             </button>
           </div>
@@ -1004,7 +1004,7 @@ function ApprovalReviewModal({ payment, onClose }: { payment: PaymentRecord; onC
             </div>
           ))}
         </div>
-        <div style={{ border: "1px solid #E8ECF4", padding: "12px 14px" }}>
+        <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 14px" }}>
           {[
             { l: "Purchase Verification", v: "Passed", ok: true },
             { l: "Payment Hold", v: "₹0", ok: true },
@@ -1037,7 +1037,7 @@ function HoldDetailModal({ hold, onClose, onResolve }: { hold: HoldRecord; onClo
           <div><span style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Invoice</span><div style={{ fontFamily: "JetBrains Mono", fontSize: 13, color: "#1B6CA8", fontWeight: 600, marginTop: 2 }}>{hold.invoiceId}</div></div>
           <div><span style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Distributor</span><div style={{ fontSize: 13, color: "#1A2436", marginTop: 2 }}>{hold.distributor}</div></div>
         </div>
-        <div style={{ border: "1px solid #E8ECF4", padding: "12px 14px" }}>
+        <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 14px" }}>
           {[
             { l: "Invoice Amount", v: money(hold.invoiceAmount), color: "#1A2436" },
             { l: "Payment Hold", v: money(hold.amount), color: "#C62828" },
@@ -1054,8 +1054,8 @@ function HoldDetailModal({ hold, onClose, onResolve }: { hold: HoldRecord; onClo
           <div style={{ fontSize: 13, color: "#4A5875", lineHeight: 1.6, padding: "10px 12px", background: "#FFFBEB", border: "1px solid #FDE68A" }}>{hold.reason}</div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "9px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>View Purchase Verification</button>
-          <button onClick={onResolve} style={{ flex: 1, padding: "9px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Resolve Hold</button>
+          <button onClick={onClose} style={{ flex: 1, padding: "9px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>View Purchase Verification</button>
+          <button onClick={onResolve} style={{ flex: 1, padding: "9px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Resolve Hold</button>
         </div>
       </div>
     </Modal>
@@ -1074,17 +1074,17 @@ function DistributorDetail({ distributor, onBack, onRecord }: { distributor: str
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "#fff", border: "1px solid #E8ECF4", borderBottom: "none" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", borderBottom: "none" }}>
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 4, border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: "#1B6CA8", fontFamily: "Inter", padding: 0 }}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="#1A2436" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           Outstanding
         </button>
-        <button onClick={() => onRecord(distributor)} style={{ padding: "7px 16px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+        <button onClick={() => onRecord(distributor)} style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
           Record Payment
         </button>
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "18px 16px" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "18px 16px" }}>
         <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33", marginBottom: 14 }}>{distributor}</div>
         <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
           <KpiTile label="Outstanding" value={money(outstanding)} accent="#C62828" />
@@ -1097,7 +1097,7 @@ function DistributorDetail({ distributor, onBack, onRecord }: { distributor: str
         </div>
 
         <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Outstanding Invoices</div>
-        <div style={{ border: "1px solid #E8ECF4" }}>
+        <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#F8FAFC" }}>
@@ -1185,7 +1185,7 @@ function OutstandingTab({ onRecord }: { onRecord: (dist?: string) => void }) {
   };
 
   return (
-    <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+    <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         {/* Single combined filter row */}
         <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <FilterSearch value={search} onChange={setSearch} placeholder="Search invoice / distributor..." />
@@ -1201,7 +1201,7 @@ function OutstandingTab({ onRecord }: { onRecord: (dist?: string) => void }) {
           })}
           {selectedCount > 0 && (
             <div style={{ marginLeft: "auto" }}>
-              <button onClick={() => onRecord()} style={{ padding: "7px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
+              <button onClick={() => onRecord()} style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
                 Record Payment ({selectedCount})
               </button>
             </div>
@@ -1296,7 +1296,7 @@ function PaymentHistoryTab({ onRecord, initialViewId, onDeepLinkConsumed }: { on
 
   return (
     <>
-    <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+    <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
       <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         <FilterSearch value={search} onChange={setSearch} placeholder="Payment no / invoice / reference..." />
         <DateRangePicker from={fromDate} to={toDate} onChange={(f, t) => { setFromDate(f); setToDate(t); }} />
@@ -1305,7 +1305,7 @@ function PaymentHistoryTab({ onRecord, initialViewId, onDeepLinkConsumed }: { on
         <FilterDropdown value={statusFilter} onChange={setStatusFilter} options={["Posted", "Pending Approval", "Reversed"]} allLabel="All Status" />
         {anyFilter && <ClearFiltersButton onClick={clearFilters} />}
         <div style={{ marginLeft: "auto" }}>
-          <button onClick={onRecord} style={{ padding: "7px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>+ Record Payment</button>
+          <button onClick={onRecord} style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>+ Record Payment</button>
         </div>
       </div>
       <div style={{ overflowX: "auto" }}>
@@ -1381,12 +1381,12 @@ function AdvancesTab() {
 
   return (
     <>
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <FilterSearch value={search} onChange={setSearch} placeholder="Search distributor / payment no..." />
           <FilterDropdown value={distFilter} onChange={setDistFilter} options={DISTRIBUTOR_NAMES} allLabel="All Distributors" />
           <div style={{ marginLeft: "auto" }}>
-            <button onClick={() => setShowRecord(true)} style={{ padding: "7px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>+ Record Advance</button>
+            <button onClick={() => setShowRecord(true)} style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>+ Record Advance</button>
           </div>
         </div>
 
@@ -1483,7 +1483,7 @@ function HoldsTab() {
 
   return (
     <>
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6" }}>
           <FilterSearch value={search} onChange={setSearch} placeholder="Search invoice / distributor / reason..." />
         </div>

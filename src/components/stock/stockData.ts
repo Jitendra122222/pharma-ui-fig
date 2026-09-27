@@ -1,6 +1,6 @@
 import { drugs } from "../../data/mockData";
 
-export type SubTab = "overview" | "adjustments" | "batches" | "expiry" | "transfer";
+export type SubTab = "overview" | "adjustments" | "batches" | "expiry" | "transfer" | "investigation";
 
 export const TABS: { id: SubTab; label: string; sub: string }[] = [
   { id: "overview", label: "Stock Overview", sub: "Current stock levels" },
@@ -8,6 +8,7 @@ export const TABS: { id: SubTab; label: string; sub: string }[] = [
   { id: "batches", label: "Batch Tracking", sub: "Lot & batch tracking" },
   { id: "expiry", label: "Expiry Management", sub: "Near-expiry alerts" },
   { id: "transfer", label: "Stock Transfer", sub: "Inter-branch transfers" },
+  { id: "investigation", label: "Investigation", sub: "Stock difference investigation" },
 ];
 
 export const adjustments = [

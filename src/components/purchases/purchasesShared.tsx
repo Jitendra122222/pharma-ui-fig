@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { suppliers } from "../../data/mockData";
-import { SearchIcon, ChevronDown } from "../shared/Icons";
+import { ChevronDown } from "../shared/Icons";
 import {
   type PriorBatch, priorBatchesFor,
   type AddMedForm, emptyMedForm, DOSAGE_FORMS, ROUTES, PRESCRIPTION_STATUSES, PRODUCT_STATUSES,
@@ -55,7 +55,7 @@ export function FieldLabel({ children }: { children: React.ReactNode }) {
 export function TextInput({ type = "text", value, onChange, placeholder, defaultValue }: { type?: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; defaultValue?: string }) {
   return (
     <input type={type} value={value} defaultValue={defaultValue} onChange={onChange} placeholder={placeholder}
-      style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}
+      style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}
       onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
       onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
     />
@@ -65,7 +65,7 @@ export function TextInput({ type = "text", value, onChange, placeholder, default
 export function DropdownSelect({ value, onChange, options, placeholder }: { value?: string; onChange?: (v: string) => void; options: string[]; placeholder?: string }) {
   return (
     <select value={value} onChange={e => onChange?.(e.target.value)}
-      style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const, cursor: "pointer" }}
+      style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const, cursor: "pointer" }}
       onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
       onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
     >
@@ -78,7 +78,7 @@ export function DropdownSelect({ value, onChange, options, placeholder }: { valu
 export function PrimaryBtn({ children, onClick, small, disabled }: { children: React.ReactNode; onClick?: () => void; small?: boolean; disabled?: boolean }) {
   return (
     <button onClick={disabled ? undefined : onClick} disabled={disabled}
-      style={{ padding: small ? "6px 14px" : "9px 20px", border: "none", background: disabled ? "#C8D6E5" : "#1B6CA8", fontSize: small ? 12 : 13, cursor: disabled ? "not-allowed" : "pointer", color: disabled ? "#8FA3B1" : "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+      style={{ padding: small ? "6px 14px" : "9px 20px", border: "none", borderRadius: 6, background: disabled ? "#C8D6E5" : "#1B6CA8", fontSize: small ? 12 : 13, cursor: disabled ? "not-allowed" : "pointer", color: disabled ? "#8FA3B1" : "#fff", fontFamily: "Inter", fontWeight: 600 }}>
       {children}
     </button>
   );
@@ -87,7 +87,7 @@ export function PrimaryBtn({ children, onClick, small, disabled }: { children: R
 export function GhostBtn({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
   return (
     <button onClick={onClick}
-      style={{ padding: "9px 18px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>
+      style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>
       {children}
     </button>
   );
@@ -96,7 +96,7 @@ export function GhostBtn({ children, onClick }: { children: React.ReactNode; onC
 export function Modal({ title, onClose, children, width = 520 }: { title: string; onClose: () => void; children: React.ReactNode; width?: number }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.6)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", width, border: "1px solid #E8ECF4", maxHeight: "90vh", overflowY: "auto" }}>
+      <div style={{ background: "#fff", width, borderRadius: 6, border: "1px solid #E8ECF4", maxHeight: "90vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px", borderBottom: "1px solid #EEF1F6" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>{title}</div>
           <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22, lineHeight: 1 }}>×</button>
@@ -111,12 +111,10 @@ export function Modal({ title, onClose, children, width = 520 }: { title: string
 
 export function FilterSearch({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
   return (
-    <div style={{ position: "relative", flex: "0 1 280px", minWidth: 220 }}>
-      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-        <SearchIcon />
-      </span>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 14px", flex: "0 1 280px", minWidth: 220, minHeight: 40, boxSizing: "border-box" as const }}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)}
-        style={{ width: "100%", padding: "10px 14px 10px 38px", border: "1px solid #EDF0F5", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", color: "#2B3A4F", minHeight: 40 }} />
+        style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
     </div>
   );
 }
@@ -125,7 +123,7 @@ export function FilterDropdown({ value, onChange, options, allLabel }: { value: 
   return (
     <div style={{ position: "relative" }}>
       <select value={value} onChange={e => onChange(e.target.value)}
-        style={{ padding: "10px 34px 10px 14px", border: "1px solid #EDF0F5", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", color: value === "All" ? "#8A94A8" : "#2B3A4F", minHeight: 40, appearance: "none", WebkitAppearance: "none" as const }}>
+        style={{ padding: "10px 34px 10px 14px", border: "1px solid #EDF0F5", borderRadius: 6, fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", color: value === "All" ? "#8A94A8" : "#2B3A4F", minHeight: 40, appearance: "none", WebkitAppearance: "none" as const }}>
         {["All", ...options].map(o => (
           <option key={o} value={o}>{o === "All" ? allLabel : o}</option>
         ))}
@@ -140,7 +138,7 @@ export function FilterDropdown({ value, onChange, options, allLabel }: { value: 
 export function ClearFiltersButton({ onClick }: { onClick: () => void }) {
   return (
     <button onClick={onClick}
-      style={{ padding: "10px 14px", border: "1px solid #EDF0F5", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter", minHeight: 40 }}>
+      style={{ padding: "10px 14px", border: "1px solid #EDF0F5", borderRadius: 6, background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter", minHeight: 40 }}>
       Clear
     </button>
   );
@@ -150,7 +148,7 @@ export function NewButton({ label, onClick }: { label: string; onClick: () => vo
   return (
     <div style={{ marginLeft: "auto" }}>
       <button onClick={onClick}
-        style={{ padding: "10px 18px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, minHeight: 40, whiteSpace: "nowrap" }}>
+        style={{ padding: "10px 18px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, minHeight: 40, whiteSpace: "nowrap" }}>
         {label}
       </button>
     </div>
@@ -169,13 +167,13 @@ export function BackConfirmDialog({
 }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "20px 24px", width: 260, textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "20px 24px", width: 260, textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
         <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436", marginBottom: 6 }}>Save before leaving?</div>
         <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter", marginBottom: 18, lineHeight: 1.5 }}>{message}</div>
         <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-          <button onClick={onCancel} style={{ padding: "6px 14px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>Cancel</button>
-          <button onClick={onSave} style={{ padding: "6px 16px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save</button>
-          <button onClick={onDiscard} style={{ padding: "6px 14px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#C62828", fontFamily: "Inter" }}>Discard</button>
+          <button onClick={onCancel} style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>Cancel</button>
+          <button onClick={onSave} style={{ padding: "6px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save</button>
+          <button onClick={onDiscard} style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#C62828", fontFamily: "Inter" }}>Discard</button>
         </div>
       </div>
     </div>
@@ -215,19 +213,17 @@ export function DrawerStepFooter({
   return (
     <div style={{ padding: "14px 32px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", flexShrink: 0 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#6B7280" }}>
-        <span style={{ display: "inline-flex", width: 18, height: 18, borderRadius: "50%", border: "1px solid #DDE3EC", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#9CA3AF" }}>?</span>
+        <span style={{ display: "inline-flex", width: 18, height: 18, borderRadius: 6, border: "1px solid #DDE3EC", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#9CA3AF" }}>?</span>
         Step {step} of {total} · Required fields are marked <span style={{ color: "#C62828" }}>*</span>
       </div>
       <div style={{ display: "flex", gap: 10 }}>
         {step > 1 && onBack && (
-          <button onClick={onBack} style={{ padding: "9px 18px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 6 }}>
-            ← Back
+          <button onClick={onBack} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 6 }}>
+            &larr; Back
           </button>
         )}
-        <GhostBtn onClick={onCancel}>Cancel</GhostBtn>
-        <button onClick={onContinue} disabled={continueDisabled}
-          style={{ padding: "9px 22px", border: "none", background: continueDisabled ? "#C8CDD8" : "#1B6CA8", fontSize: 13, cursor: continueDisabled ? "not-allowed" : "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-          {isFinal ? <>{finalLabel ?? "Save"} <span>✓</span></> : <>Continue <span>→</span></>}
+        <button disabled={continueDisabled} onClick={!continueDisabled ? onContinue : undefined} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: continueDisabled ? "#C8CDD8" : "#1B6CA8", fontSize: 13, cursor: continueDisabled ? "not-allowed" : "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+          {isFinal ? <>{finalLabel ?? "Save"} <span>&#x2713;</span></> : <>Continue <span>&#x2192;</span></>}
         </button>
       </div>
     </div>
@@ -358,13 +354,13 @@ function AddManufacturerModal({ initialName, onClose, onSaved }: { initialName: 
   const canSave = mfg.name.trim().length > 0;
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", width: 520, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(10,22,44,0.18)" }}>
+      <div style={{ background: "#fff", width: 520, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(10,22,44,0.18)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px", borderBottom: "1px solid #EEF1F6" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>New Manufacturer</div>
             <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>Add manufacturer</div>
           </div>
-          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
         <div style={{ padding: "20px 22px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>
@@ -407,7 +403,7 @@ function ManufacturerField({ value, onChange }: { value: string; onChange: (v: s
       <div ref={wrapRef} style={{ position: "relative" }}>
         <TextInput value={value} onChange={e => { onChange(e.target.value); setOpen(true); }} placeholder="e.g. GSK" />
         {open && (matches.length > 0 || showAddButton) && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", borderTop: "none", zIndex: 20, maxHeight: 220, overflowY: "auto", boxShadow: "0 4px 12px rgba(10,22,44,0.10)" }}>
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", borderTop: "none", zIndex: 20, maxHeight: 220, overflowY: "auto", boxShadow: "0 4px 12px rgba(10,22,44,0.10)" }}>
             {matches.map(m => (
               <button key={m} onClick={() => { onChange(m); setOpen(false); }}
                 style={{ width: "100%", textAlign: "left", padding: "9px 12px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: "#1A2436", fontFamily: "Inter", borderBottom: "1px solid #F4F6FA" }}
@@ -437,13 +433,13 @@ function AddCompositionModal({ initialName, onClose, onSaved }: { initialName: s
   const canSave = comp.name.trim().length > 0;
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", width: 520, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(10,22,44,0.18)" }}>
+      <div style={{ background: "#fff", width: 520, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(10,22,44,0.18)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px", borderBottom: "1px solid #EEF1F6" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>New Composition</div>
             <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>Add composition</div>
           </div>
-          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
         <div style={{ padding: "20px 22px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>
@@ -453,7 +449,7 @@ function AddCompositionModal({ initialName, onClose, onSaved }: { initialName: s
             <DrawerField label="Side effects"><TextInput value={comp.sideEffects} onChange={e => upd("sideEffects", e.target.value)} placeholder="e.g. Nausea, dizziness" /></DrawerField>
             <DrawerField label="Description" gridSpan={2}>
               <textarea value={comp.description} onChange={e => upd("description", e.target.value)} placeholder="Pharmacological description" rows={3}
-                style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const, resize: "vertical" }}
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const, resize: "vertical" }}
                 onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
                 onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")} />
             </DrawerField>
@@ -491,7 +487,7 @@ function CompositionField({ value, onChange }: { value: string; onChange: (v: st
       <div ref={wrapRef} style={{ position: "relative" }}>
         <TextInput value={value} onChange={e => { onChange(e.target.value); setOpen(true); }} placeholder="e.g. Paracetamol 500 mg" />
         {open && (matches.length > 0 || showAddButton) && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", borderTop: "none", zIndex: 20, maxHeight: 220, overflowY: "auto", boxShadow: "0 4px 12px rgba(10,22,44,0.10)" }}>
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", borderTop: "none", zIndex: 20, maxHeight: 220, overflowY: "auto", boxShadow: "0 4px 12px rgba(10,22,44,0.10)" }}>
             {matches.map(c => (
               <button key={c} onClick={() => { onChange(c); setOpen(false); }}
                 style={{ width: "100%", textAlign: "left", padding: "9px 12px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: "#1A2436", fontFamily: "Inter", borderBottom: "1px solid #F4F6FA" }}
@@ -557,7 +553,7 @@ export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialNa
           <div style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", letterSpacing: "-0.02em", marginTop: 6 }}>Add medicine</div>
           <div style={{ fontSize: 13, color: "#6B7280", marginTop: 4, maxWidth: 560 }}>Create a catalog record that is ready for purchasing, batch tracking, and stock control.</div>
           <button onClick={onClose} aria-label="Close"
-            style={{ position: "absolute", top: 22, right: 22, width: 32, height: 32, borderRadius: "50%", border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            style={{ position: "absolute", top: 22, right: 22, width: 32, height: 32, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
         <MedStepper current={step} />
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px" }}>
@@ -575,7 +571,7 @@ export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialNa
             <>
               <DrawerSectionHeader n="02" title="Compliance &amp; storage" subtitle="These controls support pharmacy dispensing and inventory safety." icon={<StepChip><ShieldSolidIcon /></StepChip>} />
               <DrawerRow><DrawerField label="HSN code" required><TextInput value={form.hsnCode} onChange={e => upd("hsnCode", e.target.value)} placeholder="e.g. 3482345" /></DrawerField><DrawerField label="Barcode / GTIN"><TextInput value={form.barcode} onChange={e => upd("barcode", e.target.value)} placeholder="Scan or enter barcode" /></DrawerField></DrawerRow>
-              <DrawerRow><DrawerField label="Prescription status"><DropdownSelect value={form.prescriptionStatus} onChange={v => upd("prescriptionStatus", v)} options={PRESCRIPTION_STATUSES} /></DrawerField><DrawerField label="GST / Tax rate" required><div style={{ display: "flex" }}><TextInput value={form.gstRate} onChange={e => upd("gstRate", e.target.value)} placeholder="12" /><span style={{ padding: "9px 12px", border: "1px solid #E8ECF4", borderLeft: "none", fontSize: 13, color: "#6B7280", background: "#F9FAFB", whiteSpace: "nowrap", flexShrink: 0 }}>%</span></div></DrawerField></DrawerRow>
+              <DrawerRow><DrawerField label="Prescription status"><DropdownSelect value={form.prescriptionStatus} onChange={v => upd("prescriptionStatus", v)} options={PRESCRIPTION_STATUSES} /></DrawerField><DrawerField label="GST / Tax rate" required><div style={{ display: "flex" }}><TextInput value={form.gstRate} onChange={e => upd("gstRate", e.target.value)} placeholder="12" /><span style={{ padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", borderLeft: "none", fontSize: 13, color: "#6B7280", background: "#F9FAFB", whiteSpace: "nowrap", flexShrink: 0 }}>%</span></div></DrawerField></DrawerRow>
               <DrawerRow><DrawerField label="Storage condition" required><TextInput value={form.storageCondition} onChange={e => upd("storageCondition", e.target.value)} placeholder="Store below 25°C" /></DrawerField><DrawerField label="Temperature range" required><TextInput value={form.tempRange} onChange={e => upd("tempRange", e.target.value)} placeholder="15–25°C" /></DrawerField></DrawerRow>
               <DrawerRow><DrawerField label="Storage zone" required><TextInput value={form.storageZone} onChange={e => upd("storageZone", e.target.value)} placeholder="Main store" /></DrawerField><DrawerField label="Manufacturer product code"><TextInput value={form.mfgProductCode} onChange={e => upd("mfgProductCode", e.target.value)} placeholder="Distributor/manufacturer code" /></DrawerField></DrawerRow>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 16px", marginTop: 16 }}>
@@ -604,7 +600,7 @@ export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialNa
           {step === 4 && (
             <>
               <DrawerSectionHeader n="04" title="Review medicine" subtitle="Confirm the catalog record before making it available to purchasing." icon={<StepChip><CheckCircleIcon /></StepChip>} />
-              <div style={{ border: "1px solid #E8ECF4" }}>
+              <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 {[
                   { l1: "Generic / Brand", v1: reviewName, l2: "Strength &amp; Form", v2: reviewStrength },
                   { l1: "Manufacturer", v1: form.manufacturer || "—", l2: "HSN / Tax", v2: reviewHsn },
@@ -683,10 +679,10 @@ export function MedicineNameCell({ value, alloc, onSelect }: {
             onChange={e => { setText(e.target.value); setOpen(true); setBatchDrug(null); }}
             onFocus={() => setOpen(true)}
             placeholder="Search medicine, generic name..."
-            style={{ flex: 1, padding: "5px 8px 5px 26px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const, minWidth: 170 }} />
+            style={{ flex: 1, padding: "5px 8px 5px 26px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const, minWidth: 170 }} />
         </div>
         {open && !batchDrug && (matches.length > 0 || noResults || !hasQuery) && (
-          <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", border: "1px solid #DDE3EC", borderTop: "none", zIndex: 10, maxHeight: 300, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", minWidth: 620 }}>
+          <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", borderTop: "none", zIndex: 10, maxHeight: 300, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", minWidth: 620 }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#F8FAFC", position: "sticky", top: 0 }}>
@@ -743,7 +739,7 @@ export function MedicineNameCell({ value, alloc, onSelect }: {
           </div>
         )}
         {open && batchDrug && (
-          <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 20, boxShadow: "0 4px 12px rgba(10,22,44,0.12)", minWidth: 560 }}>
+          <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 20, boxShadow: "0 4px 12px rgba(10,22,44,0.12)", minWidth: 560 }}>
             <div style={{ padding: "8px 12px", background: "#F0F6FF", borderBottom: "1px solid #E8ECF4", fontSize: 11, fontWeight: 700, color: "#1B6CA8", letterSpacing: "0.06em", textTransform: "uppercase", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>Select Batch — {batchDrug.name}</span>
               <span style={{ fontFamily: "JetBrains Mono", fontSize: 10 }}>{alloc}</span>
@@ -943,7 +939,7 @@ function ReviewStep({ data }: { data: DistributorFormData }) {
   return (
     <>
       <DrawerSectionHeader n="04" title="Review distributor" subtitle="Confirm the account details before adding it to purchasing." icon={<StepChip><CheckCircleIcon /></StepChip>} />
-      <div style={{ border: "1px solid #E8ECF4" }}>
+      <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
         {rows.map((r, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: i < rows.length - 1 ? "1px solid #F4F6FA" : "none" }}>
             <div style={{ padding: "14px 18px", borderRight: "1px solid #F4F6FA" }}>
@@ -996,7 +992,7 @@ export function AddDistributorDrawer({ onClose, onSaved, initialData }: { onClos
           <div style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", letterSpacing: "-0.02em", marginTop: 6 }}>{isEdit ? "Edit distributor" : "Add distributor"}</div>
           <div style={{ fontSize: 13, color: "#6B7280", marginTop: 4, maxWidth: 560 }}>{isEdit ? "Update the distributor profile." : "Create a complete distributor profile without leaving your purchase invoice."}</div>
           <button onClick={onClose} aria-label="Close"
-            style={{ position: "absolute", top: 22, right: 22, width: 32, height: 32, borderRadius: "50%", border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            style={{ position: "absolute", top: 22, right: 22, width: 32, height: 32, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
         <DistributorStepper current={step} />
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px" }}>
@@ -1040,10 +1036,10 @@ export function DistributorSearch({ selected, onSelect, distributors, onAdd }: {
         onChange={e => { setQuery(e.target.value); setOpen(true); if (selected) onSelect(""); }}
         onFocus={() => setOpen(true)}
         placeholder="Search distributor..."
-        style={{ width: "100%", padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: isSelected ? "#F0F6FF" : "#fff" }} />
+        style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: isSelected ? "#F0F6FF" : "#fff" }} />
       {isSelected && <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "#2E7D32", fontWeight: 600 }}>✓</div>}
       {open && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 200, boxShadow: "0 6px 20px rgba(0,0,0,0.12)", minWidth: 320, maxHeight: 320, overflowY: "auto" }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 200, boxShadow: "0 6px 20px rgba(0,0,0,0.12)", minWidth: 320, maxHeight: 320, overflowY: "auto" }}>
           {results.map(name => {
             const sup = suppliers.find(s => s.name === name);
             const payable = sup && sup.balance < 0 ? Math.abs(sup.balance) : 0;
@@ -1114,7 +1110,7 @@ export function MedicineMapModal({
       style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.5)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#fff", width: 720, maxWidth: "calc(100vw - 32px)", maxHeight: "80vh", display: "flex", flexDirection: "column", border: "1px solid #E8ECF4", boxShadow: "0 12px 40px rgba(10,22,44,0.18)" }}>
+      <div style={{ background: "#fff", width: 720, maxWidth: "calc(100vw - 32px)", maxHeight: "80vh", display: "flex", flexDirection: "column", borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 12px 40px rgba(10,22,44,0.18)" }}>
 
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #EEF1F6", flexShrink: 0 }}>
           <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Map Medicine Name</div>
@@ -1133,7 +1129,7 @@ export function MedicineMapModal({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by name, composition, strength, pack, or category…"
-            style={{ width: "100%", padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }}
+            style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }}
             onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
             onBlur={e => (e.currentTarget.style.borderColor = "#DDE3EC")}
           />
@@ -1192,13 +1188,13 @@ export function MedicineMapModal({
         <div style={{ padding: "12px 20px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <button
             onClick={onCreateNew}
-            style={{ padding: "8px 16px", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}
+            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}
           >
             + Create New Medicine
           </button>
           <button
             onClick={onClose}
-            style={{ padding: "8px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}
+            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}
           >
             Cancel
           </button>
@@ -1219,7 +1215,7 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
   onLineSearchChange?: (v: string) => void;
 }) {
   const inputStyle = (w: number): React.CSSProperties => ({
-    width: w, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none",
+    width: w, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none",
     fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436",
   });
 
@@ -1323,11 +1319,11 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
               </td>
               <td style={{ padding: "6px 10px", textAlign: "left" }}>
                 <input value={item.batchNo} onChange={e => onChange(item.id, "batchNo", e.target.value)} placeholder="BATCH-#"
-                  style={{ width: 100, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#1A2436" }} />
+                  style={{ width: 100, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#1A2436" }} />
               </td>
               <td style={{ padding: "6px 10px", textAlign: "left" }}>
                 <input type="date" value={item.expDate} onChange={e => onChange(item.id, "expDate", e.target.value)}
-                  style={{ width: 130, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: item.expDate && item.expDate < "2026-12-31" ? "#E65100" : "#1A2436" }} />
+                  style={{ width: 130, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: item.expDate && item.expDate < "2026-12-31" ? "#E65100" : "#1A2436" }} />
               </td>
               <td style={{ padding: "6px 10px", textAlign: "right" }}>
                 <input type="number" value={item.packSize || ""} onChange={e => onChange(item.id, "packSize", parseFloat(e.target.value) || 0)}
@@ -1415,7 +1411,7 @@ export function DistributorDrawer({ supplierName, onClose, onEdit }: { supplierN
             {sup && <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{sup.contact} · {sup.phone}</div>}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={onEdit} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, fontWeight: 600, cursor: onEdit ? "pointer" : "default", color: "#1A2436", fontFamily: "Inter" }}>
+            <button onClick={onEdit} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, fontWeight: 600, cursor: onEdit ? "pointer" : "default", color: "#1A2436", fontFamily: "Inter" }}>
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M9.5 1.5a1.414 1.414 0 0 1 2 2L4 11H1.5V8.5L9.5 1.5Z" stroke="#1A2436" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               Edit Distributor
             </button>
@@ -1720,12 +1716,12 @@ export function POLineSearch({ onSelect, onAddMedicine }: { onSelect: (m: MedCat
           onChange={e => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
-          style={{ width: "100%", padding: "6px 8px 6px 26px", border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "Inter", outline: "none", background: "#fff" }}
+          style={{ width: "100%", padding: "6px 8px 6px 26px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "Inter", outline: "none", background: "#fff" }}
           onMouseDown={e => e.stopPropagation()}
         />
       </div>
       {open && (
-        <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 200, background: "#fff", border: "1px solid #DDE3EC", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", minWidth: 640, maxHeight: 260, overflowY: "auto" }}
+        <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 200, background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", minWidth: 640, maxHeight: 260, overflowY: "auto" }}
           onMouseDown={e => e.preventDefault()}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -1790,7 +1786,7 @@ export function EditableChip({ label, value, onChange, editable, prefix, allowNe
             <span style={{ fontFamily: "JetBrains Mono", fontSize: 13, color: "#6B7280" }}>{prefix ?? ""}₹</span>
             <input type="text" value={text} onChange={e => setText(e.target.value)} onBlur={commit} onKeyDown={e => e.key === "Enter" && commit()}
               placeholder="0.00"
-              style={{ width: 72, padding: "2px 4px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", textAlign: "right" }} />
+              style={{ width: 72, padding: "2px 4px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", textAlign: "right" }} />
           </div>
         ) : (
           <div style={{ fontFamily: "JetBrains Mono", fontSize: 13, color: "#6B7280" }}>{prefix ?? ""}₹{Math.abs(value).toFixed(2)}</div>
@@ -1812,7 +1808,7 @@ export function OptionCard({
     <div
       onMouseEnter={e => { e.currentTarget.style.borderColor = "#1B6CA8"; e.currentTarget.style.background = "#F8FBFF"; }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = "#E8ECF4"; e.currentTarget.style.background = "#fff"; }}
-      style={{ border: "1px solid #E8ECF4", background: "#fff", padding: "16px 18px" }}>
+      style={{ borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", padding: "16px 18px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14 }}>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flex: 1 }}>
           <div style={{ flexShrink: 0, marginTop: 1 }}>{icon}</div>
@@ -1859,7 +1855,7 @@ export function MethodCard({ icon, title, desc, badge, btnLabel, onSelect }: {
     <div
       onMouseEnter={e => { e.currentTarget.style.borderColor = "#1B6CA8"; e.currentTarget.style.background = "#F8FBFF"; }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = "#E8ECF4"; e.currentTarget.style.background = "#fff"; }}
-      style={{ border: "1px solid #E8ECF4", background: "#fff", padding: "20px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+      style={{ borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", padding: "20px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
         <div style={{ flexShrink: 0, width: 36, height: 36, border: "1px solid #EEF1F6", background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {icon}
@@ -1876,7 +1872,7 @@ export function MethodCard({ icon, title, desc, badge, btnLabel, onSelect }: {
       </div>
       <button
         onClick={onSelect}
-        style={{ alignSelf: "flex-start", padding: "6px 14px", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>
+        style={{ alignSelf: "flex-start", padding: "6px 14px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>
         {btnLabel}
       </button>
     </div>
@@ -1886,7 +1882,7 @@ export function MethodCard({ icon, title, desc, badge, btnLabel, onSelect }: {
 export function CenteredModal({ children, width = 620 }: { children: React.ReactNode; width?: number }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}>
-      <div style={{ background: "#fff", width, maxWidth: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 12px 40px rgba(0,0,0,0.18)", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", width, maxWidth: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 12px 40px rgba(0,0,0,0.18)", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         {children}
       </div>
     </div>

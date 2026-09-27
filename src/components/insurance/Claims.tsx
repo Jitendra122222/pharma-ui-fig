@@ -30,12 +30,15 @@ export default function Claims() {
         ))}
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 10 }}>
-          <input type="text" placeholder="Search by patient or claim ID..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ flex: 1, padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "5px 10px", flex: 1 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" placeholder="Search by patient or claim ID..." value={search} onChange={e => setSearch(e.target.value)}
+              style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+          </div>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            style={{ padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff" }}>
+            style={{ padding: "10px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", minHeight: 40, boxSizing: "border-box" as const }}>
             {["All", "Pending", "Approved", "Partial", "Paid", "Rejected"].map(s => <option key={s}>{s}</option>)}
           </select>
         </div>

@@ -86,11 +86,11 @@ export function DateRangePicker({
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
             <button onClick={() => { onChange("", ""); setOpen(false); }}
-              style={{ padding: "7px 14px", border: "1px solid #1B6CA8", background: "transparent", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
+              style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #1B6CA8", background: "transparent", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
               Clear
             </button>
             <button onClick={() => setOpen(false)}
-              style={{ padding: "7px 18px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+              style={{ padding: "7px 18px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
               Done
             </button>
           </div>

@@ -7,7 +7,7 @@ export default function BatchTracking() {
   const { sortCol, sortDir, handleSort, sorted: sortedRows } = useTableSort(batches);
   return (
     <div className="flex flex-col gap-5">
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Batch / Lot Registry</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>

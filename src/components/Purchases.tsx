@@ -55,7 +55,7 @@ export default function Purchases({ deepLink, onDeepLinkConsumed }: {
           {/* Summary stat tiles */}
           <div style={{ display: "flex", gap: 10 }}>
             {PAY_SUMMARY.map(s => (
-              <div key={s.label} style={{ flex: 1, background: "#fff", border: "1px solid #E8ECF4", borderLeft: `3px solid ${s.accent}`, padding: "10px 14px", minWidth: 0 }}>
+              <div key={s.label} style={{ flex: 1, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", borderLeft: `3px solid ${s.accent}`, padding: "10px 14px", minWidth: 0 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.09em", textTransform: "uppercase", fontFamily: "Inter" }}>{s.label}</div>
                 <div style={{ fontFamily: "JetBrains Mono", fontSize: 16, fontWeight: 700, color: s.accent, marginTop: 3, letterSpacing: "-0.01em" }}>{s.value}</div>
               </div>
@@ -67,7 +67,7 @@ export default function Purchases({ deepLink, onDeepLinkConsumed }: {
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, padding: "0 0 8px 0", flexShrink: 0 }}>
             <h1 style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#1A2436", margin: 0, letterSpacing: "-0.02em" }}>Purchases</h1>
           </div>
-          <div style={{ display: "flex", background: "#fff", border: "1px solid #E8ECF4", flexShrink: 0 }}>
+          <div style={{ display: "flex", background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", flexShrink: 0 }}>
             {TABS.map((t, i) => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 style={{

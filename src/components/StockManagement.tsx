@@ -6,6 +6,7 @@ import Adjustments from "./stock/Adjustments";
 import BatchTracking from "./stock/BatchTracking";
 import StockExpiry from "./stock/StockExpiry";
 import StockTransfer from "./stock/StockTransfer";
+import StockInvestigation from "./stock/StockInvestigation";
 
 export default function StockManagement() {
   const [tab, setTab] = useState<SubTab>("overview");
@@ -14,7 +15,7 @@ export default function StockManagement() {
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div>
         <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#1A2436", margin: 0, letterSpacing: "-0.02em" }}>Stock Management</h1>
-        <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 3 }}>Overview · Adjustments · Batches · Expiry · Transfers</div>
+        <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 3 }}>Overview · Adjustments · Batches · Expiry · Transfers · Investigation</div>
       </div>
 
       <TabBar tabs={TABS} active={tab} onChange={(id) => setTab(id as SubTab)} />
@@ -24,6 +25,7 @@ export default function StockManagement() {
       {tab === "batches" && <BatchTracking />}
       {tab === "expiry" && <StockExpiry />}
       {tab === "transfer" && <StockTransfer />}
+      {tab === "investigation" && <StockInvestigation />}
     </div>
   );
 }

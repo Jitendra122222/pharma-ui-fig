@@ -98,7 +98,7 @@ function OverviewTab({ order, response, onReviewChanges }: { order: PurchaseOrde
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* PO Summary */}
-      <div style={{ border: "1px solid #E8ECF4" }}>
+      <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>PO Summary</div>
         {infoRows.map(r => (
           <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "9px 16px", borderBottom: "1px solid #F4F5F7" }}>
@@ -118,7 +118,7 @@ function OverviewTab({ order, response, onReviewChanges }: { order: PurchaseOrde
       </div>
 
       {/* Response Summary */}
-      <div style={{ border: "1px solid #E8ECF4" }}>
+      <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Response Summary</span>
           <span style={{ fontSize: 11, fontWeight: 600, color: "#9CA3AF", letterSpacing: "0.04em" }}>Supplier Response</span>
@@ -152,7 +152,7 @@ function OverviewTab({ order, response, onReviewChanges }: { order: PurchaseOrde
               </div>
             )}
             <div style={{ padding: "12px 16px" }}>
-              <button onClick={onReviewChanges} style={{ fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1B6CA8", border: "1px solid #1B6CA8", background: "transparent", padding: "6px 14px", cursor: "pointer" }}>
+              <button onClick={onReviewChanges} style={{ fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1B6CA8", borderRadius: 6, border: "1px solid #1B6CA8", background: "transparent", padding: "6px 14px", cursor: "pointer" }}>
                 Review Changes
               </button>
             </div>
@@ -173,7 +173,7 @@ function ItemsTab({ lines }: { lines: POLine[] }) {
   }
   const total = lines.reduce((s, l) => s + l.orderQty * l.purchaseRate, 0);
   return (
-    <div style={{ border: "1px solid #E8ECF4", overflow: "hidden" }}>
+    <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", overflow: "hidden" }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #EEF1F6" }}>
@@ -256,11 +256,11 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
     <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", background: t === "Price" ? "#FFEBEE" : t === "Scheme" ? "#FFF3E0" : "#EFF6FF", color: t === "Price" ? "#C62828" : t === "Scheme" ? "#E65100" : "#1B6CA8" }}>{t}</span>
   );
 
-  const inputStyle: React.CSSProperties = { width: "100%", border: "1px solid #E8ECF4", padding: "5px 8px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", outline: "none", background: "#fff", boxSizing: "border-box" };
+  const inputStyle: React.CSSProperties = { width: "100%", borderRadius: 6, border: "1px solid #E8ECF4", padding: "5px 8px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", outline: "none", background: "#fff", boxSizing: "border-box" };
 
   const ModalWrap = ({ children, width = 480 }: { children: React.ReactNode; width?: number }) => (
     <div style={{ position: "fixed", inset: 0, background: "rgba(12,27,51,0.6)", zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", width, border: "1px solid #E8ECF4", boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }}>{children}</div>
+      <div style={{ background: "#fff", width, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }}>{children}</div>
     </div>
   );
   const ModalHeader = ({ title, onClose }: { title: string; onClose: () => void }) => (
@@ -290,7 +290,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
       </div>
 
       {/* Change Details + Margin table */}
-      <div style={{ border: "1px solid #E8ECF4", overflowX: "auto" }}>
+      <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", overflowX: "auto" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Change Details</div>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
           <thead>
@@ -338,7 +338,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
               Rejecting all <strong style={{ color: "#1A2436" }}>{total}</strong> changes from <strong style={{ color: "#1A2436" }}>{order.supplier}</strong>. Your original PO terms and quantities will be maintained.
             </div>
             {medicinesToReject.length > 0 && (
-              <div style={{ border: "1px solid #E8ECF4", marginBottom: 16 }}>
+              <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", marginBottom: 16 }}>
                 <div style={{ padding: "8px 14px", borderBottom: "1px solid #EEF1F6", fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase" }}>Affected items</div>
                 {medicinesToReject.map((m, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderBottom: i < medicinesToReject.length - 1 ? "1px solid #F4F5F7" : "none" }}>
@@ -348,7 +348,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
                 ))}
               </div>
             )}
-            <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", padding: "12px 14px" }}>
+            <div style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 14px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", marginBottom: 4 }}>Add to Short Book?</div>
               <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>Short Book registers rejected items for priority re-ordering from alternate distributors in future POs.</div>
             </div>
@@ -378,7 +378,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
                 <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>The PO will be updated with the distributor's revised terms. This action cannot be undone.</div>
               </div>
             </div>
-            <div style={{ border: "1px solid #E8ECF4", marginBottom: 16 }}>
+            <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", marginBottom: 16 }}>
               {response.changeDetails.map((c, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 14px", borderBottom: i < response.changeDetails.length - 1 ? "1px solid #F4F5F7" : "none" }}>
                   <span style={{ fontSize: 12, color: "#6B7280" }}>{c.medicine} · {c.changeType}</span>
@@ -386,7 +386,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
                 </div>
               ))}
             </div>
-            <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", padding: "12px 14px" }}>
+            <div style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 14px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", marginBottom: 4 }}>Notify distributor of acceptance?</div>
               <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>An email or WhatsApp notification will be sent to {order.supplier} confirming your acceptance.</div>
             </div>
@@ -407,7 +407,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
             <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 14 }}>
               Enter your negotiated values below. The Margin column updates as you type.
             </div>
-            <div style={{ border: "1px solid #E8ECF4", overflowX: "auto", marginBottom: 14 }}>
+            <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", overflowX: "auto", marginBottom: 14 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
                 <thead>
                   <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #EEF1F6" }}>
@@ -457,7 +457,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
                 onChange={e => setNegotiateMsg(e.target.value)}
                 placeholder="e.g. Please consider our rates — we order consistently in high volume."
                 rows={3}
-                style={{ width: "100%", border: "1px solid #E8ECF4", padding: "8px 10px", fontSize: 12, fontFamily: "Inter", color: "#1A2436", outline: "none", resize: "vertical", boxSizing: "border-box" }}
+                style={{ width: "100%", borderRadius: 6, border: "1px solid #E8ECF4", padding: "8px 10px", fontSize: 12, fontFamily: "Inter", color: "#1A2436", outline: "none", resize: "vertical", boxSizing: "border-box" }}
                 onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
                 onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
               />
@@ -545,7 +545,7 @@ function PODetailDrawer({ order, onClose, onEdit, onToast }: {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <button onClick={onEdit} style={{ fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1B6CA8", border: "1px solid #1B6CA8", background: "transparent", padding: "6px 14px", cursor: "pointer" }}>Edit PO</button>
+              <button onClick={onEdit} style={{ fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1B6CA8", borderRadius: 6, border: "1px solid #1B6CA8", background: "transparent", padding: "6px 14px", cursor: "pointer" }}>Edit PO</button>
               <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22, lineHeight: 1, padding: "2px 4px" }}>×</button>
             </div>
           </div>
@@ -605,7 +605,7 @@ function PurchaseOrderList({ onNew, onView }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Purchase Orders</div>
           <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>Orders placed with distributors</div>

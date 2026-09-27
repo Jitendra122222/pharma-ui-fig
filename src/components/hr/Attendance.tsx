@@ -16,7 +16,7 @@ export default function Attendance() {
         </div>
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4", overflowX: "auto" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#FAFBFD" }}>

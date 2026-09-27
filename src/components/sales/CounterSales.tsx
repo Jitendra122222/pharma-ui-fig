@@ -54,7 +54,7 @@ export default function CounterSales({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <div>
             <span style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Line Items</span>
@@ -82,7 +82,7 @@ export default function CounterSales({
 
       <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
         placeholder="Add notes, special instructions or remarks..."
-        style={{ width: "100%", padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", resize: "none", background: "#fff", boxSizing: "border-box", marginTop: 8, flexShrink: 0 }} />
+        style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", resize: "none", background: "#fff", boxSizing: "border-box", marginTop: 8, flexShrink: 0 }} />
 
       <InvoiceSummaryFooter
         items={items.filter(i => checked[i.id] && i.medicineName)}

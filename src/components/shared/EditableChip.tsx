@@ -47,7 +47,7 @@ export function EditableChip({
               style={{
                 width: 80,
                 padding: "3px 6px",
-                border: "1px solid #E8ECF4",
+                borderRadius: 6, border: "1px solid #E8ECF4",
                 fontSize: 13,
                 fontFamily: "JetBrains Mono",
                 fontWeight: 500,

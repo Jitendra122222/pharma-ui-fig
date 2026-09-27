@@ -146,7 +146,7 @@ function ExpiryDetailDrawer({ item, onClose }: { item: ExpiryItem; onClose: () =
         <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 14, background: "#F0F3F7" }}>
 
           {/* Batch info */}
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
             <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Batch Details</div>
             {[
               { label: "Batch Number", value: item.batch, mono: true },
@@ -163,7 +163,7 @@ function ExpiryDetailDrawer({ item, onClose }: { item: ExpiryItem; onClose: () =
           </div>
 
           {/* Expiry return policy */}
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
             <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Expiry Return Policy</div>
             <div style={{ padding: "12px 14px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -194,7 +194,7 @@ function ExpiryDetailDrawer({ item, onClose }: { item: ExpiryItem; onClose: () =
 
           {/* Risk explanation */}
           {item.risk !== "Safe" && (
-            <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+            <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
               <button onClick={() => setShowRiskExplain(prev => !prev)}
                 style={{ width: "100%", padding: "10px 14px", background: "transparent", border: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: showRiskExplain ? "1px solid #EEF1F6" : "none" }}>
                 <span style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
@@ -230,7 +230,7 @@ function ExpiryDetailDrawer({ item, onClose }: { item: ExpiryItem; onClose: () =
                 <span style={{ fontSize: 16, color: "#2E7D32" }}>&#10003;</span>
                 <span style={{ fontSize: 13, color: "#1A2436" }}><strong>{confirmedAction}</strong> recorded for {item.medicine}</span>
               </div>
-              <button onClick={onClose} style={{ padding: "7px 16px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+              <button onClick={onClose} style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
                 Done
               </button>
             </div>
@@ -277,7 +277,7 @@ function ExpiryChecks() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={() => setShowNew(true)} style={{ padding: "8px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+        <button onClick={() => setShowNew(true)} style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
           + New Expiry Check
         </button>
       </div>
@@ -288,12 +288,12 @@ function ExpiryChecks() {
             <div style={{ fontSize: 12, color: "#6B7280" }}>This will scan all {MOCK_EXPIRY_ITEMS.length} batches and flag items that are expired or near expiry.</div>
           </div>
           <div style={{ display: "flex", gap: 8, flexShrink: 0, marginLeft: 16 }}>
-            <button onClick={() => setShowNew(false)} style={{ padding: "7px 14px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-            <button onClick={handleStartCheck} style={{ padding: "7px 14px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Start Check</button>
+            <button onClick={() => setShowNew(false)} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+            <button onClick={handleStartCheck} style={{ padding: "7px 14px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Start Check</button>
           </div>
         </div>
       )}
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
@@ -339,7 +339,7 @@ function ExpiryTable({
 }) {
   if (items.length === 0) {
     return (
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "48px 24px", textAlign: "center" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "48px 24px", textAlign: "center" }}>
         <div style={{ fontSize: 28, marginBottom: 10, color: "#2E7D32" }}>&#10003;</div>
         <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#6B7280", marginBottom: 6 }}>{emptyLabel}</div>
         <div style={{ fontSize: 13, color: "#9CA3AF" }}>No batches currently require attention.</div>
@@ -348,7 +348,7 @@ function ExpiryTable({
   }
 
   return (
-    <div style={{ background: "#fff", border: "1px solid #E8ECF4", overflowX: "auto" }}>
+    <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
@@ -388,7 +388,7 @@ function ExpiryTable({
               <td style={{ padding: "11px 14px" }}><ReturnPill status={item.returnStatus} /></td>
               <td style={{ padding: "11px 14px" }}>
                 <button onClick={() => onReview(item)}
-                  style={{ padding: "5px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
                   Review
                 </button>
               </td>
@@ -484,8 +484,8 @@ export default function ExpiryManagement() {
           <div style={{ fontSize: 13, color: "#6B7280", marginTop: 4 }}>Monitor and action near-expiry and expired batches</div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={handleExport} style={{ padding: "8px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Export</button>
-          <button onClick={() => setActiveTab("checks")} style={{ padding: "8px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+          <button onClick={handleExport} style={{ padding: "10px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", minHeight: 40, boxSizing: "border-box" as const }}>Export</button>
+          <button onClick={() => setActiveTab("checks")} style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
             + Expiry Check
           </button>
         </div>
@@ -501,7 +501,7 @@ export default function ExpiryManagement() {
           { label: "Return Eligible", value: summary.returnEligible, color: "#2E7D32" },
           { label: "Non-returnable", value: summary.nonReturnable, color: "#E65100" },
         ].map(c => (
-          <div key={c.label} style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "14px 16px", borderTop: `3px solid ${c.color}` }}>
+          <div key={c.label} style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "14px 16px", borderTop: `3px solid ${c.color}` }}>
             <div style={{ fontSize: 9, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{c.label}</div>
             <div style={{ fontFamily: (c as { mono?: boolean }).mono ? "JetBrains Mono" : "Outfit", fontSize: 20, fontWeight: 700, color: c.color }}>{c.value}</div>
           </div>
@@ -515,7 +515,7 @@ export default function ExpiryManagement() {
         if (critical.length > 0) actionRows.push({ dot: "#C62828", text: `${critical.length} batch${critical.length > 1 ? "es" : ""} expire within 30 days`, tab: "action" });
         if (nearExpiry.length > 0) actionRows.push({ dot: "#F57F17", text: `${nearExpiry.length} batch${nearExpiry.length > 1 ? "es" : ""} expire within 90 days`, tab: "expiring" });
         return (
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
             <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" }}>
               Action Required
             </div>
@@ -526,7 +526,7 @@ export default function ExpiryManagement() {
                   <span style={{ fontSize: 13, color: "#1A2436" }}>{row.text}</span>
                 </div>
                 <button onClick={() => setActiveTab(row.tab)}
-                  style={{ padding: "4px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
+                  style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
                   Review
                 </button>
               </div>
@@ -538,7 +538,7 @@ export default function ExpiryManagement() {
       {/* Main table card */}
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
         {/* Tabs */}
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4", borderBottom: "none" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", borderBottom: "none" }}>
           <div style={{ display: "flex", padding: "0 16px", borderBottom: "1px solid #EEF1F6" }}>
             {TABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -554,8 +554,11 @@ export default function ExpiryManagement() {
           </div>
           {activeTab !== "checks" && (
             <div style={{ padding: "10px 16px" }}>
-              <input type="text" placeholder="Search medicine, batch, supplier..." value={search} onChange={e => setSearch(e.target.value)}
-                style={{ width: 320, padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "5px 10px", width: 300 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" placeholder="Search medicine, batch, supplier..." value={search} onChange={e => setSearch(e.target.value)}
+                  style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+              </div>
             </div>
           )}
         </div>

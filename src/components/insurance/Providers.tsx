@@ -7,10 +7,10 @@ export default function Providers() {
   const { sortCol, sortDir, handleSort, sorted: sortedRows } = useTableSort(providers);
   return (
     <div className="flex flex-col gap-4">
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Insurance Providers</div>
-          <button style={{ padding: "7px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>+ Add Provider</button>
+          <button style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>+ Add Provider</button>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>

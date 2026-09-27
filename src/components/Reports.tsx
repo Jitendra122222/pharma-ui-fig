@@ -45,12 +45,12 @@ export default function Reports() {
           <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>Period: February – July 2025</div>
         </div>
         <div className="flex gap-2">
-          <select style={{ padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff" }}>
+          <select style={{ padding: "10px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", minHeight: 40, boxSizing: "border-box" as const }}>
             <option>Last 6 Months</option>
             <option>This Year</option>
             <option>Custom Range</option>
           </select>
-          <button style={{ padding: "8px 16px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Export PDF</button>
+          <button style={{ padding: "10px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33", minHeight: 40, boxSizing: "border-box" as const }}>Export PDF</button>
         </div>
       </div>
 
@@ -63,7 +63,7 @@ export default function Reports() {
           { label: "Total Rx Filled", value: "2,179", change: "+8.2%", up: true },
           { label: "New Patients", value: "34", change: "-3", up: false },
         ].map((k) => (
-          <div key={k.label} style={{ background: "#fff", border: "1px solid #DDE3EC", padding: "16px 18px" }}>
+          <div key={k.label} style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "16px 18px" }}>
             <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>{k.label}</div>
             <div style={{ fontFamily: "Outfit", fontSize: 20, fontWeight: 700, color: "#0C1B33", marginBottom: 4 }}>{k.value}</div>
             <div style={{ fontSize: 12, color: k.up ? "#2E7D32" : "#C62828", fontWeight: 500 }}>{k.change}</div>
@@ -74,7 +74,7 @@ export default function Reports() {
       {/* Charts row 1 */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "3fr 2fr" }}>
         {/* Revenue bar */}
-        <div style={{ background: "#fff", border: "1px solid #DDE3EC", padding: "20px 22px" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "20px 22px" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 600, color: "#0C1B33", marginBottom: 4 }}>Monthly Revenue vs Profit</div>
           <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 16 }}>Grouped bar chart</div>
           <ResponsiveContainer width="100%" height={200}>
@@ -82,7 +82,7 @@ export default function Reports() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
               <CartesianGrid vertical={false} stroke="#F0F3F7" />
-              <Tooltip contentStyle={{ border: "1px solid #DDE3EC", borderRadius: 0, fontSize: 12 }} formatter={(v) => [`₹${(v as number).toLocaleString()}`, ""]} />
+              <Tooltip contentStyle={{ borderRadius: 0, border: "1px solid #DDE3EC", fontSize: 12 }} formatter={(v) => [`₹${(v as number).toLocaleString()}`, ""]} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="revenue" name="Revenue" fill="#1B6CA8" radius={0} />
               <Bar dataKey="profit" name="Profit" fill="#00ACC1" radius={0} />
@@ -91,7 +91,7 @@ export default function Reports() {
         </div>
 
         {/* Rx line */}
-        <div style={{ background: "#fff", border: "1px solid #DDE3EC", padding: "20px 22px" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "20px 22px" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 600, color: "#0C1B33", marginBottom: 4 }}>Prescriptions</div>
           <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 16 }}>Filled vs cancelled</div>
           <ResponsiveContainer width="100%" height={200}>
@@ -99,7 +99,7 @@ export default function Reports() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
               <CartesianGrid vertical={false} stroke="#F0F3F7" />
-              <Tooltip contentStyle={{ border: "1px solid #DDE3EC", borderRadius: 0, fontSize: 12 }} />
+              <Tooltip contentStyle={{ borderRadius: 0, border: "1px solid #DDE3EC", fontSize: 12 }} />
               <Line type="monotone" dataKey="filled" name="Filled" stroke="#2E7D32" strokeWidth={2} dot={{ r: 3 }} />
               <Line type="monotone" dataKey="cancelled" name="Cancelled" stroke="#C62828" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
@@ -110,7 +110,7 @@ export default function Reports() {
       {/* Bottom row */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
         {/* Top drugs table */}
-        <div style={{ background: "#fff", border: "1px solid #DDE3EC" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC" }}>
           <div style={{ padding: "16px 20px", borderBottom: "1px solid #DDE3EC", fontFamily: "Outfit", fontSize: 15, fontWeight: 600, color: "#0C1B33" }}>Top Selling Drugs</div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -156,7 +156,7 @@ export default function Reports() {
         </div>
 
         {/* Category distribution */}
-        <div style={{ background: "#fff", border: "1px solid #DDE3EC", padding: "20px 22px" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "20px 22px" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 600, color: "#0C1B33", marginBottom: 4 }}>Sales by Drug Category</div>
           <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 16 }}>% share of total sales</div>
           <div className="flex flex-col gap-3">

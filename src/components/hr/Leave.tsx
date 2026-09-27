@@ -8,11 +8,11 @@ export default function Leave() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <button style={{ padding: "8px 18px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>+ Apply Leave</button>
+        <button style={{ padding: "8px 18px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>+ Apply Leave</button>
       </div>
 
       {/* Leave balances */}
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: 20 }}>
         <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436", marginBottom: 14 }}>Leave Balances — 2025</div>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
           {staff.filter(s => s.status === "Active").map(e => (
@@ -34,7 +34,7 @@ export default function Leave() {
         </div>
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Leave Requests</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>

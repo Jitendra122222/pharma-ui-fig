@@ -127,7 +127,7 @@ function SupplierComparisonDrawer({
               <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>{item.medicine}</div>
               <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Required Quantity: <span style={{ fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1A2436" }}>{item.orderQty} units</span></div>
             </div>
-            <button onClick={onClose} style={{ width: 28, height: 28, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
           </div>
         </div>
 
@@ -209,7 +209,7 @@ function SupplierComparisonDrawer({
 
         {/* Footer */}
         <div style={{ padding: "14px 22px", borderTop: "1px solid #EEF1F6", display: "flex", gap: 10, flexShrink: 0 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "9px 0", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+          <button onClick={onClose} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
           <button
             onClick={() => { if (selected) { onSelect(selected); onClose(); } }}
             disabled={!selected}
@@ -280,7 +280,7 @@ function AddMedicineDrawer({
             <div style={{ fontSize: 13, color: "#6B7280", textAlign: "center" }}>Order quantity: <span style={{ fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1A2436" }}>{updateQtyMode ? updateQtyInput : orderQty} units</span></div>
           </div>
           <div style={{ padding: "14px 22px", borderTop: "1px solid #EEF1F6", display: "flex", gap: 10, flexShrink: 0 }}>
-            <button onClick={onClose} style={{ flex: 1, padding: "9px 0", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Close</button>
+            <button onClick={onClose} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Close</button>
           </div>
         </div>
       </>
@@ -298,7 +298,7 @@ function AddMedicineDrawer({
               <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Short Book</div>
               <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>Add to Short Book</div>
             </div>
-            <button onClick={onClose} style={{ width: 28, height: 28, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
           </div>
         </div>
 
@@ -311,10 +311,10 @@ function AddMedicineDrawer({
               <input type="text" placeholder="Search medicine..." value={search}
                 onChange={e => { setSearch(e.target.value); setSelected(e.target.value); setShowDropdown(true); }}
                 onFocus={() => setShowDropdown(true)}
-                style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }}
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }}
                 onBlur={e => setTimeout(() => setShowDropdown(false), 150)} />
               {showDropdown && matches.length > 0 && (
-                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", borderTop: "none", zIndex: 20, maxHeight: 200, overflowY: "auto", boxShadow: "0 4px 12px rgba(10,22,44,0.10)" }}>
+                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", borderTop: "none", zIndex: 20, maxHeight: 200, overflowY: "auto", boxShadow: "0 4px 12px rgba(10,22,44,0.10)" }}>
                   {matches.map(m => (
                     <button key={m} onMouseDown={() => { setSelected(m); setSearch(m); setShowDropdown(false); }}
                       style={{ width: "100%", textAlign: "left", padding: "9px 12px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: "#1A2436", fontFamily: "Inter", borderBottom: "1px solid #F4F6FA" }}
@@ -339,7 +339,7 @@ function AddMedicineDrawer({
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#4A5875", marginBottom: 6 }}>Reason</div>
                 <select value={reason} onChange={e => setReason(e.target.value as Reason)}
-                  style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer" }}>
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer" }}>
                   {(["Low Stock", "Out of Stock", "Today's Sales", "Manual", "Customer Demand"] as Reason[]).map(r => (
                     <option key={r}>{r}</option>
                   ))}
@@ -350,13 +350,13 @@ function AddMedicineDrawer({
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#4A5875", marginBottom: 6 }}>Order Quantity <span style={{ color: "#C62828" }}>*</span></div>
                 <input type="number" value={orderQty} min={1}
                   onChange={e => setOrderQty(e.target.value)}
-                  style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} />
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} />
               </div>
 
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#4A5875", marginBottom: 6 }}>Preferred Supplier</div>
                 <select value={supplier} onChange={e => setSupplier(e.target.value)}
-                  style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer" }}>
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer" }}>
                   {["ABC Pharma", "XYZ Pharma", "Medico", "PharmaCo Inc", "MedLine Pharma"].map(s => (
                     <option key={s}>{s}</option>
                   ))}
@@ -373,7 +373,7 @@ function AddMedicineDrawer({
                   <input type="number" value={updateQtyInput} min={1}
                     onChange={e => setUpdateQtyInput(e.target.value)}
                     autoFocus
-                    style={{ flex: 1, padding: "9px 12px", border: "1px solid #1B6CA8", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} />
+                    style={{ flex: 1, padding: "9px 12px", borderRadius: 6, border: "1px solid #1B6CA8", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} />
                   <button
                     onClick={() => { if (Number(updateQtyInput) > 0) { onUpdateQty(existingItem.id, Number(updateQtyInput)); setSaved(true); } }}
                     disabled={!updateQtyInput || Number(updateQtyInput) <= 0}
@@ -386,10 +386,10 @@ function AddMedicineDrawer({
               <div style={{ display: "flex", gap: 10 }}>
                 <button
                   onClick={() => { setUpdateQtyMode(true); setUpdateQtyInput(String(existingItem.orderQty)); }}
-                  style={{ flex: 1, padding: "9px 0", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 13, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 13, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
                   Update Quantity
                 </button>
-                <button onClick={onClose} style={{ flex: 1, padding: "9px 0", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+                <button onClick={onClose} style={{ flex: 1, padding: "9px 0", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
                   Go to Short Book
                 </button>
               </div>
@@ -400,7 +400,7 @@ function AddMedicineDrawer({
         {/* Footer */}
         {!isDuplicate && (
           <div style={{ padding: "14px 22px", borderTop: "1px solid #EEF1F6", display: "flex", gap: 10, flexShrink: 0 }}>
-            <button onClick={onClose} style={{ flex: 1, padding: "9px 0", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+            <button onClick={onClose} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
             <button onClick={handleAdd} disabled={!canAdd}
               style={{ flex: 2, padding: "9px 0", border: "none", background: canAdd ? "#1B6CA8" : "#C8CDD8", fontSize: 13, cursor: canAdd ? "pointer" : "not-allowed", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
               Add to Short Book
@@ -422,10 +422,10 @@ function EditQtyCell({ item, onSave }: { item: ShortBookItem; onSave: (qty: numb
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <input type="number" value={val} min={1} onChange={e => setVal(e.target.value)} autoFocus
-          style={{ width: 72, padding: "5px 8px", border: "1px solid #1B6CA8", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono" }}
+          style={{ width: 72, padding: "5px 8px", borderRadius: 6, border: "1px solid #1B6CA8", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono" }}
           onKeyDown={e => { if (e.key === "Enter") { onSave(Number(val)); setEditing(false); } if (e.key === "Escape") { setEditing(false); setVal(String(item.orderQty)); } }} />
         <button onClick={() => { onSave(Number(val)); setEditing(false); }}
-          style={{ padding: "4px 8px", border: "none", background: "#1B6CA8", color: "#fff", fontSize: 11, cursor: "pointer", fontFamily: "Inter" }}>Save</button>
+          style={{ padding: "4px 8px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 11, cursor: "pointer", fontFamily: "Inter" }}>Save</button>
       </div>
     );
   }
@@ -458,7 +458,7 @@ function PurchasePlanDrawer({ items, onClose }: { items: ShortBookItem[]; onClos
               <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Purchase Plan</div>
               <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>Create Purchase Orders</div>
             </div>
-            <button onClick={onClose} style={{ width: 28, height: 28, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
           </div>
         </div>
 
@@ -466,7 +466,7 @@ function PurchasePlanDrawer({ items, onClose }: { items: ShortBookItem[]; onClos
           {Object.entries(bySupplier).map(([supplier, sitems]) => {
             const subtotal = sitems.reduce((s, i) => s + i.orderQty * 22, 0);
             return (
-              <div key={supplier} style={{ border: "1px solid #E8ECF4", background: "#fff" }}>
+              <div key={supplier} style={{ borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff" }}>
                 <div style={{ padding: "12px 16px", background: "#FAFBFD", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: "#0C1B33", fontFamily: "Inter" }}>{supplier}</div>
                   <span style={{ fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>₹{subtotal.toFixed(0)}</span>
@@ -484,7 +484,7 @@ function PurchasePlanDrawer({ items, onClose }: { items: ShortBookItem[]; onClos
             );
           })}
 
-          <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", padding: "14px 16px" }}>
+          <div style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "14px 16px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <span style={{ fontSize: 12, color: "#6B7280" }}>Suppliers</span>
               <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700 }}>{Object.keys(bySupplier).length}</span>
@@ -501,9 +501,9 @@ function PurchasePlanDrawer({ items, onClose }: { items: ShortBookItem[]; onClos
         </div>
 
         <div style={{ padding: "14px 22px", borderTop: "1px solid #EEF1F6", display: "flex", gap: 10, flexShrink: 0 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "9px 0", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+          <button onClick={onClose} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
           <button onClick={onClose}
-            style={{ flex: 2, padding: "9px 0", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+            style={{ flex: 2, padding: "9px 0", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
             Create Purchase Orders
           </button>
         </div>
@@ -574,11 +574,11 @@ export default function ShortBook() {
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <button onClick={() => setShowPlan(true)}
-            style={{ padding: "8px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>
+            style={{ padding: "10px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", minHeight: 40, boxSizing: "border-box" as const }}>
             Purchase Plan
           </button>
           <button onClick={() => setShowAdd(true)}
-            style={{ padding: "8px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+            style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
             + Add Medicine
           </button>
         </div>
@@ -593,7 +593,7 @@ export default function ShortBook() {
           { label: "Today's Sales", value: summary.todaySales, color: "#1B6CA8" },
           { label: "Manual", value: summary.manual, color: "#4B5563" },
         ].map(c => (
-          <div key={c.label} style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "14px 18px", borderTop: `3px solid ${c.color}` }}>
+          <div key={c.label} style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "14px 18px", borderTop: `3px solid ${c.color}` }}>
             <div style={{ fontSize: 9, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>{c.label}</div>
             <div style={{ fontFamily: (c as { mono?: boolean }).mono ? "JetBrains Mono" : "Outfit", fontSize: 22, fontWeight: 700, color: c.color }}>{c.value}</div>
           </div>
@@ -601,7 +601,7 @@ export default function ShortBook() {
       </div>
 
       {/* Table card */}
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         {/* Tabs + search bar */}
         <div style={{ borderBottom: "1px solid #EEF1F6" }}>
           <div style={{ display: "flex", padding: "0 16px", borderBottom: "1px solid #EEF1F6" }}>
@@ -618,8 +618,11 @@ export default function ShortBook() {
             ))}
           </div>
           <div style={{ padding: "10px 16px", display: "flex", gap: 10, alignItems: "center" }}>
-            <input type="text" placeholder="Search medicine, barcode..." value={search} onChange={e => setSearch(e.target.value)}
-              style={{ flex: 1, padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "5px 10px", flex: 1 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Search medicine, barcode..." value={search} onChange={e => setSearch(e.target.value)}
+                style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+            </div>
           </div>
         </div>
 
@@ -672,7 +675,7 @@ export default function ShortBook() {
                     <Td>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => setCompareItem(item)}
-                          style={{ padding: "5px 10px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
                           Compare
                         </button>
                         <button onClick={() => handleRemove(item.id)}
@@ -699,7 +702,7 @@ export default function ShortBook() {
                 </span>
               </span>
               <button onClick={() => setShowPlan(true)}
-                style={{ padding: "5px 14px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+                style={{ padding: "5px 14px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
                 Create Purchase Orders
               </button>
             </div>

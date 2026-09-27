@@ -77,7 +77,7 @@ export function Th({
                   left: right ? undefined : 0,
                   width: 270,
                   background: "#fff",
-                  border: "1px solid #E8ECF4",
+                  borderRadius: 6, border: "1px solid #E8ECF4",
                   boxShadow: "0 6px 24px rgba(0,0,0,0.13)",
                   zIndex: 500,
                   padding: "12px 14px",

@@ -50,7 +50,7 @@ function OrderQtyBreakdown({
   const labelStyle: React.CSSProperties = { color: "#6B7280", fontSize: 11 };
   const valStyle = (color: string): React.CSSProperties => ({ fontFamily: "JetBrains Mono", fontWeight: 700, color });
   return (
-    <div style={{ position: "absolute", top: 28, left: 0, width: 300, background: "#fff", border: "1px solid #E8ECF4", zIndex: 400, boxShadow: "0 8px 28px rgba(0,0,0,0.14)", padding: "14px 16px" }}>
+    <div style={{ position: "absolute", top: 28, left: 0, width: 300, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 400, boxShadow: "0 8px 28px rgba(0,0,0,0.14)", padding: "14px 16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "#1A2436" }}>How Sugg Qty was calculated</div>
         <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>
@@ -113,7 +113,7 @@ function OrderQtyBreakdown({
           <div style={{ fontFamily: "JetBrains Mono", fontSize: 18, fontWeight: 700, color: "#1B6CA8", marginTop: 2 }}>{rec.qty}</div>
         </div>
         <button onClick={onUse}
-          style={{ padding: "7px 14px", border: "none", background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "Inter", cursor: "pointer" }}>
+          style={{ padding: "7px 14px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "Inter", cursor: "pointer" }}>
           Use
         </button>
       </div>
@@ -234,7 +234,7 @@ function NewPurchaseOrder({
     return (
       <>
         <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.4)", zIndex: 100 }} />
-        <aside style={{ position: "fixed", top: 50, right: 0, bottom: 0, width: 480, background: "#fff", border: "1px solid #E8ECF4", zIndex: 101, display: "flex", flexDirection: "column", boxShadow: "-4px 0 24px rgba(0,0,0,0.10)" }}>
+        <aside style={{ position: "fixed", top: 50, right: 0, bottom: 0, width: 480, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 101, display: "flex", flexDirection: "column", boxShadow: "-4px 0 24px rgba(0,0,0,0.10)" }}>
           <div style={{ padding: "18px 22px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>Distributor Comparison</div>
@@ -296,7 +296,7 @@ function NewPurchaseOrder({
     const lastRate = history[0]?.rate ?? currentRate;
     const pctChange = lastRate > 0 ? ((currentRate - lastRate) / lastRate) * 100 : 0;
     return (
-      <div style={{ position: "absolute", top: 32, left: 0, width: 280, background: "#fff", border: "1px solid #E8ECF4", zIndex: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: 16 }}>
+      <div style={{ position: "absolute", top: 32, left: 0, width: 280, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Price History</div>
           <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 18 }}>×</button>
@@ -335,7 +335,7 @@ function NewPurchaseOrder({
   if (saved) {
     return (
       <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, background: "#F0F3F7", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: 60, textAlign: "center", minWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: 60, textAlign: "center", minWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 20, fontWeight: 700, color: "#1A2436", marginBottom: 8 }}>
             {saved === "submitted" ? "PO Submitted for Approval" : "Purchase Order Saved as Draft"}
           </div>
@@ -422,7 +422,7 @@ function NewPurchaseOrder({
       <div style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: 20, paddingBottom: 16, display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* ── Order header fields ── */}
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "16px 20px", flexShrink: 0 }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "16px 20px", flexShrink: 0 }}>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 14 }}>
             <div>
               <FieldLabel>Distributor</FieldLabel>
@@ -437,7 +437,7 @@ function NewPurchaseOrder({
                     onAdd={() => setShowAddSupplier(true)}
                   />
                   {supplier && (
-                    <button onClick={() => setShowDistributorDrawer(true)} style={{ padding: "8px 12px", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>Details</button>
+                    <button onClick={() => setShowDistributorDrawer(true)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>Details</button>
                   )}
                 </div>
               )}
@@ -496,7 +496,7 @@ function NewPurchaseOrder({
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {/* Selected supplier card */}
             {supplier ? (
-              <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "18px 20px" }}>
+              <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "18px 20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2436" }}>{supplier}</div>
@@ -522,7 +522,7 @@ function NewPurchaseOrder({
                   return (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
                   {tiles.map(t => (
-                    <div key={t.label} style={{ border: "1px solid #E8ECF4", padding: "10px 12px" }}>
+                    <div key={t.label} style={{ borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px" }}>
                       <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>{t.label}</div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: t.ok === true ? "#2E7D32" : t.ok === false ? "#C62828" : "#1A2436", marginTop: 3 }}>{t.value}</div>
                     </div>
@@ -532,13 +532,13 @@ function NewPurchaseOrder({
                 })()}
               </div>
             ) : (
-              <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "32px 20px", textAlign: "center" }}>
+              <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "32px 20px", textAlign: "center" }}>
                 <div style={{ fontSize: 13, color: "#9CA3AF" }}>No distributor selected. Choose a distributor from the header.</div>
               </div>
             )}
 
             {/* Alternative suppliers comparison */}
-            <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+            <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
               <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Alternative Distributors</div>
                 <div style={{ fontSize: 11, color: "#9CA3AF" }}>Ranked by best overall score</div>
@@ -581,13 +581,13 @@ function NewPurchaseOrder({
                 { label: "Supplied", value: String(initialData?.received ?? 0), color: "#2E7D32" },
                 { label: "Pending", value: String(initialData?.pending ?? filledLines.length), color: (initialData?.pending ?? filledLines.length) > 0 ? "#C62828" : "#9CA3AF" },
               ].map(kpi => (
-                <div key={kpi.label} style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "14px 16px" }}>
+                <div key={kpi.label} style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "14px 16px" }}>
                   <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>{kpi.label}</div>
                   <div style={{ fontSize: 20, fontWeight: 700, color: kpi.color, fontFamily: "JetBrains Mono", marginTop: 4 }}>{kpi.value}</div>
                 </div>
               ))}
             </div>
-            <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+            <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
               <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Per-line Supply Status</div>
               </div>
@@ -632,7 +632,7 @@ function NewPurchaseOrder({
         {detailTab === "invoice" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {relatedInvoices.length === 0 ? (
-              <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "32px 24px" }}>
+              <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "32px 24px" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", marginBottom: 6 }}>No Invoice Uploaded</div>
                 <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 20 }}>Upload the distributor invoice to match against this PO and trigger payment processing.</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
@@ -652,7 +652,7 @@ function NewPurchaseOrder({
                 <PrimaryBtn onClick={() => {}}>Upload Invoice</PrimaryBtn>
               </div>
             ) : (
-              <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+              <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6" }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2436" }}>PO–Invoice Matching</div>
                 </div>
@@ -692,7 +692,7 @@ function NewPurchaseOrder({
 
         {/* ── Timeline tab ── */}
         {detailTab === "timeline" && (
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "20px 24px" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "20px 24px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", marginBottom: 16 }}>Event Timeline</div>
             {[
               { date: formatDMY(initialData?.date ?? TODAY), event: "Purchase Order Created", user: "Amit", desc: `PO created for ${supplier || "distributor"}`, color: "#1B6CA8" },
@@ -720,7 +720,7 @@ function NewPurchaseOrder({
         )}
 
         {/* ── Items ── */}
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
             <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Line Items</span>
@@ -847,7 +847,7 @@ function NewPurchaseOrder({
                           ) : (
                             <input type="number" value={l.orderQty || ""} min={0}
                               onChange={e => updatePOLine(l.id, "orderQty", parseInt(e.target.value) || 0)}
-                              style={{ width: "100%", padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none", boxSizing: "border-box" }}
+                              style={{ width: "100%", padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none", boxSizing: "border-box" }}
                               onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
                               onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")} />
                           )}
@@ -858,7 +858,7 @@ function NewPurchaseOrder({
                           ) : (
                             <input type="number" value={l.purchaseRate || ""} min={0} step={0.01}
                               onChange={e => updatePOLine(l.id, "purchaseRate", parseFloat(e.target.value) || 0)}
-                              style={{ width: "100%", padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none", boxSizing: "border-box" }}
+                              style={{ width: "100%", padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none", boxSizing: "border-box" }}
                               onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
                               onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")} />
                           )}
@@ -869,7 +869,7 @@ function NewPurchaseOrder({
                           ) : (
                             <input value={l.scheme} placeholder="10+1"
                               onChange={e => updatePOLine(l.id, "scheme", e.target.value)}
-                              style={{ width: "100%", padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", outline: "none", boxSizing: "border-box" }}
+                              style={{ width: "100%", padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", outline: "none", boxSizing: "border-box" }}
                               onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
                               onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")} />
                           )}
@@ -949,7 +949,7 @@ function NewPurchaseOrder({
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button
                     onClick={() => setShowEditDistributor(true)}
-                    style={{ padding: "7px 14px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 6 }}>
+                    style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 6 }}>
                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M9.5 1.5a1.414 1.414 0 0 1 2 2L4 11H1.5V8.5L9.5 1.5Z" stroke="#1A2436" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     Edit Distributor
                   </button>
@@ -1238,7 +1238,7 @@ function NewPurchaseOrder({
                 { label: "Distributor", value: supplier || "—" },
                 { label: "Expected Margin", value: "—" },
               ].map(item => (
-                <div key={item.label} style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", padding: "12px 14px" }}>
+                <div key={item.label} style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 14px" }}>
                   <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{item.label}</div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2436", fontFamily: "JetBrains Mono", marginTop: 3 }}>{item.value}</div>
                 </div>
@@ -1252,7 +1252,7 @@ function NewPurchaseOrder({
               <FieldLabel>Reason / Note (Optional)</FieldLabel>
               <textarea value={approvalReason} onChange={e => setApprovalReason(e.target.value)}
                 placeholder="Add a note for the approver..."
-                style={{ width: "100%", minHeight: 90, padding: "10px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", resize: "vertical", boxSizing: "border-box" as const }}
+                style={{ width: "100%", minHeight: 90, padding: "10px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", resize: "vertical", boxSizing: "border-box" as const }}
                 onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
                 onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
               />
@@ -1290,7 +1290,7 @@ function NewPurchaseOrder({
       {showSendModal && (
         <Modal title="Send Purchase Order" onClose={() => setShowSendModal(false)} width={480}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", padding: "12px 14px", marginBottom: 4 }}>
+            <div style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 14px", marginBottom: 4 }}>
               <div style={{ fontSize: 12, color: "#9CA3AF" }}>Sending</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2436", marginTop: 2 }}>{poId} · {supplier}</div>
             </div>
@@ -1302,9 +1302,9 @@ function NewPurchaseOrder({
               <FieldLabel>WhatsApp (Optional)</FieldLabel>
               <TextInput value={sendWhatsApp} onChange={e => setSendWhatsApp(e.target.value)} placeholder="+91 XXXXX XXXXX" />
             </div>
-            <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 13, color: "#6B7280" }}>Download PDF copy</span>
-              <button style={{ border: "1px solid #E8ECF4", background: "#fff", padding: "6px 14px", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Download</button>
+              <button style={{ borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", padding: "6px 14px", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Download</button>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingTop: 4 }}>
               <GhostBtn onClick={() => setShowSendModal(false)}>Cancel</GhostBtn>
@@ -1394,7 +1394,7 @@ function NewPurchaseOrder({
                                   });
                                   setShowRecommendFor(null);
                                 }}
-                                style={{ padding: "5px 12px", border: "none", background: "#1B6CA8", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter", whiteSpace: "nowrap" }}>
+                                style={{ padding: "5px 12px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter", whiteSpace: "nowrap" }}>
                                 + Add to PO
                               </button>
                             </td>

@@ -128,7 +128,7 @@ export default function PrintDialog({ jobType, docId, onClose }: Props) {
       style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.5)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4", width: 520, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 60px)", display: "flex", flexDirection: "column", boxShadow: "0 12px 40px rgba(10,22,44,0.18)" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", width: 520, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 60px)", display: "flex", flexDirection: "column", boxShadow: "0 12px 40px rgba(10,22,44,0.18)" }}>
 
         {/* Header */}
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
@@ -217,7 +217,7 @@ export default function PrintDialog({ jobType, docId, onClose }: Props) {
         <div style={{ padding: "12px 20px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end", gap: 10, flexShrink: 0 }}>
           <button
             onClick={onClose}
-            style={{ padding: "8px 18px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}
+            style={{ padding: "8px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}
           >
             Cancel
           </button>

@@ -26,7 +26,7 @@ export default function Prescriptions() {
           <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", margin: 0, letterSpacing: "-0.02em" }}>Prescriptions</h1>
           <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>℞ {prescriptions.length} total · 2 pending</div>
         </div>
-        <button style={{ padding: "8px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff" }}>+ New Prescription</button>
+        <button style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff" }}>+ New Prescription</button>
       </div>
 
       {/* Status summary */}
@@ -49,19 +49,17 @@ export default function Prescriptions() {
 
       <div className="grid gap-4" style={{ gridTemplateColumns: selected ? "1fr 380px" : "1fr" }}>
         {/* List */}
-        <div style={{ background: "#fff", border: "1px solid #DDE3EC" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC" }}>
           <div style={{ padding: "14px 20px", borderBottom: "1px solid #DDE3EC", display: "flex", gap: 12 }}>
-            <input
-              type="text"
-              placeholder="Search by patient, Rx ID, or doctor..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ flex: 1, padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter" }}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "5px 10px", flex: 1 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Search by patient, Rx ID, or doctor..." value={search} onChange={(e) => setSearch(e.target.value)}
+                style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+            </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              style={{ padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer" }}
+              style={{ padding: "10px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", minHeight: 40, boxSizing: "border-box" as const }}
             >
               {["All", "Pending", "Partial", "Dispensed", "Cancelled"].map(s => <option key={s}>{s}</option>)}
             </select>
@@ -104,7 +102,7 @@ export default function Prescriptions() {
 
         {/* Detail panel */}
         {selected && (
-          <div style={{ background: "#fff", border: "1px solid #DDE3EC", padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="flex justify-between items-start">
               <div>
                 <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#0C1B33" }}>{selected.id}</div>
@@ -142,9 +140,9 @@ export default function Prescriptions() {
             </div>
 
             <div className="flex gap-2">
-              <button onClick={() => setPrintJob({ jobType: "Prescription Label", docId: selected.id })} style={{ flex: 1, padding: "9px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Print Label</button>
+              <button onClick={() => setPrintJob({ jobType: "Prescription Label", docId: selected.id })} style={{ flex: 1, padding: "9px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Print Label</button>
               {selected.status === "Pending" && (
-                <button style={{ flex: 1, padding: "9px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontWeight: 600 }}>Dispense</button>
+                <button style={{ flex: 1, padding: "9px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontWeight: 600 }}>Dispense</button>
               )}
             </div>
           </div>

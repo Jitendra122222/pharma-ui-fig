@@ -101,26 +101,26 @@ function ReturnItemsTable({
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.packs || ""} disabled={readOnly} onChange={e => onChange(item.id, "packs", parseFloat(e.target.value) || 0)}
-                  style={{ width: 52, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 52, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.qty || ""} disabled={readOnly} onChange={e => onChange(item.id, "qty", parseFloat(e.target.value) || 0)}
-                  style={{ width: 60, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", fontWeight: 600, color: readOnly ? "#6B7280" : "#C62828", background: readOnly ? "#F8FAFC" : "#fff" }} />
+                  style={{ width: 60, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", fontWeight: 600, color: readOnly ? "#6B7280" : "#C62828", background: readOnly ? "#F8FAFC" : "#fff" }} />
               </td>
               <td style={{ padding: "4px 8px", fontSize: 13, fontFamily: "JetBrains Mono", textAlign: "right", color: "#9CA3AF" }}>
                 {item.mrp > 0 ? `₹${item.mrp.toFixed(2)}` : "—"}
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.saleRate || ""} disabled={readOnly} onChange={e => onChange(item.id, "saleRate", parseFloat(e.target.value) || 0)}
-                  style={{ width: 64, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 64, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.disc || ""} disabled={readOnly} onChange={e => onChange(item.id, "disc", parseFloat(e.target.value) || 0)}
-                  style={{ width: 48, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.gst || ""} disabled={readOnly} onChange={e => onChange(item.id, "gst", parseFloat(e.target.value) || 0)}
-                  style={{ width: 48, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#C62828", whiteSpace: "nowrap" }}>
                 {item.medicineName ? `-₹${calcAmount(item).toFixed(2)}` : "—"}
@@ -171,25 +171,20 @@ function SalesReturnsList({ onNew, onOpen }: { onNew: () => void; onOpen: (r: ty
   const anyFilter = search || fromDate || toDate || statusFilter !== "All";
 
   return (
-    <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+    <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
       <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6" }}>
         <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Sales Return Notes</div>
       </div>
       <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ position: "relative", flex: "0 1 280px", minWidth: 220 }}>
-          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A94A8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 14px", flex: "0 1 280px", minWidth: 220, minHeight: 40, boxSizing: "border-box" as const }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input type="text" placeholder="Search return no, invoice no, patient..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: "100%", padding: "10px 14px 10px 38px", border: "1px solid #EDF0F5", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", color: "#2B3A4F", minHeight: 40 }} />
+            style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
         </div>
         <DateRangePicker from={fromDate} to={toDate} onChange={(f, t) => { setFromDate(f); setToDate(t); }} />
         <div style={{ position: "relative" }}>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            style={{ padding: "10px 34px 10px 14px", border: "1px solid #EDF0F5", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", color: statusFilter === "All" ? "#8A94A8" : "#2B3A4F", minHeight: 40, appearance: "none", WebkitAppearance: "none" }}>
+            style={{ padding: "10px 34px 10px 14px", border: "1px solid #EDF0F5", borderRadius: 6, fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", color: statusFilter === "All" ? "#8A94A8" : "#2B3A4F", minHeight: 40, appearance: "none", WebkitAppearance: "none" }}>
             {["All", "Posted", "Draft"].map(s => (
               <option key={s} value={s}>{s === "All" ? "All Return Status" : s}</option>
             ))}
@@ -200,12 +195,12 @@ function SalesReturnsList({ onNew, onOpen }: { onNew: () => void; onOpen: (r: ty
         </div>
         {anyFilter && (
           <button onClick={() => { setSearch(""); setFromDate(""); setToDate(""); setStatusFilter("All"); }}
-            style={{ padding: "10px 14px", border: "1px solid #EDF0F5", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter", minHeight: 40 }}>
+            style={{ padding: "10px 14px", border: "1px solid #EDF0F5", borderRadius: 6, background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter", minHeight: 40 }}>
             Clear
           </button>
         )}
         <div style={{ marginLeft: "auto" }}>
-          <button onClick={onNew} style={{ padding: "10px 18px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, minHeight: 40, whiteSpace: "nowrap" }}>+ New Return</button>
+          <button onClick={onNew} style={{ padding: "10px 18px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, minHeight: 40, whiteSpace: "nowrap" }}>+ New Return</button>
         </div>
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -444,20 +439,20 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {isExisting && readOnly && (
             <>
-              <button onClick={() => setPrintJob({ jobType: "Sales Return", docId: returnRecord?.id })} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Print</button>
+              <button onClick={() => setPrintJob({ jobType: "Sales Return", docId: returnRecord?.id })} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Print</button>
               <button onClick={() => setReadOnly(false)}
-                style={{ padding: "7px 20px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Edit</button>
+                style={{ padding: "7px 20px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Edit</button>
             </>
           )}
           {isExisting && !readOnly && (
             <>
-              <button onClick={() => setReadOnly(true)} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-              <button onClick={() => setSaved("posted")} style={{ padding: "7px 20px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save Changes</button>
+              <button onClick={() => setReadOnly(true)} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+              <button onClick={() => setSaved("posted")} style={{ padding: "7px 20px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save Changes</button>
             </>
           )}
           {!isExisting && (
             <>
-              <button onClick={onBack} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+              <button onClick={onBack} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
               <button disabled={!hasItems} onClick={() => setSaved("draft")} style={{ padding: "7px 16px", border: `1px solid ${hasItems ? "#E8ECF4" : "#F0F0F0"}`, background: hasItems ? "#fff" : "#F5F5F5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#1A2436" : "#BDBDBD", fontFamily: "Inter" }}>Save Draft</button>
               <button disabled={!hasItems} onClick={() => { setSaved("posted"); setPrintJob({ jobType: "Sales Return", docId: "SRN-2025-0010" }); }} style={{ padding: "7px 20px", border: "none", background: hasItems ? "#1B6CA8" : "#C8D6E5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#fff" : "#8FA3B1", fontFamily: "Inter", fontWeight: 600 }}>Save &amp; Print Return</button>
             </>
@@ -467,13 +462,13 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
 
       {showBackConfirm && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "20px 24px", width: 260, textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "20px 24px", width: 260, textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
             <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436", marginBottom: 6 }}>Save before leaving?</div>
             <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter", marginBottom: 18, lineHeight: 1.5 }}>Save this return as a draft before going back?</div>
             <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-              <button onClick={() => setShowBackConfirm(false)} style={{ padding: "6px 14px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>Cancel</button>
-              <button onClick={() => { setSaved("draft"); setShowBackConfirm(false); }} style={{ padding: "6px 16px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save</button>
-              <button onClick={onBack} style={{ padding: "6px 14px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#C62828", fontFamily: "Inter" }}>Discard</button>
+              <button onClick={() => setShowBackConfirm(false)} style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>Cancel</button>
+              <button onClick={() => { setSaved("draft"); setShowBackConfirm(false); }} style={{ padding: "6px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save</button>
+              <button onClick={onBack} style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#C62828", fontFamily: "Inter" }}>Discard</button>
             </div>
           </div>
         </div>
@@ -485,7 +480,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Customer / Patient</div>
             <div style={{ display: "flex", gap: 6 }}>
               {readOnly ? (
-                <div style={{ flex: 1, padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#F8FAFC", color: "#1A2436", boxSizing: "border-box" }}>
+                <div style={{ flex: 1, padding: "8px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#F8FAFC", color: "#1A2436", boxSizing: "border-box" }}>
                   {patient ? patient.name : (returnRecord?.patient ?? "—")}
                 </div>
               ) : (
@@ -493,7 +488,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
               )}
               {patient && (
                 <button onClick={() => setShowDrawer(true)}
-                  style={{ padding: "8px 10px", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
                   Details
                 </button>
               )}
@@ -503,13 +498,13 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
           <div style={{ flex: "0 0 140px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Return Date</div>
             <input type="date" value={returnDate} disabled={readOnly} onChange={e => setReturnDate(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
           </div>
 
           <div style={{ flex: "0 0 240px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Original Invoice Ref</div>
             {readOnly ? (
-              <div style={{ padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", background: "#F8FAFC", color: "#1B6CA8", boxSizing: "border-box" }}>
+              <div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", background: "#F8FAFC", color: "#1B6CA8", boxSizing: "border-box" }}>
                 {origInvoiceId || "—"}
               </div>
             ) : (
@@ -525,14 +520,14 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
           <div style={{ flex: "0 0 150px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Return Payment Type</div>
             <select value={payMethod} disabled={readOnly} onChange={e => setPayMethod(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: readOnly ? "#F8FAFC" : "#fff", boxSizing: "border-box", cursor: readOnly ? "default" : "pointer", color: readOnly ? "#6B7280" : "#1A2436" }}>
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: readOnly ? "#F8FAFC" : "#fff", boxSizing: "border-box", cursor: readOnly ? "default" : "pointer", color: readOnly ? "#6B7280" : "#1A2436" }}>
               {["Cash", "Card", "UPI", "Insurance", "Credit Note"].map(m => <option key={m}>{m}</option>)}
             </select>
           </div>
 
           <div>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Stock Allocation</div>
-            <div style={{ display: "flex", border: "1px solid #E8ECF4", overflow: "hidden", opacity: readOnly ? 0.6 : 1 }}>
+            <div style={{ display: "flex", borderRadius: 6, border: "1px solid #E8ECF4", overflow: "hidden", opacity: readOnly ? 0.6 : 1 }}>
               {(["FEFO", "LEFO"] as const).map(opt => (
                 <button key={opt} onClick={() => !readOnly && setAlloc(opt)} disabled={readOnly}
                   style={{ padding: "7px 14px", fontSize: 12, fontWeight: 700, border: "none", cursor: readOnly ? "default" : "pointer", fontFamily: "Inter", background: alloc === opt ? "#1B6CA8" : "#fff", color: alloc === opt ? "#fff" : "#9CA3AF", letterSpacing: "0.04em" }}>
@@ -552,7 +547,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
       </div>
 
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", margin: "10px 20px 0", minHeight: 0 }}>
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, gap: 12 }}>
             <div>
               <span style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Return Items</span>
@@ -563,7 +558,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Return Reason</label>
               <select value={returnReason} disabled={readOnly} onChange={e => setReturnReason(e.target.value)}
-                style={{ padding: "6px 10px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: readOnly ? "#F8FAFC" : "#fff", cursor: readOnly ? "default" : "pointer", minWidth: 220, color: readOnly ? "#6B7280" : "#1A2436" }}>
+                style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: readOnly ? "#F8FAFC" : "#fff", cursor: readOnly ? "default" : "pointer", minWidth: 220, color: readOnly ? "#6B7280" : "#1A2436" }}>
                 {RETURN_REASONS.map(r => <option key={r}>{r}</option>)}
               </select>
             </div>
@@ -573,41 +568,41 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "10px 20px 0", flexShrink: 0 }}>
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
           <div style={{ padding: "8px 14px", borderBottom: "1px solid #EEF1F6", fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Return Note</div>
           <div style={{ padding: "10px 14px" }}>
             <textarea value={note} disabled={readOnly} onChange={e => setNote(e.target.value)} rows={3}
               placeholder={readOnly ? "" : "Notes, condition of returned items, additional remarks..."}
-              style={{ width: "100%", padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", resize: "none", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436", boxSizing: "border-box" }} />
+              style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", resize: "none", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436", boxSizing: "border-box" }} />
           </div>
         </div>
 
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
           <div style={{ padding: "8px 14px", borderBottom: "1px solid #EEF1F6", fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Return Settlement</div>
           <div style={{ padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
               <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Payment Reference No</div>
               <input value={settlementRef} disabled={readOnly} onChange={e => setSettlementRef(e.target.value)}
                 placeholder={readOnly ? "" : "TXN / cheque / voucher #"}
-                style={{ width: "100%", padding: "7px 10px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Payment Type</div>
               <select value={payMethod} disabled={readOnly} onChange={e => setPayMethod(e.target.value)}
-                style={{ width: "100%", padding: "7px 10px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: readOnly ? "#F8FAFC" : "#fff", boxSizing: "border-box", cursor: readOnly ? "default" : "pointer", color: readOnly ? "#6B7280" : "#1A2436" }}>
+                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: readOnly ? "#F8FAFC" : "#fff", boxSizing: "border-box", cursor: readOnly ? "default" : "pointer", color: readOnly ? "#6B7280" : "#1A2436" }}>
                 {["Cash", "Card", "UPI", "Insurance", "Credit Note"].map(m => <option key={m}>{m}</option>)}
               </select>
             </div>
             <div>
               <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Refund Amount</div>
-              <div style={{ padding: "7px 10px", border: "1px solid #E8ECF4", background: "#F8FAFC", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#C62828" }}>
+              <div style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#F8FAFC", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#C62828" }}>
                 -₹{refundAmount.toFixed(2)}
               </div>
             </div>
             <div>
               <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Status</div>
               <select value={settlementStatus} disabled={readOnly} onChange={e => setSettlementStatus(e.target.value)}
-                style={{ width: "100%", padding: "7px 10px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: readOnly ? "#F8FAFC" : "#fff", boxSizing: "border-box", cursor: readOnly ? "default" : "pointer", color: readOnly ? "#6B7280" : "#1A2436" }}>
+                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: readOnly ? "#F8FAFC" : "#fff", boxSizing: "border-box", cursor: readOnly ? "default" : "pointer", color: readOnly ? "#6B7280" : "#1A2436" }}>
                 {RETURN_STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -645,14 +640,14 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
 
       {saved && (
         <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, background: "rgba(10,22,44,0.45)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: 60, textAlign: "center", minWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: 60, textAlign: "center", minWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ fontFamily: "Outfit", fontSize: 20, fontWeight: 700, color: "#1A2436", marginBottom: 8 }}>
               Return {saved === "posted" ? "Saved & Printed" : "Saved as Draft"}
             </div>
             <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 24 }}>SRN-2025-0010 · Refund ₹{refundAmount.toFixed(2)}</div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <button onClick={onBack} style={{ padding: "9px 20px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Back to Sales</button>
-              <button onClick={() => setPrintJob({ jobType: "Sales Return", docId: "SRN-2025-0010" })} style={{ padding: "9px 20px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Print Return</button>
+              <button onClick={onBack} style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Back to Sales</button>
+              <button onClick={() => setPrintJob({ jobType: "Sales Return", docId: "SRN-2025-0010" })} style={{ padding: "9px 20px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Print Return</button>
             </div>
           </div>
         </div>
