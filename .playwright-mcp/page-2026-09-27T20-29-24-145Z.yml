@@ -1,0 +1,43 @@
+- generic [ref=f10e3]:
+  - generic [ref=f10e7]:
+    - generic [ref=f10e8]:
+      - generic [ref=f10e9]: Rx
+      - generic [ref=f10e11]:
+        - generic [ref=f10e12]: PharmERP
+        - generic [ref=f10e13]: City Central Pharmacy
+    - heading "Complete Pharmacy Management" [level=1] [ref=f10e15]: Complete PharmacyManagement
+    - paragraph [ref=f10e16]: Streamline your operations, manage inventory, track sales and grow your pharmacy business — all in one place.
+    - generic [ref=f10e17]:
+      - generic [ref=f10e18]: Inventory Management
+      - generic [ref=f10e24]: Purchase & Sales
+      - generic [ref=f10e32]: Invoices & Reports
+      - generic [ref=f10e39]: Multi-Location Support
+  - generic [ref=f10e48]:
+    - generic [ref=f10e49]:
+      - generic [ref=f10e50]: +
+      - generic [ref=f10e51]: +
+    - generic [ref=f10e52]:
+      - generic [ref=f10e53]:
+        - heading "Welcome Back" [level=1] [ref=f10e54]
+        - paragraph [ref=f10e55]: Sign in to your pharmacy workspace
+      - generic [ref=f10e56]:
+        - generic [ref=f10e57]:
+          - generic [ref=f10e58]: Mobile Number
+          - generic [ref=f10e59]:
+            - generic [ref=f10e60] [cursor=pointer]: "+91"
+            - textbox "Enter your mobile number" [ref=f10e64]: "9999999999"
+        - generic [ref=f10e65]:
+          - generic [ref=f10e66]: Password
+          - generic [ref=f10e67]:
+            - textbox "Enter your password" [ref=f10e72]: admin123
+            - button [ref=f10e73] [cursor=pointer]
+        - button "Sign In" [ref=f10e78] [cursor=pointer]
+        - generic [ref=f10e82]:
+          - generic [ref=f10e83] [cursor=pointer]: Remember me
+          - button "Forgot Password?" [ref=f10e88] [cursor=pointer]
+        - generic [ref=f10e90]:
+          - text: Don't have an account?
+          - button "Register" [ref=f10e91] [cursor=pointer]
+        - generic [ref=f10e92]:
+          - generic [ref=f10e93]: PharmERP v2.1.0
+          - generic [ref=f10e94]: © 2026 City Central Pharmacy

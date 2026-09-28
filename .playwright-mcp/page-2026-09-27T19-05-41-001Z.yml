@@ -1,0 +1,322 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e475]:
+    - complementary [ref=f2e476]:
+      - generic [ref=f2e477]:
+        - generic [ref=f2e478]:
+          - generic [ref=f2e479]: Rx
+          - generic [ref=f2e480]:
+            - generic [ref=f2e481]: PharmERP
+            - generic [ref=f2e482]: City Central Pharmacy
+        - button "Collapse sidebar" [ref=f2e483] [cursor=pointer]: «
+      - navigation [ref=f2e484]:
+        - generic [ref=f2e485]:
+          - generic [ref=f2e486]: Core Operations
+          - button "Dashboard" [ref=f2e487] [cursor=pointer]
+          - button "Sales 2" [ref=f2e492] [cursor=pointer]:
+            - generic [ref=f2e496]: Sales
+            - generic [ref=f2e497]: "2"
+          - button "Prescriptions 2" [ref=f2e498] [cursor=pointer]:
+            - generic [ref=f2e502]: Prescriptions
+            - generic [ref=f2e503]: "2"
+          - button "Patients" [ref=f2e504] [cursor=pointer]
+        - generic [ref=f2e509]:
+          - generic [ref=f2e510]: Inventory & Stock
+          - button "Inventory 3" [ref=f2e511] [cursor=pointer]:
+            - generic [ref=f2e515]: Inventory
+            - generic [ref=f2e516]: "3"
+          - button "Stock Management" [ref=f2e517] [cursor=pointer]
+          - button "Short Book 8" [ref=f2e523] [cursor=pointer]:
+            - generic [ref=f2e527]: Short Book
+            - generic [ref=f2e528]: "8"
+          - button "Expiry Management 12" [ref=f2e529] [cursor=pointer]:
+            - generic [ref=f2e534]: Expiry Management
+            - generic [ref=f2e535]: "12"
+        - generic [ref=f2e536]:
+          - generic [ref=f2e537]: Purchasing
+          - button "Purchasing" [ref=f2e538] [cursor=pointer]
+          - button "Distributors" [ref=f2e545] [cursor=pointer]
+        - generic [ref=f2e551]:
+          - generic [ref=f2e552]: Finance
+          - button "Accounts" [ref=f2e553] [cursor=pointer]
+          - button "Insurance & Claims" [ref=f2e559] [cursor=pointer]
+        - generic [ref=f2e564]:
+          - generic [ref=f2e565]: Analytics
+          - button "Reports" [ref=f2e566] [cursor=pointer]
+        - generic [ref=f2e571]:
+          - generic [ref=f2e572]: Administration
+          - button "HR & Payroll" [ref=f2e573] [cursor=pointer]
+          - button "Settings" [ref=f2e578] [cursor=pointer]
+      - generic [ref=f2e584]:
+        - generic [ref=f2e585]: JD
+        - generic [ref=f2e586]:
+          - generic [ref=f2e587]: Jane Doe
+          - generic [ref=f2e588]: Head Pharmacist
+    - generic [ref=f2e589]:
+      - banner [ref=f2e590]:
+        - generic [ref=f2e591]:
+          - generic [ref=f2e592]: PharmERP
+          - generic [ref=f2e593]: ›
+          - generic [ref=f2e594]: Stock Management
+        - generic [ref=f2e595]:
+          - generic [ref=f2e596]:
+            - textbox "Quick search..." [ref=f2e597]
+            - generic [ref=f2e598]: ⌕
+          - generic [ref=f2e599] [cursor=pointer]:
+            - text: 🔔
+            - generic [ref=f2e600]: "5"
+          - generic [ref=f2e601]: 28 Jul 2025
+          - generic [ref=f2e603]:
+            - generic [ref=f2e604]: RK
+            - generic [ref=f2e606]:
+              - generic [ref=f2e607]: Rajesh Kumar
+              - generic [ref=f2e608]: Pharmacist
+            - button "Logout" [ref=f2e609] [cursor=pointer]
+      - main [ref=f2e610]:
+        - generic [ref=f2e611]:
+          - generic [ref=f2e612]:
+            - heading "Stock Management" [level=1] [ref=f2e613]
+            - generic [ref=f2e614]: Overview · Adjustments · Batches · Expiry · Transfers · Investigation
+          - generic [ref=f2e615]:
+            - button "Stock Overview" [ref=f2e616] [cursor=pointer]
+            - button "Adjustments" [ref=f2e617] [cursor=pointer]
+            - button "Batch Tracking" [ref=f2e618] [cursor=pointer]
+            - button "Expiry Management" [ref=f2e619] [cursor=pointer]
+            - button "Stock Transfer" [ref=f2e620] [cursor=pointer]
+            - button "Investigation" [ref=f2e621] [cursor=pointer]
+          - generic [ref=f2e622]:
+            - generic [ref=f2e623]:
+              - generic [ref=f2e624]:
+                - generic [ref=f2e625]: Total SKUs
+                - generic [ref=f2e626]: "12"
+                - generic [ref=f2e627]: Active products
+              - generic [ref=f2e628]:
+                - generic [ref=f2e629]: Stock Value (Cost)
+                - generic [ref=f2e630]: ₹1892
+                - generic [ref=f2e631]: Current inventory cost
+              - generic [ref=f2e632]:
+                - generic [ref=f2e633]: Retail Value
+                - generic [ref=f2e634]: ₹3152
+                - generic [ref=f2e635]: ₹1260 potential profit
+              - generic [ref=f2e636]:
+                - generic [ref=f2e637]: Alerts
+                - generic [ref=f2e638]: "4"
+                - generic [ref=f2e639]: Low stock or out of stock
+            - generic [ref=f2e640]:
+              - generic [ref=f2e641]:
+                - button "Insights 4 alerts" [ref=f2e642] [cursor=pointer]:
+                  - text: Insights
+                  - generic [ref=f2e643]: 4 alerts
+                - button "Inventory 12 SKUs" [active] [ref=f2e644] [cursor=pointer]:
+                  - text: Inventory
+                  - generic [ref=f2e645]: 12 SKUs
+                - button "Location Map 12 zones" [ref=f2e646] [cursor=pointer]:
+                  - text: Location Map
+                  - generic [ref=f2e647]: 12 zones
+                - button "Movement Heatmap Sep" [ref=f2e648] [cursor=pointer]:
+                  - text: Movement Heatmap
+                  - generic [ref=f2e649]: Sep
+              - generic [ref=f2e886]:
+                - generic [ref=f2e887]:
+                  - textbox "Search drug or category..." [ref=f2e892]
+                  - button "All" [ref=f2e893] [cursor=pointer]
+                  - button "Low Stock" [ref=f2e894] [cursor=pointer]
+                  - button "Out of Stock" [ref=f2e895] [cursor=pointer]
+                - table [ref=f2e897]:
+                  - rowgroup [ref=f2e898]:
+                    - row [ref=f2e899]:
+                      - columnheader "Drug Name" [ref=f2e900] [cursor=pointer]
+                      - columnheader "Category" [ref=f2e907] [cursor=pointer]
+                      - columnheader "Location" [ref=f2e914] [cursor=pointer]
+                      - columnheader "Stock Qty" [ref=f2e921] [cursor=pointer]
+                      - columnheader "Min Stock" [ref=f2e928] [cursor=pointer]
+                      - columnheader "Reorder Point" [ref=f2e935]
+                      - columnheader "Unit" [ref=f2e937] [cursor=pointer]
+                      - columnheader "Cost/Unit" [ref=f2e944] [cursor=pointer]
+                      - columnheader "Price/Unit" [ref=f2e951] [cursor=pointer]
+                      - columnheader "Margin" [ref=f2e958]
+                      - columnheader "Stock Value" [ref=f2e960]
+                      - columnheader "Confidence" [ref=f2e962]
+                      - columnheader "Velocity/wk" [ref=f2e964]
+                      - columnheader "Status" [ref=f2e966] [cursor=pointer]
+                  - rowgroup [ref=f2e973]:
+                    - row [ref=f2e974] [cursor=pointer]:
+                      - cell "Amoxicillin 500mg" [ref=f2e975]
+                      - cell "Antibiotics" [ref=f2e976]
+                      - cell "A1-02" [ref=f2e977]
+                      - cell "240" [ref=f2e978]
+                      - cell "50" [ref=f2e979]
+                      - cell [ref=f2e980]
+                      - cell "Capsules" [ref=f2e983]
+                      - cell "₹0.45" [ref=f2e984]
+                      - cell "₹0.85" [ref=f2e985]
+                      - cell "47%" [ref=f2e986]
+                      - cell "₹108.00" [ref=f2e987]
+                      - cell "100%" [ref=f2e988]
+                      - cell "3" [ref=f2e990]
+                      - cell "In Stock" [ref=f2e991]
+                    - row [ref=f2e992] [cursor=pointer]:
+                      - cell "Metformin 1000mg" [ref=f2e993]
+                      - cell "Antidiabetics" [ref=f2e994]
+                      - cell "B3-05" [ref=f2e995]
+                      - cell "18" [ref=f2e996]
+                      - cell "30" [ref=f2e997]
+                      - cell [ref=f2e998]
+                      - cell "Tablets" [ref=f2e1001]
+                      - cell "₹0.18" [ref=f2e1002]
+                      - cell "₹0.32" [ref=f2e1003]
+                      - cell "44%" [ref=f2e1004]
+                      - cell "₹3.24" [ref=f2e1005]
+                      - cell "65%" [ref=f2e1006]
+                      - cell "3" [ref=f2e1008]
+                      - cell "Low Stock" [ref=f2e1009]
+                    - row [ref=f2e1010] [cursor=pointer]:
+                      - cell "Lisinopril 10mg" [ref=f2e1011]
+                      - cell "Antihypertensives" [ref=f2e1012]
+                      - cell "B2-01" [ref=f2e1013]
+                      - cell "0" [ref=f2e1014]
+                      - cell "40" [ref=f2e1015]
+                      - cell [ref=f2e1016]
+                      - cell "Tablets" [ref=f2e1018]
+                      - cell "₹0.28" [ref=f2e1019]
+                      - cell "₹0.56" [ref=f2e1020]
+                      - cell "50%" [ref=f2e1021]
+                      - cell "₹0.00" [ref=f2e1022]
+                      - cell "45%" [ref=f2e1023]
+                      - cell "9" [ref=f2e1025]
+                      - cell "Out of Stock" [ref=f2e1026]
+                    - row [ref=f2e1027] [cursor=pointer]:
+                      - cell "Atorvastatin 20mg" [ref=f2e1028]
+                      - cell "Statins" [ref=f2e1029]
+                      - cell "C1-04" [ref=f2e1030]
+                      - cell "312" [ref=f2e1031]
+                      - cell "60" [ref=f2e1032]
+                      - cell [ref=f2e1033]
+                      - cell "Tablets" [ref=f2e1036]
+                      - cell "₹0.38" [ref=f2e1037]
+                      - cell "₹0.78" [ref=f2e1038]
+                      - cell "51%" [ref=f2e1039]
+                      - cell "₹118.56" [ref=f2e1040]
+                      - cell "80%" [ref=f2e1041]
+                      - cell "10" [ref=f2e1043]
+                      - cell "In Stock" [ref=f2e1044]
+                    - row [ref=f2e1045] [cursor=pointer]:
+                      - cell "Omeprazole 20mg" [ref=f2e1046]
+                      - cell "Antacids" [ref=f2e1047]
+                      - cell "A2-08" [ref=f2e1048]
+                      - cell "145" [ref=f2e1049]
+                      - cell "50" [ref=f2e1050]
+                      - cell [ref=f2e1051]
+                      - cell "Capsules" [ref=f2e1054]
+                      - cell "₹0.31" [ref=f2e1055]
+                      - cell "₹0.62" [ref=f2e1056]
+                      - cell "50%" [ref=f2e1057]
+                      - cell "₹44.95" [ref=f2e1058]
+                      - cell "70%" [ref=f2e1059]
+                      - cell "—" [ref=f2e1061]
+                      - cell "In Stock" [ref=f2e1062]
+                    - row [ref=f2e1063] [cursor=pointer]:
+                      - cell "Salbutamol Inhaler" [ref=f2e1064]
+                      - cell "Bronchodilators" [ref=f2e1065]
+                      - cell "D1-01" [ref=f2e1066]
+                      - cell "28" [ref=f2e1067]
+                      - cell "25" [ref=f2e1068]
+                      - cell [ref=f2e1069]
+                      - cell "Inhaler" [ref=f2e1072]
+                      - cell "₹4.20" [ref=f2e1073]
+                      - cell "₹8.50" [ref=f2e1074]
+                      - cell "51%" [ref=f2e1075]
+                      - cell "₹117.60" [ref=f2e1076]
+                      - cell "70%" [ref=f2e1077]
+                      - cell "—" [ref=f2e1079]
+                      - cell "In Stock" [ref=f2e1080]
+                    - row [ref=f2e1081] [cursor=pointer]:
+                      - cell "Paracetamol 500mg" [ref=f2e1082]
+                      - cell "Analgesics" [ref=f2e1083]
+                      - cell "A3-01" [ref=f2e1084]
+                      - cell "1,200" [ref=f2e1085]
+                      - cell "200" [ref=f2e1086]
+                      - cell [ref=f2e1087]
+                      - cell "Tablets" [ref=f2e1090]
+                      - cell "₹0.04" [ref=f2e1091]
+                      - cell "₹0.08" [ref=f2e1092]
+                      - cell "50%" [ref=f2e1093]
+                      - cell "₹48.00" [ref=f2e1094]
+                      - cell "80%" [ref=f2e1095]
+                      - cell "9" [ref=f2e1097]
+                      - cell "In Stock" [ref=f2e1098]
+                    - row [ref=f2e1099] [cursor=pointer]:
+                      - cell "Ciprofloxacin 500mg" [ref=f2e1100]
+                      - cell "Antibiotics" [ref=f2e1101]
+                      - cell "A1-06" [ref=f2e1102]
+                      - cell "12" [ref=f2e1103]
+                      - cell "40" [ref=f2e1104]
+                      - cell [ref=f2e1105]
+                      - cell "Tablets" [ref=f2e1108]
+                      - cell "₹0.65" [ref=f2e1109]
+                      - cell "₹1.20" [ref=f2e1110]
+                      - cell "46%" [ref=f2e1111]
+                      - cell "₹7.80" [ref=f2e1112]
+                      - cell "65%" [ref=f2e1113]
+                      - cell "2" [ref=f2e1115]
+                      - cell "Low Stock" [ref=f2e1116]
+                    - row [ref=f2e1117] [cursor=pointer]:
+                      - cell "Amlodipine 5mg" [ref=f2e1118]
+                      - cell "Antihypertensives" [ref=f2e1119]
+                      - cell "B2-03" [ref=f2e1120]
+                      - cell "380" [ref=f2e1121]
+                      - cell "60" [ref=f2e1122]
+                      - cell [ref=f2e1123]
+                      - cell "Tablets" [ref=f2e1126]
+                      - cell "₹0.22" [ref=f2e1127]
+                      - cell "₹0.45" [ref=f2e1128]
+                      - cell "51%" [ref=f2e1129]
+                      - cell "₹83.60" [ref=f2e1130]
+                      - cell "70%" [ref=f2e1131]
+                      - cell "—" [ref=f2e1133]
+                      - cell "In Stock" [ref=f2e1134]
+                    - row [ref=f2e1135] [cursor=pointer]:
+                      - cell "Insulin Glargine" [ref=f2e1136]
+                      - cell "Hormones" [ref=f2e1137]
+                      - cell "COLD-01" [ref=f2e1138]
+                      - cell "45" [ref=f2e1139]
+                      - cell "20" [ref=f2e1140]
+                      - cell [ref=f2e1141]
+                      - cell "Vial" [ref=f2e1144]
+                      - cell "₹28.00" [ref=f2e1145]
+                      - cell "₹42.00" [ref=f2e1146]
+                      - cell "33%" [ref=f2e1147]
+                      - cell "₹1260.00" [ref=f2e1148]
+                      - cell "80%" [ref=f2e1149]
+                      - cell "1" [ref=f2e1151]
+                      - cell "In Stock" [ref=f2e1152]
+                    - row [ref=f2e1153] [cursor=pointer]:
+                      - cell "Warfarin 5mg" [ref=f2e1154]
+                      - cell "Anticoagulants" [ref=f2e1155]
+                      - cell "B4-02" [ref=f2e1156]
+                      - cell "6" [ref=f2e1157]
+                      - cell "30" [ref=f2e1158]
+                      - cell [ref=f2e1159]
+                      - cell "Tablets" [ref=f2e1162]
+                      - cell "₹0.52" [ref=f2e1163]
+                      - cell "₹0.95" [ref=f2e1164]
+                      - cell "45%" [ref=f2e1165]
+                      - cell "₹3.12" [ref=f2e1166]
+                      - cell "85%" [ref=f2e1167]
+                      - cell "1" [ref=f2e1169]
+                      - cell "Low Stock" [ref=f2e1170]
+                    - row [ref=f2e1171] [cursor=pointer]:
+                      - cell "Sertraline 50mg" [ref=f2e1172]
+                      - cell "Antidepressants" [ref=f2e1173]
+                      - cell "C2-07" [ref=f2e1174]
+                      - cell "220" [ref=f2e1175]
+                      - cell "40" [ref=f2e1176]
+                      - cell [ref=f2e1177]
+                      - cell "Tablets" [ref=f2e1180]
+                      - cell "₹0.44" [ref=f2e1181]
+                      - cell "₹0.88" [ref=f2e1182]
+                      - cell "50%" [ref=f2e1183]
+                      - cell "₹96.80" [ref=f2e1184]
+                      - cell "70%" [ref=f2e1185]
+                      - cell "—" [ref=f2e1187]
+                      - cell "In Stock" [ref=f2e1188]
+  - generic [aria-hidden] [ref=f2e470]: ₹0k

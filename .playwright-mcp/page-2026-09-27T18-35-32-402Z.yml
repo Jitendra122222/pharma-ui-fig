@@ -1,0 +1,259 @@
+- generic [ref=e1]:
+  - generic [ref=e472]:
+    - complementary [ref=e473]:
+      - generic [ref=e474]:
+        - generic [ref=e475]:
+          - generic [ref=e476]: Rx
+          - generic [ref=e477]:
+            - generic [ref=e478]: PharmERP
+            - generic [ref=e479]: City Central Pharmacy
+        - button "Collapse sidebar" [ref=e480] [cursor=pointer]: «
+      - navigation [ref=e481]:
+        - generic [ref=e482]:
+          - generic [ref=e483]: Core Operations
+          - button "Dashboard" [ref=e484] [cursor=pointer]
+          - button "Sales 2" [ref=e489] [cursor=pointer]:
+            - generic [ref=e493]: Sales
+            - generic [ref=e494]: "2"
+          - button "Prescriptions 2" [ref=e495] [cursor=pointer]:
+            - generic [ref=e499]: Prescriptions
+            - generic [ref=e500]: "2"
+          - button "Patients" [ref=e501] [cursor=pointer]
+        - generic [ref=e506]:
+          - generic [ref=e507]: Inventory & Stock
+          - button "Inventory 3" [ref=e508] [cursor=pointer]:
+            - generic [ref=e512]: Inventory
+            - generic [ref=e513]: "3"
+          - button "Stock Management" [ref=e514] [cursor=pointer]
+          - button "Short Book 8" [ref=e520] [cursor=pointer]:
+            - generic [ref=e524]: Short Book
+            - generic [ref=e525]: "8"
+          - button "Expiry Management 12" [ref=e526] [cursor=pointer]:
+            - generic [ref=e531]: Expiry Management
+            - generic [ref=e532]: "12"
+        - generic [ref=e533]:
+          - generic [ref=e534]: Purchasing
+          - button "Purchasing" [ref=e535] [cursor=pointer]
+          - button "Distributors" [ref=e542] [cursor=pointer]
+        - generic [ref=e548]:
+          - generic [ref=e549]: Finance
+          - button "Accounts" [ref=e550] [cursor=pointer]
+          - button "Insurance & Claims" [ref=e556] [cursor=pointer]
+        - generic [ref=e561]:
+          - generic [ref=e562]: Analytics
+          - button "Reports" [ref=e563] [cursor=pointer]
+        - generic [ref=e568]:
+          - generic [ref=e569]: Administration
+          - button "HR & Payroll" [ref=e570] [cursor=pointer]
+          - button "Settings" [ref=e575] [cursor=pointer]
+      - generic [ref=e581]:
+        - generic [ref=e582]: JD
+        - generic [ref=e583]:
+          - generic [ref=e584]: Jane Doe
+          - generic [ref=e585]: Head Pharmacist
+    - generic [ref=e586]:
+      - banner [ref=e587]:
+        - generic [ref=e588]:
+          - generic [ref=e589]: PharmERP
+          - generic [ref=e590]: ›
+          - generic [ref=e591]: Stock Management
+        - generic [ref=e592]:
+          - generic [ref=e593]:
+            - textbox "Quick search..." [ref=e594]
+            - generic [ref=e595]: ⌕
+          - generic [ref=e596] [cursor=pointer]:
+            - text: 🔔
+            - generic [ref=e597]: "5"
+          - generic [ref=e598]: 28 Jul 2025
+          - generic [ref=e600]:
+            - generic [ref=e601]: RK
+            - generic [ref=e603]:
+              - generic [ref=e604]: Rajesh Kumar
+              - generic [ref=e605]: Pharmacist
+            - button "Logout" [ref=e606] [cursor=pointer]
+      - main [ref=e607]:
+        - generic [ref=e608]:
+          - generic [ref=e609]:
+            - heading "Stock Management" [level=1] [ref=e610]
+            - generic [ref=e611]: Overview · Adjustments · Batches · Expiry · Transfers · Investigation
+          - generic [ref=e612]:
+            - button "Stock Overview" [ref=e613] [cursor=pointer]
+            - button "Adjustments" [ref=e614] [cursor=pointer]
+            - button "Batch Tracking" [ref=e615] [cursor=pointer]
+            - button "Expiry Management" [ref=e616] [cursor=pointer]
+            - button "Stock Transfer" [ref=e617] [cursor=pointer]
+            - button "Investigation" [ref=e618] [cursor=pointer]
+          - generic [ref=e2460]:
+            - generic [ref=e2461]:
+              - generic [ref=e2462]:
+                - generic [ref=e2463]: Open Cases
+                - generic [ref=e2464]: "1"
+              - generic [ref=e2465]:
+                - generic [ref=e2466]: In Progress
+                - generic [ref=e2467]: "1"
+              - generic [ref=e2468]:
+                - generic [ref=e2469]: Pending Approval
+                - generic [ref=e2470]: "1"
+              - generic [ref=e2471]:
+                - generic [ref=e2472]: Adjusted This Month
+                - generic [ref=e2473]: "1"
+            - generic [ref=e2474]:
+              - generic [ref=e2475]:
+                - generic [ref=e2476]: Variance Resolution Center
+                - generic [ref=e2477]: 2 of 5 cases resolved
+              - generic [ref=e2478]:
+                - generic [ref=e2479]:
+                  - generic [ref=e2480]: Resolution Rate
+                  - generic [ref=e2481]: 40%
+                - generic [ref=e2482]:
+                  - generic [ref=e2483]: Total Qty Adjusted
+                  - generic [ref=e2484]: "5"
+                - generic [ref=e2485]:
+                  - generic [ref=e2486]: Top Root Cause
+                  - generic [ref=e2487]: Purchase Entry Error
+                - generic [ref=e2488]:
+                  - generic [ref=e2489]: Rejected
+                  - generic [ref=e2490]: "0"
+              - generic [ref=e2491]:
+                - generic [ref=e2492]: Root Cause Breakdown
+                - generic [ref=e2493]:
+                  - generic [ref=e2494]:
+                    - generic [ref=e2495]: Purchase Entry Error
+                    - generic [ref=e2498]: "1"
+                  - generic [ref=e2499]:
+                    - generic [ref=e2500]: Unrecorded Sale
+                    - generic [ref=e2503]: "1"
+              - generic [ref=e2504]:
+                - generic [ref=e2505]: Recent Resolutions
+                - generic [ref=e2506]:
+                  - generic [ref=e2507]:
+                    - generic [ref=e2508]:
+                      - generic [ref=e2509]: Metformin 1000mg
+                      - generic [ref=e2510]: Purchase Entry Error
+                    - generic [ref=e2511]:
+                      - generic [ref=e2512]: Approved
+                      - generic [ref=e2513]: "+3"
+                  - generic [ref=e2514]:
+                    - generic [ref=e2515]:
+                      - generic [ref=e2516]: Warfarin 5mg
+                      - generic [ref=e2517]: Unrecorded SaleADJ-2026-0042
+                    - generic [ref=e2518]:
+                      - generic [ref=e2519]: Adjusted
+                      - generic [ref=e2520]: "-2"
+            - generic [ref=e2521]:
+              - generic [ref=e2522]:
+                - generic [ref=e2523]:
+                  - generic [ref=e2527]: Stock Audit Replay
+                  - generic [ref=e2528]: 15 audit events
+                - generic [ref=e2529]:
+                  - button "Reset" [ref=e2661] [cursor=pointer]
+                  - button "Play" [ref=e2662] [cursor=pointer]
+                  - button "Hide" [active] [ref=e2663] [cursor=pointer]
+              - generic [ref=e2664]:
+                - generic [ref=e2666]:
+                  - generic [ref=e2667]: Event 1 of 15
+                  - generic [ref=e2668]: 2026-09-15 08:12
+                - generic [ref=e2671]:
+                  - generic [ref=e2672]:
+                    - generic [ref=e2673]: Event Timeline
+                    - generic [ref=e2675]:
+                      - generic [ref=e2676]: +
+                      - generic [ref=e2678]:
+                        - generic [ref=e2679]:
+                          - generic [ref=e2680]: Case Opened
+                          - generic [ref=e2681]: 2026-09-15
+                        - generic [ref=e2682]: INV-2026-0001 — Amoxicillin 500mg
+                        - generic [ref=e2683]: "Physical count: 374, System: 380, Variance: -6"
+                        - generic [ref=e2684]: by Cashier
+                  - generic [ref=e2685]:
+                    - generic [ref=e2686]: Case Activity Summary
+                    - generic [ref=e2688]:
+                      - generic [ref=e2689]:
+                        - generic [ref=e2690]:
+                          - text: INV-2026-0001
+                          - generic [ref=e2691]: Amoxicillin 500mg
+                        - generic [ref=e2692]: 1 events
+                      - generic [ref=e2693]: "Last: Case Opened by Cashier"
+                      - generic [ref=e2694]: 1 actor
+            - generic [ref=e2531]:
+              - generic [ref=e2532]:
+                - generic [ref=e2533]: Stock Difference Investigations
+                - generic [ref=e2534]:
+                  - generic [ref=e2535]:
+                    - button "All" [ref=e2536] [cursor=pointer]
+                    - button "Open" [ref=e2537] [cursor=pointer]
+                    - button "In Progress" [ref=e2538] [cursor=pointer]
+                    - button "Pending Approval" [ref=e2539] [cursor=pointer]
+                    - button "Approved" [ref=e2540] [cursor=pointer]
+                    - button "Rejected" [ref=e2541] [cursor=pointer]
+                    - button "Adjusted" [ref=e2542] [cursor=pointer]
+                  - button "+ New Investigation" [ref=e2543] [cursor=pointer]
+              - table [ref=e2544]:
+                - rowgroup [ref=e2545]:
+                  - row [ref=e2546]:
+                    - 'columnheader "Case #" [ref=e2547] [cursor=pointer]'
+                    - columnheader "Drug" [ref=e2554] [cursor=pointer]
+                    - columnheader "Reported" [ref=e2561] [cursor=pointer]
+                    - columnheader "Variance" [ref=e2568] [cursor=pointer]
+                    - columnheader "Priority" [ref=e2575] [cursor=pointer]
+                    - columnheader "Stage" [ref=e2582] [cursor=pointer]
+                    - columnheader "Assigned To" [ref=e2589] [cursor=pointer]
+                    - columnheader "Status" [ref=e2596] [cursor=pointer]
+                    - columnheader "Actions" [ref=e2603]
+                - rowgroup [ref=e2605]:
+                  - row [ref=e2606] [cursor=pointer]:
+                    - cell "INV-2026-0001" [ref=e2607]
+                    - cell "Amoxicillin 500mg" [ref=e2608]
+                    - cell "2026-09-15" [ref=e2609]
+                    - cell "-6" [ref=e2610]
+                    - cell "High" [ref=e2611]
+                    - cell "Approval" [ref=e2612]
+                    - cell "Dr. R. Sharma" [ref=e2613]
+                    - cell "Pending Approval" [ref=e2614]
+                    - cell [ref=e2615]:
+                      - button "View" [ref=e2616]
+                  - row [ref=e2617] [cursor=pointer]:
+                    - cell "INV-2026-0002" [ref=e2618]
+                    - cell "Paracetamol 500mg" [ref=e2619]
+                    - cell "2026-09-18" [ref=e2620]
+                    - cell "-5" [ref=e2621]
+                    - cell "Medium" [ref=e2622]
+                    - cell "Batch Investigation" [ref=e2623]
+                    - cell "Mark Stevens" [ref=e2624]
+                    - cell "In Progress" [ref=e2625]
+                    - cell [ref=e2626]:
+                      - button "Investigate" [ref=e2627]
+                  - row [ref=e2628] [cursor=pointer]:
+                    - cell "INV-2026-0003" [ref=e2629]
+                    - cell "Metformin 1000mg" [ref=e2630]
+                    - cell "2026-09-10" [ref=e2631]
+                    - cell "+3" [ref=e2632]
+                    - cell "Low" [ref=e2633]
+                    - cell "Adjustment" [ref=e2634]
+                    - cell "Admin" [ref=e2635]
+                    - cell "Approved" [ref=e2636]
+                    - cell [ref=e2637]:
+                      - button "View" [ref=e2638]
+                  - row [ref=e2639] [cursor=pointer]:
+                    - cell "INV-2026-0004" [ref=e2640]
+                    - cell "Atorvastatin 20mg" [ref=e2641]
+                    - cell "2026-09-20" [ref=e2642]
+                    - cell "-7" [ref=e2643]
+                    - cell "High" [ref=e2644]
+                    - cell "Stock Difference" [ref=e2645]
+                    - cell "Unassigned" [ref=e2646]
+                    - cell "Open" [ref=e2647]
+                    - cell [ref=e2648]:
+                      - button "Investigate" [ref=e2649]
+                  - row [ref=e2650] [cursor=pointer]:
+                    - cell "INV-2026-0005" [ref=e2651]
+                    - cell "Warfarin 5mg" [ref=e2652]
+                    - cell "2026-08-25" [ref=e2653]
+                    - cell "-2" [ref=e2654]
+                    - cell "Medium" [ref=e2655]
+                    - cell "Adjustment" [ref=e2656]
+                    - cell "Jane Doe" [ref=e2657]
+                    - cell "Adjusted" [ref=e2658]
+                    - cell [ref=e2659]:
+                      - button "View" [ref=e2660]
+  - generic [aria-hidden] [ref=e471]: ₹0k

@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { usePrinterSettings } from "./shared/PrinterContext";
 import type { PrinterType } from "./shared/PrinterContext";
+import type { StorageType } from "./stock/stockData";
 
-const sections = ["General", "Users & Roles", "Billing", "Notifications", "Integrations", "Printer", "Backup"];
+const sections = ["General", "Users & Roles", "Billing", "Notifications", "Integrations", "Printer", "Storage & Location", "Backup"];
 
-export default function Settings() {
+interface SettingsProps {
+  storageType: StorageType;
+  onStorageTypeChange: (t: StorageType) => void;
+}
+
+export default function Settings({ storageType, onStorageTypeChange }: SettingsProps) {
   const [activeSection, setActiveSection] = useState("General");
   const [saved, setSaved] = useState(false);
   const { settings: printer, updateSettings: updatePrinter } = usePrinterSettings();
@@ -30,10 +36,26 @@ export default function Settings() {
     }, 1200);
   };
 
+  const [localStorageType, setLocalStorageType] = useState<StorageType>(storageType);
+  const [storageSaved, setStorageSaved] = useState(false);
+
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
+
+  const handleStorageSave = () => {
+    onStorageTypeChange(localStorageType);
+    setStorageSaved(true);
+    setTimeout(() => setStorageSaved(false), 2000);
+  };
+
+  const STORAGE_OPTIONS: { id: StorageType; label: string; desc: string; detail: string }[] = [
+    { id: "alphabetical", label: "Alphabetical", desc: "A → Z by product name", detail: "Bins are assigned based on the first letter of the drug name. Easy to find any product without memorising shelf codes." },
+    { id: "company",      label: "By Company",   desc: "Grouped by manufacturer", detail: "All products from the same manufacturer are stored together. Ideal when you receive stock from a small set of suppliers." },
+    { id: "category",     label: "By Category",  desc: "Grouped by drug category", detail: "Antibiotics, Antidiabetics, etc. share bins. Best when staff think in therapeutic categories." },
+    { id: "custom",       label: "Custom / Manual", desc: "You assign each bin yourself", detail: "No automatic suggestion. You choose the target bin every time you move or receive stock. Full manual control." },
+  ];
 
   const USERS = [
     { name: "Jane Doe", email: "jane.doe@citycentralpharmacy.com", role: "Head Pharmacist", login: "Today 09:12", status: "Active" },
@@ -292,7 +314,85 @@ export default function Settings() {
             </div>
           )}
 
-          {!["General", "Users & Roles", "Printer"].includes(activeSection) && (
+          {activeSection === "Storage & Location" && (
+            <div className="flex flex-col gap-6">
+              <div>
+                <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 4 }}>Storage Organisation Type</div>
+                <div style={{ fontSize: 13, color: "#6B7280" }}>
+                  This setting controls how the system suggests bin locations when you move or receive stock.
+                  Applied pharmacy-wide — set it once and the Locations tab uses it automatically.
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                {STORAGE_OPTIONS.map(opt => {
+                  const active = localStorageType === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setLocalStorageType(opt.id)}
+                      style={{
+                        textAlign: "left", padding: "16px 18px", borderRadius: 8, cursor: "pointer",
+                        border: active ? "2px solid #1B6CA8" : "1.5px solid #DDE3EC",
+                        background: active ? "#EFF6FF" : "#fff",
+                        transition: "border 0.15s, background 0.15s",
+                        display: "flex", flexDirection: "column", gap: 6,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{
+                          width: 18, height: 18, borderRadius: "50%", border: active ? "5px solid #1B6CA8" : "2px solid #DDE3EC",
+                          background: active ? "#fff" : "#F8FAFC", display: "inline-block", flexShrink: 0,
+                        }} />
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: active ? "#1B6CA8" : "#0C1B33", fontFamily: "Inter" }}>{opt.label}</div>
+                          <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter" }}>{opt.desc}</div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter", lineHeight: 1.5, paddingLeft: 28 }}>{opt.detail}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", borderRadius: 6, padding: "12px 16px", fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>
+                <span style={{ fontWeight: 600, color: "#1A2436" }}>Current setting: </span>
+                {STORAGE_OPTIONS.find(o => o.id === storageType)?.label ?? storageType}
+                {localStorageType !== storageType && (
+                  <span style={{ marginLeft: 8, color: "#E65100", fontWeight: 600 }}>
+                    {" "}&rarr; will change to {STORAGE_OPTIONS.find(o => o.id === localStorageType)?.label}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ background: "#FFF3E0", border: "1px solid #FFB74D", borderRadius: 6, padding: "10px 16px", fontSize: 12, color: "#E65100", fontFamily: "Inter" }}>
+                Changing storage type affects bin suggestions in the Locations tab. Existing stock placement is not moved automatically.
+              </div>
+
+              <div className="flex justify-end gap-3" style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
+                <button
+                  onClick={() => setLocalStorageType(storageType)}
+                  style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}
+                >
+                  Discard
+                </button>
+                <button
+                  onClick={handleStorageSave}
+                  disabled={localStorageType === storageType}
+                  style={{
+                    padding: "9px 24px", border: "none", borderRadius: 6, fontSize: 13,
+                    cursor: localStorageType === storageType ? "default" : "pointer",
+                    fontWeight: 600, color: "#fff", transition: "background 0.2s",
+                    background: storageSaved ? "#2E7D32" : localStorageType === storageType ? "#A0AEC0" : "#1B6CA8",
+                  }}
+                >
+                  {storageSaved ? "Saved!" : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!["General", "Users & Roles", "Printer", "Storage & Location"].includes(activeSection) && (
             <div style={{ padding: 60, textAlign: "center", color: "#9CA3AF" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>⚙</div>
               <div style={{ fontFamily: "Outfit", fontSize: 16, color: "#6B7280" }}>{activeSection} settings coming soon</div>

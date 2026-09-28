@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { PrinterProvider } from "./components/shared/PrinterContext";
+import type { StorageType } from "./components/stock/stockData";
 import Login from "./components/Login";
 import LoadingScreen from "./components/LoadingScreen";
 import Sidebar from "./components/Sidebar";
@@ -49,6 +50,7 @@ export interface PurchasesDeepLink { tab: "orders" | "invoices" | "returns" | "p
 export default function App() {
   const [module, setModule] = useState<Module>("dashboard");
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [storageType, setStorageType] = useState<StorageType>("alphabetical");
   const [loading, setLoading] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [purchasesDeepLink, setPurchasesDeepLink] = useState<PurchasesDeepLink | null>(null);
@@ -183,7 +185,7 @@ export default function App() {
         <main style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", minHeight: 0 }}>
           {module === "dashboard" && <Dashboard />}
           {module === "inventory" && <Inventory onEditDistributor={navigateToEditDistributor} />}
-          {module === "stock" && <StockManagement />}
+          {module === "stock" && <StockManagement storageType={storageType} />}
           {module === "shortbook" && <ShortBook />}
           {module === "expiry" && <ExpiryManagement />}
           {module === "sales" && <Sales />}
@@ -195,7 +197,7 @@ export default function App() {
           {module === "insurance" && <Insurance />}
           {module === "reports" && <Reports />}
           {module === "hr" && <HR />}
-          {module === "settings" && <Settings />}
+          {module === "settings" && <Settings storageType={storageType} onStorageTypeChange={setStorageType} />}
         </main>
       </div>
     </div>

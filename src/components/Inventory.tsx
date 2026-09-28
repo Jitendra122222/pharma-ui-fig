@@ -4315,15 +4315,15 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
 
       {/* Nav bar */}
       <div style={{ background: "#fff", borderBottom: "1px solid #EEF1F6", padding: "10px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-        <button onClick={onBack}
-          style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", color: "#6B7280", fontSize: 13, fontFamily: "Inter", padding: 0 }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#0C1B33")}
-          onMouseLeave={e => (e.currentTarget.style.color = "#6B7280")}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-          <span style={{ color: "#9CA3AF" }}>Stock</span>
-          <span style={{ color: "#DDE3EC", margin: "0 2px" }}>/</span>
-          <span style={{ color: "#0C1B33", fontWeight: 600 }}>Medicine Details</span>
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={onBack}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", border: "none", background: "transparent", cursor: "pointer", padding: 0, width: 28, height: 28 }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="#1A2436" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+          <span style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter" }}>Stock</span>
+          <span style={{ fontSize: 12, color: "#9CA3AF" }}>›</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>Medicine Details</span>
+        </div>
       </div>
 
       {/* Hero section */}

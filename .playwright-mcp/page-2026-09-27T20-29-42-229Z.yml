@@ -1,0 +1,43 @@
+- generic [ref=f11e3]:
+  - generic [ref=f11e7]:
+    - generic [ref=f11e8]:
+      - generic [ref=f11e9]: Rx
+      - generic [ref=f11e11]:
+        - generic [ref=f11e12]: PharmERP
+        - generic [ref=f11e13]: City Central Pharmacy
+    - heading "Complete Pharmacy Management" [level=1] [ref=f11e15]: Complete PharmacyManagement
+    - paragraph [ref=f11e16]: Streamline your operations, manage inventory, track sales and grow your pharmacy business — all in one place.
+    - generic [ref=f11e17]:
+      - generic [ref=f11e18]: Inventory Management
+      - generic [ref=f11e24]: Purchase & Sales
+      - generic [ref=f11e32]: Invoices & Reports
+      - generic [ref=f11e39]: Multi-Location Support
+  - generic [ref=f11e48]:
+    - generic [ref=f11e49]:
+      - generic [ref=f11e50]: +
+      - generic [ref=f11e51]: +
+    - generic [ref=f11e52]:
+      - generic [ref=f11e53]:
+        - heading "Welcome Back" [level=1] [ref=f11e54]
+        - paragraph [ref=f11e55]: Sign in to your pharmacy workspace
+      - generic [ref=f11e56]:
+        - generic [ref=f11e57]:
+          - generic [ref=f11e58]: Mobile Number
+          - generic [ref=f11e59]:
+            - generic [ref=f11e60] [cursor=pointer]: "+91"
+            - textbox "Enter your mobile number" [ref=f11e64]
+        - generic [ref=f11e65]:
+          - generic [ref=f11e66]: Password
+          - generic [ref=f11e67]:
+            - textbox "Enter your password" [ref=f11e72]
+            - button [ref=f11e73] [cursor=pointer]
+        - button "Sign In" [ref=f11e78] [cursor=pointer]
+        - generic [ref=f11e82]:
+          - generic [ref=f11e83] [cursor=pointer]: Remember me
+          - button "Forgot Password?" [ref=f11e88] [cursor=pointer]
+        - generic [ref=f11e90]:
+          - text: Don't have an account?
+          - button "Register" [ref=f11e91] [cursor=pointer]
+        - generic [ref=f11e92]:
+          - generic [ref=f11e93]: PharmERP v2.1.0
+          - generic [ref=f11e94]: © 2026 City Central Pharmacy
