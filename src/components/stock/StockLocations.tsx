@@ -1,6 +1,6 @@
 import { useState, useMemo, type ReactNode } from "react";
 import { drugs } from "../../data/mockData";
-import { LOCATION_META } from "./stockData";
+import { LOCATION_META, COLD_LOG } from "./stockData";
 import type { StorageType } from "./stockData";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
 
@@ -781,7 +781,7 @@ export default function StockLocations({ storageType }: Props) {
                                   <>
                                     <div onClick={() => setOpenMenu(null)} style={{ position: "fixed", inset: 0, zIndex: 299 }} />
                                     <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 4, background: "#fff", border: "1px solid #DDE3EC", borderRadius: 8, boxShadow: "0 4px 16px rgba(12,27,51,0.12)", zIndex: 300, minWidth: 160, overflow: "hidden" }}>
-                                      <button onClick={() => { setOpenMenu(null); showToast(`Editing bin ${row.locId}`); }}
+                                      <button onClick={() => { setOpenMenu(null); openEditLoc(row.locId); }}
                                         style={{ display: "block", width: "100%", padding: "9px 16px", textAlign: "left", fontSize: 13, fontFamily: "Inter", color: "#1A2436", background: "none", border: "none", borderBottom: "1px solid #F0F3F7", cursor: "pointer" }}>
                                         Edit Bin
                                       </button>
@@ -870,6 +870,94 @@ export default function StockLocations({ storageType }: Props) {
           </div>
         )}
       </div>
+
+      {/* ── Cold Chain Temperature Log (shown when COLD-01 is expanded) ── */}
+      {expandedLocs.has("COLD-01") && (() => {
+        const last = COLD_LOG[COLD_LOG.length - 1];
+        const inRange = last.tempC >= 2 && last.tempC <= 8;
+        const excursions = COLD_LOG.filter(r => r.tempC < 2 || r.tempC > 8);
+        const display = COLD_LOG.slice(-8);
+
+        // SVG sparkline (120×40)
+        const minT = 0; const maxT = 12;
+        const W = 120; const H = 40;
+        const pts = COLD_LOG.slice(-12).map((r, i, arr) => {
+          const x = Math.round(i / (arr.length - 1) * W);
+          const y = Math.round(H - (r.tempC - minT) / (maxT - minT) * H);
+          return `${x},${y}`;
+        }).join(" ");
+        const safeY1 = Math.round(H - (8 - minT) / (maxT - minT) * H);
+        const safeY2 = Math.round(H - (2 - minT) / (maxT - minT) * H);
+
+        return (
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Temperature Log — COLD-01</span>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: "#EFF6FF", color: "#1B6CA8" }}>Range: 2°C – 8°C</span>
+              <span style={{ fontSize: 11, color: "#9CA3AF", marginLeft: "auto" }}>{COLD_LOG[0].ts.slice(0, 10)} – {COLD_LOG[COLD_LOG.length - 1].ts.slice(0, 10)}</span>
+            </div>
+
+            {excursions.length > 0 && (
+              <div style={{ background: "#FFEBEE", borderBottom: "1px solid #FFCDD2", padding: "8px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#C62828" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#C62828" }}>Temperature excursion detected</span>
+                <span style={{ fontSize: 12, color: "#9B1C1C" }}>{excursions.map(e => `${e.ts} (${e.tempC}°C)`).join(", ")}</span>
+              </div>
+            )}
+
+            <div style={{ padding: "16px 20px", display: "flex", gap: 24, alignItems: "flex-start" }}>
+              {/* Latest reading */}
+              <div style={{ flexShrink: 0, textAlign: "center" as const }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6 }}>Latest Reading</div>
+                <div style={{ fontFamily: "JetBrains Mono", fontSize: 32, fontWeight: 800, color: inRange ? "#2E7D32" : "#C62828" }}>{last.tempC}°C</div>
+                <div style={{ fontSize: 11, color: inRange ? "#2E7D32" : "#C62828", marginTop: 2 }}>{inRange ? "In Range" : "Excursion"}</div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 4, fontFamily: "JetBrains Mono" }}>{last.ts}</div>
+              </div>
+
+              {/* Sparkline */}
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6 }}>Last 12 Readings</div>
+                <svg width={W} height={H} style={{ display: "block" }}>
+                  <rect x={0} y={safeY1} width={W} height={safeY2 - safeY1} fill="#2E7D32" opacity={0.12} />
+                  <polyline points={pts} fill="none" stroke="#1B6CA8" strokeWidth={1.5} />
+                  {COLD_LOG.slice(-12).map((r, i, arr) => {
+                    const x = Math.round(i / (arr.length - 1) * W);
+                    const y = Math.round(H - (r.tempC - minT) / (maxT - minT) * H);
+                    const bad = r.tempC < 2 || r.tempC > 8;
+                    return bad ? <circle key={i} cx={x} cy={y} r={3} fill="#C62828" /> : null;
+                  })}
+                </svg>
+              </div>
+
+              {/* Last 8 readings table */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6 }}>Recent Readings</div>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      {["Timestamp", "Temp", "Status"].map(h => (
+                        <th key={h} style={{ padding: "4px 8px", fontSize: 9, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase" as const, textAlign: "left" as const }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {display.map((r, i) => {
+                      const ok = r.tempC >= 2 && r.tempC <= 8;
+                      return (
+                        <tr key={i} style={{ background: !ok ? "#FFEBEE" : "transparent" }}>
+                          <td style={{ padding: "3px 8px", fontFamily: "JetBrains Mono", fontSize: 11, color: "#6B7280" }}>{r.ts}</td>
+                          <td style={{ padding: "3px 8px", fontFamily: "JetBrains Mono", fontWeight: 700, fontSize: 12, color: ok ? "#1A2436" : "#C62828" }}>{r.tempC}°C</td>
+                          <td style={{ padding: "3px 8px" }}><span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 3, background: ok ? "#E8F5E9" : "#FFEBEE", color: ok ? "#2E7D32" : "#C62828" }}>{ok ? "In Range" : "Excursion"}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Filter Drawer */}
       {filterDrawer && (

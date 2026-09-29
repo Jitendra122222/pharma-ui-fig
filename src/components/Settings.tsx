@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { S } from "../styles/common";
+import { ST } from "../styles/settings";
 import { usePrinterSettings } from "./shared/PrinterContext";
 import type { PrinterType } from "./shared/PrinterContext";
 import type { StorageType } from "./stock/stockData";
@@ -78,26 +80,19 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", margin: 0, letterSpacing: "-0.02em" }}>Settings</h1>
-          <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>System configuration</div>
+          <h1 style={S.pageTitle}>Settings</h1>
+          <div style={{ ...S.mutedText, marginTop: 2 }}>System configuration</div>
         </div>
       </div>
 
       <div className="grid gap-5" style={{ gridTemplateColumns: "200px 1fr" }}>
         {/* Side nav */}
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "8px 0", height: "fit-content" }}>
+        <div style={ST.sideNav}>
           {sections.map((s) => (
             <button
               key={s}
               onClick={() => setActiveSection(s)}
-              style={{
-                width: "100%", padding: "10px 18px", textAlign: "left", border: "none",
-                background: activeSection === s ? "#EFF6FF" : "transparent",
-                color: activeSection === s ? "#1B6CA8" : "#6B7280",
-                fontSize: 13, fontFamily: "Inter", cursor: "pointer",
-                borderLeft: activeSection === s ? "2px solid #1B6CA8" : "2px solid transparent",
-                fontWeight: activeSection === s ? 500 : 400,
-              }}
+              style={ST.navBtn(activeSection === s)}
             >
               {s}
             </button>
@@ -105,11 +100,11 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
         </div>
 
         {/* Content */}
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: 24 }}>
+        <div style={ST.contentCard}>
           {activeSection === "General" && (
             <div className="flex flex-col gap-6">
               <div>
-                <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 16 }}>Pharmacy Information</div>
+                <div style={ST.sectionTitle}>Pharmacy Information</div>
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     { label: "Pharmacy Name", value: "City Central Pharmacy" },
@@ -120,18 +115,18 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
                     { label: "City / State / ZIP", value: "Chicago, IL 60601" },
                   ].map((f) => (
                     <div key={f.label}>
-                      <label style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>{f.label}</label>
+                      <label style={ST.formLabel}>{f.label}</label>
                       <input
                         defaultValue={f.value}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }}
+                        style={ST.formInput}
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
-                <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 16 }}>Tax & Pricing</div>
+              <div style={ST.saveBar}>
+                <div style={ST.sectionTitle}>Tax & Pricing</div>
                 <div className="grid grid-cols-3 gap-4">
                   {[
                     { label: "Tax Rate (%)", value: "8.75" },
@@ -139,18 +134,18 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
                     { label: "Currency", value: "USD" },
                   ].map((f) => (
                     <div key={f.label}>
-                      <label style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>{f.label}</label>
+                      <label style={ST.formLabel}>{f.label}</label>
                       <input
                         defaultValue={f.value}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }}
+                        style={ST.formInput}
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
-                <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 16 }}>System Preferences</div>
+              <div style={ST.saveBar}>
+                <div style={ST.sectionTitle}>System Preferences</div>
                 <div className="flex flex-col gap-4">
                   {[
                     { label: "Auto-reorder when stock reaches minimum level", enabled: true },
@@ -159,7 +154,7 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
                     { label: "Enable insurance billing integration", enabled: false },
                     { label: "Daily sales report via email", enabled: false },
                   ].map((pref) => (
-                    <div key={pref.label} className="flex items-center justify-between" style={{ padding: "12px 16px", background: "#F8FAFC" }}>
+                    <div key={pref.label} className="flex items-center justify-between" style={ST.prefRow}>
                       <span style={{ fontSize: 13, color: "#0C1B33" }}>{pref.label}</span>
                       <Toggle defaultOn={pref.enabled} />
                     </div>
@@ -171,7 +166,7 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
 
           {activeSection === "Users & Roles" && (
             <div>
-              <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 16 }}>Users & Access Control</div>
+              <div style={ST.sectionTitle}>Users & Access Control</div>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#F8FAFC" }}>
@@ -186,14 +181,14 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
                 <tbody>
                   {sortedUsers.map((u) => (
                     <tr key={u.email} style={{ borderBottom: "1px solid #F0F3F7" }}>
-                      <td style={{ padding: "11px 14px", fontSize: 13, color: "#0C1B33", fontWeight: 500 }}>{u.name}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#6B7280" }}>{u.email}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#6B7280" }}>{u.role}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#6B7280" }}>{u.login}</td>
+                      <td style={ST.tdName}>{u.name}</td>
+                      <td style={ST.tdMuted}>{u.email}</td>
+                      <td style={ST.tdMuted}>{u.role}</td>
+                      <td style={ST.tdMuted}>{u.login}</td>
                       <td style={{ padding: "11px 14px" }}>
                         <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", background: u.status === "Active" ? "#E8F5E9" : "#F5F5F5", color: u.status === "Active" ? "#2E7D32" : "#9E9E9E" }}>{u.status}</span>
                       </td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#1B6CA8", cursor: "pointer" }}>Edit</td>
+                      <td style={ST.tdEdit}>Edit</td>
                     </tr>
                   ))}
                 </tbody>
@@ -244,35 +239,35 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
 
                 {/* Printer Name */}
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>Printer Name / Model</label>
+                  <label style={ST.formLabel}>Printer Name / Model</label>
                   <input
                     value={printer.printerName}
                     onChange={(e) => updatePrinter({ printerName: e.target.value })}
-                    style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", maxWidth: 380 }}
+                    style={{ ...ST.formInput, maxWidth: 380 }}
                   />
                 </div>
 
                 {/* Enable / Disable */}
-                <div style={{ padding: "14px 16px", background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, border: "1px solid #EEF1F6" }}>
+                <div style={{ ...ST.printerToggleRow, marginBottom: 12 }}>
                   <div>
-                    <div style={{ fontSize: 13, color: "#0C1B33", fontWeight: 500 }}>Enable Printer</div>
-                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>Allow the system to send print jobs to this printer.</div>
+                    <div style={ST.printerToggleTitle}>Enable Printer</div>
+                    <div style={ST.printerToggleSub}>Allow the system to send print jobs to this printer.</div>
                   </div>
                   <Toggle defaultOn={printer.enabled} onChange={(v) => updatePrinter({ enabled: v })} />
                 </div>
 
                 {/* Connected toggle */}
-                <div style={{ padding: "14px 16px", background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, border: "1px solid #EEF1F6" }}>
+                <div style={{ ...ST.printerToggleRow, marginBottom: 20 }}>
                   <div>
-                    <div style={{ fontSize: 13, color: "#0C1B33", fontWeight: 500 }}>Printer Connected</div>
-                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>Mark as connected when printer cable/network is active.</div>
+                    <div style={ST.printerToggleTitle}>Printer Connected</div>
+                    <div style={ST.printerToggleSub}>Mark as connected when printer cable/network is active.</div>
                   </div>
                   <Toggle defaultOn={printer.connected} onChange={(v) => updatePrinter({ connected: v })} />
                 </div>
 
                 {/* Status summary */}
-                <div style={{ padding: "12px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Current Printer Status</div>
+                <div style={ST.statusBox}>
+                  <div style={ST.statusBoxLabel}>Current Printer Status</div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", background: printer.printerType === "Laser" ? "#EFF6FF" : printer.printerType === "DOT" ? "#F0FDF4" : "#FFF7ED", color: printer.printerType === "Laser" ? "#1B6CA8" : printer.printerType === "DOT" ? "#15803D" : "#C2410C", letterSpacing: "0.05em", textTransform: "uppercase" }}>
                       {printer.printerType}
@@ -302,7 +297,7 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
               </div>
 
               {/* Save bar */}
-              <div className="flex justify-end mt-2 gap-3" style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
+              <div className="flex justify-end mt-2 gap-3" style={ST.saveBar}>
                 <button style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Discard</button>
                 <button
                   onClick={handlePrinterSave}
@@ -369,7 +364,7 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
                 Changing storage type affects bin suggestions in the Locations tab. Existing stock placement is not moved automatically.
               </div>
 
-              <div className="flex justify-end gap-3" style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
+              <div className="flex justify-end gap-3" style={ST.saveBar}>
                 <button
                   onClick={() => setLocalStorageType(storageType)}
                   style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}
@@ -400,7 +395,7 @@ export default function Settings({ storageType, onStorageTypeChange }: SettingsP
           )}
 
           {activeSection === "General" && (
-            <div className="flex justify-end mt-6 gap-3" style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
+            <div className="flex justify-end mt-6 gap-3" style={ST.saveBar}>
               <button style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Discard</button>
               <button
                 onClick={handleSave}

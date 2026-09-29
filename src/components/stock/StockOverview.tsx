@@ -7,14 +7,17 @@ import { usePagination, PaginationFooter } from "../shared/usePagination";
 import { adjustments, batches, MOVEMENTS } from "./stockData";
 import type { StockMovement } from "./stockData";
 
-export default function StockOverview() {
+interface StockOverviewProps { onNavigate?: (m: string) => void; }
+
+export default function StockOverview({ onNavigate }: StockOverviewProps = {}) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [sel, setSel] = useState<typeof drugs[0] | null>(null);
   const [dTab, setDTab] = useState<"overview" | "clinical" | "movements" | "history">("overview");
   const [showAdjust, setShowAdjust] = useState(false);
   const [showPO, setShowPO] = useState(false);
-  const [insightsOpen, setInsightsOpen] = useState(true);
+  const [showReorder, setShowReorder] = useState(false);
+  const [showCycleCount, setShowCycleCount] = useState(false);
   const [filterDrawer, setFilterDrawer] = useState(false);
   const [fCategories, setFCategories] = useState<string[]>([]);
   const [fSuppliers, setFSuppliers] = useState<string[]>([]);
@@ -90,305 +93,100 @@ export default function StockOverview() {
   const dosageForm = (unit: string) => unit === "Capsules" ? "Capsule" : unit === "Tablets" ? "Tablet" : unit;
   const genericName = (name: string) => name.replace(/\s+\d.*$/, "").trim();
 
-  const riskScores = drugs.map(d => {
-    const moves = MOVEMENTS[d.name] ?? [];
-    let score = 0;
-    if (d.status === "Out of Stock") score += 30;
-    else if (d.status === "Low Stock") score += 15;
-    const hasRecentCount = moves.some(m => m.type === "Adjustment" && m.reason?.toLowerCase().includes("count"));
-    if (!hasRecentCount) score += 20;
-    const dBatches = batches.filter(b => b.drug === d.name);
-    const nearExpiry = dBatches.some(b => {
-      const days = Math.round((new Date(b.expiry).getTime() - new Date("2026-09-27").getTime()) / 86400000);
-      return days > 0 && days < 90;
-    });
-    if (nearExpiry) score += 15;
-    if (d.stock * d.cost > 5000) score += 10;
-    return { ...d, riskScore: score };
-  }).sort((a, b) => b.riskScore - a.riskScore);
+  const lowStockCount = drugs.filter(d => d.status === "Low Stock").length;
+  const outOfStockCount = drugs.filter(d => d.status === "Out of Stock").length;
+  const reorderDrugs = drugs.filter(d => d.stock <= d.minStock && d.stock > 0);
 
-  const capitalLocked = {
-    outOfStock: drugs.filter(d => d.status === "Out of Stock").reduce((s, d) => s + d.minStock * d.cost, 0),
-    lowStock: drugs.filter(d => d.status === "Low Stock").reduce((s, d) => s + (d.minStock - d.stock) * d.cost, 0),
-    highValue: drugs.filter(d => d.stock * d.cost > 5000).reduce((s, d) => s + d.stock * d.cost, 0),
-    total: totalValue,
-    topItems: [...drugs].sort((a, b) => (b.stock * b.cost) - (a.stock * a.cost)).slice(0, 5),
+  // ABC classification by cost × velocity score
+  const abcScores = drugs.map(d => ({ name: d.name, score: d.cost * weeklyVelocity(d) }))
+    .sort((a, b) => b.score - a.score);
+  const topCutoff = Math.ceil(drugs.length * 0.2);
+  const midCutoff = Math.ceil(drugs.length * 0.5);
+  function abcClass(name: string): "A" | "B" | "C" {
+    const rank = abcScores.findIndex(s => s.name === name);
+    return rank < topCutoff ? "A" : rank < midCutoff ? "B" : "C";
+  }
+  const ABC_STYLE = {
+    A: { bg: "#FFEBEE", color: "#C62828" },
+    B: { bg: "#FFF3E0", color: "#E65100" },
+    C: { bg: "#F0F3F7", color: "#6B7280" },
   };
-
-  const exceptions = {
-    stockouts: drugs.filter(d => d.status === "Out of Stock"),
-    lowStock: drugs.filter(d => d.status === "Low Stock"),
-    noMovement: drugs.filter(d => {
-      const moves = MOVEMENTS[d.name] ?? [];
-      if (moves.length === 0) return true;
-      const days = Math.round((new Date("2026-09-27").getTime() - new Date(moves[0].date).getTime()) / 86400000);
-      return days > 30;
-    }),
-    overstock: drugs.filter(d => d.stock > d.minStock * 4),
-  };
-
-  const accuracyStats = (() => {
-    const counted = drugs.filter(d => (MOVEMENTS[d.name] ?? []).some(m => m.type === "Adjustment" && m.reason?.toLowerCase().includes("count")));
-    const withDiscrepancy = drugs.filter(d => {
-      const adj = (MOVEMENTS[d.name] ?? []).find(m => m.type === "Adjustment");
-      return adj && adj.qtyBefore !== undefined && Math.abs(adj.qty) > 3;
-    });
-    return { accuracy: Math.round((counted.length / drugs.length) * 100), counted: counted.length, total: drugs.length, withDiscrepancy: withDiscrepancy.length };
-  })();
-
-  const recoveryActions = riskScores.slice(0, 5).map(d => {
-    const action = d.status === "Out of Stock" ? "Raise Emergency PO" : d.status === "Low Stock" ? "Reorder Now" : d.riskScore >= 20 ? "Schedule Count" : "Monitor";
-    const urgency = d.riskScore >= 30 ? "Critical" : d.riskScore >= 20 ? "High" : "Medium";
-    return { ...d, action, urgency };
-  });
-
-  const actionItems = [
-    ...exceptions.stockouts.map(d => ({ drug: d.name, action: "Raise Emergency PO", type: "Stockout", priority: 1 })),
-    ...exceptions.lowStock.map(d => ({ drug: d.name, action: "Reorder", type: "Low Stock", priority: 2 })),
-    ...exceptions.noMovement.slice(0, 3).map(d => ({ drug: d.name, action: "Physical Count", type: "No Movement", priority: 3 })),
-    ...exceptions.overstock.slice(0, 2).map(d => ({ drug: d.name, action: "Review Reorder Point", type: "Overstock", priority: 4 })),
-  ].slice(0, 8);
-
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-      {/* ── Stock Insights — single collapsible panel ── */}
-      <div style={{ background: "#fff", border: "1px solid #DDE3EC", borderRadius: 6, overflow: "hidden" }}>
-
-        {/* Panel header — click to toggle */}
-        <div onClick={() => setInsightsOpen(p => !p)}
-          style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none" as const, borderBottom: insightsOpen ? "1px solid #EEF1F6" : "none" }}
-          onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")}
-          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-          </svg>
-          <span style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#0C1B33", flex: 1 }}>Stock Insights</span>
-          {exceptions.stockouts.length > 0 && (
-            <span style={{ fontSize: 10, padding: "2px 7px", background: "#FFEBEE", color: "#C62828", fontWeight: 700, borderRadius: 10 }}>
-              {exceptions.stockouts.length} Stockout{exceptions.stockouts.length !== 1 ? "s" : ""}
-            </span>
-          )}
-          {exceptions.lowStock.length > 0 && (
-            <span style={{ fontSize: 10, padding: "2px 7px", background: "#FFF3E0", color: "#E65100", fontWeight: 700, borderRadius: 10 }}>
-              {exceptions.lowStock.length} Low Stock
-            </span>
-          )}
-          {actionItems.length > 0 && (
-            <span style={{ fontSize: 10, padding: "2px 7px", background: "#F0F3F7", color: "#6B7280", fontWeight: 600, borderRadius: 10 }}>
-              {actionItems.length} actions
-            </span>
-          )}
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-            style={{ transform: insightsOpen ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s", flexShrink: 0 }}>
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
-
-        {/* All 6 cards inside */}
-        {insightsOpen && (
-          <div style={{ padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-
-            {/* Stock Risk Center */}
-            <div style={{ border: "1px solid #EEF1F6", borderRadius: 5, overflow: "hidden" }}>
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid #F0F3F7", display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#C62828", display: "inline-block" }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#0C1B33", fontFamily: "Outfit", flex: 1 }}>Stock Risk Center</span>
-                <span style={{ fontSize: 10, padding: "1px 6px", background: "#FFEBEE", color: "#C62828", fontWeight: 700 }}>{riskScores.filter(r => r.riskScore >= 20).length} at risk</span>
-              </div>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr style={{ background: "#FAFBFD" }}>
-                  {["Drug", "Risk", "Factors", ""].map(h => (
-                    <th key={h} style={{ padding: "6px 12px", textAlign: "left" as const, fontSize: 10, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6" }}>{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody>
-                  {riskScores.slice(0, 5).map((d, i) => {
-                    const barColor = d.riskScore >= 30 ? "#C62828" : d.riskScore >= 20 ? "#E65100" : "#F57F17";
-                    const factors = [d.status === "Out of Stock" && "Stockout", d.status === "Low Stock" && "Low Stock", d.riskScore >= 20 && "No Count"].filter(Boolean).join(", ");
-                    return (
-                      <tr key={d.id} style={{ borderBottom: i < 4 ? "1px solid #F0F3F7" : "none" }}>
-                        <td style={{ padding: "7px 12px", fontSize: 12, color: "#1A2436", fontWeight: 600 }}>{d.name}</td>
-                        <td style={{ padding: "7px 12px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                            <div style={{ flex: 1, height: 3, background: "#EEF1F6" }}><div style={{ height: 3, width: `${Math.min(100, d.riskScore * 2)}%`, background: barColor }} /></div>
-                            <span style={{ fontFamily: "JetBrains Mono", fontSize: 11, color: barColor, fontWeight: 700, minWidth: 24 }}>{d.riskScore}</span>
-                          </div>
-                        </td>
-                        <td style={{ padding: "7px 12px", fontSize: 11, color: "#6B7280" }}>{factors || "—"}</td>
-                        <td style={{ padding: "7px 12px" }}><button onClick={() => setSel(d)} style={{ fontSize: 11, padding: "2px 7px", border: `1px solid ${barColor}`, background: "transparent", color: barColor, cursor: "pointer", borderRadius: 4 }}>View</button></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Capital Locked */}
-            <div style={{ border: "1px solid #EEF1F6", borderRadius: 5, overflow: "hidden" }}>
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid #F0F3F7", display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1B6CA8", display: "inline-block" }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#0C1B33", fontFamily: "Outfit", flex: 1 }}>Capital Locked</span>
-                <span style={{ fontSize: 10, padding: "1px 6px", background: "#EFF6FF", color: "#1B6CA8", fontWeight: 700, fontFamily: "JetBrains Mono" }}>₹{capitalLocked.highValue.toFixed(0)} HV</span>
-              </div>
-              <div style={{ padding: 12 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
-                  {[
-                    { label: "Total", value: `₹${capitalLocked.total.toFixed(0)}`, color: "#1A2436" },
-                    { label: "High-Value", value: `₹${capitalLocked.highValue.toFixed(0)}`, color: "#1B6CA8" },
-                    { label: "Gap", value: `₹${(capitalLocked.outOfStock + capitalLocked.lowStock).toFixed(0)}`, color: "#C62828" },
-                  ].map(k => (
-                    <div key={k.label} style={{ padding: "8px 10px", background: "#F8FAFC", border: "1px solid #EEF1F6", borderRadius: 4 }}>
-                      <div style={{ fontSize: 9, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 3 }}>{k.label}</div>
-                      <div style={{ fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 700, color: k.color }}>{k.value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  {capitalLocked.topItems.map((d, i) => {
-                    const val = d.stock * d.cost;
-                    const maxVal = capitalLocked.topItems[0].stock * capitalLocked.topItems[0].cost;
-                    return (
-                      <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <span style={{ fontSize: 11, color: "#9CA3AF", minWidth: 12, fontFamily: "JetBrains Mono" }}>{i + 1}</span>
-                        <span style={{ fontSize: 11, color: "#1A2436", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{d.name}</span>
-                        <div style={{ width: 50, height: 3, background: "#EEF1F6" }}><div style={{ height: 3, width: `${(val / maxVal) * 100}%`, background: val > 5000 ? "#1B6CA8" : "#00ACC1" }} /></div>
-                        <span style={{ fontFamily: "JetBrains Mono", fontSize: 11, color: "#1A2436", minWidth: 58, textAlign: "right" as const }}>₹{val.toFixed(0)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Stock Exceptions */}
-            <div style={{ border: "1px solid #EEF1F6", borderRadius: 5, overflow: "hidden" }}>
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid #F0F3F7", display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#E65100", display: "inline-block" }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#0C1B33", fontFamily: "Outfit", flex: 1 }}>Stock Exceptions</span>
-                <span style={{ fontSize: 10, padding: "1px 6px", background: "#FFF3E0", color: "#E65100", fontWeight: 700 }}>{exceptions.stockouts.length + exceptions.lowStock.length + exceptions.noMovement.length + exceptions.overstock.length} total</span>
-              </div>
-              <div style={{ padding: 12 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-                  {[
-                    { label: "Stockouts", count: exceptions.stockouts.length, bg: "#FFEBEE", color: "#C62828" },
-                    { label: "Low Stock", count: exceptions.lowStock.length, bg: "#FFF3E0", color: "#E65100" },
-                    { label: "No Movement >30d", count: exceptions.noMovement.length, bg: "#F3F4F6", color: "#6B7280" },
-                    { label: "Overstock", count: exceptions.overstock.length, bg: "#EFF6FF", color: "#1B6CA8" },
-                  ].map(k => (
-                    <div key={k.label} style={{ padding: "9px 10px", background: k.bg, borderRadius: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, color: k.color, fontWeight: 600 }}>{k.label}</span>
-                      <span style={{ fontFamily: "JetBrains Mono", fontSize: 16, fontWeight: 700, color: k.color }}>{k.count}</span>
-                    </div>
-                  ))}
-                </div>
-                {exceptions.stockouts.length > 0 && (
-                  <div>
-                    <div style={{ fontSize: 10, color: "#C62828", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 5 }}>Critical Stockouts</div>
-                    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 5 }}>
-                      {exceptions.stockouts.map(d => (
-                        <button key={d.id} onClick={() => setSel(d)} style={{ fontSize: 11, padding: "3px 10px", background: "#FFEBEE", color: "#C62828", border: "1px solid #FFCDD2", cursor: "pointer", borderRadius: 4 }}>{d.name}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Stock Accuracy */}
-            <div style={{ border: "1px solid #EEF1F6", borderRadius: 5, overflow: "hidden" }}>
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid #F0F3F7", display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#2E7D32", display: "inline-block" }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#0C1B33", fontFamily: "Outfit", flex: 1 }}>Stock Accuracy</span>
-                <span style={{ fontSize: 10, padding: "1px 6px", background: "#E8F5E9", color: "#2E7D32", fontWeight: 700 }}>{accuracyStats.accuracy}% accurate</span>
-              </div>
-              <div style={{ padding: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginBottom: 12 }}>
-                  <div style={{ position: "relative", width: 72, height: 72 }}>
-                    <svg width="72" height="72" viewBox="0 0 72 72">
-                      <circle cx="36" cy="36" r="30" fill="none" stroke="#EEF1F6" strokeWidth="7" />
-                      <circle cx="36" cy="36" r="30" fill="none" stroke={accuracyStats.accuracy >= 80 ? "#2E7D32" : "#E65100"} strokeWidth="7"
-                        strokeDasharray={`${2 * Math.PI * 30}`} strokeDashoffset={`${2 * Math.PI * 30 * (1 - accuracyStats.accuracy / 100)}`}
-                        strokeLinecap="round" transform="rotate(-90 36 36)" />
-                    </svg>
-                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontFamily: "JetBrains Mono", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>{accuracyStats.accuracy}%</span>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {[
-                      { label: "SKUs Counted", value: `${accuracyStats.counted}/${accuracyStats.total}`, color: "#1A2436" },
-                      { label: "Discrepancy", value: accuracyStats.withDiscrepancy.toString(), color: "#E65100" },
-                      { label: "Not Counted", value: (accuracyStats.total - accuracyStats.counted).toString(), color: "#C62828" },
-                    ].map(k => (
-                      <div key={k.label} style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
-                        <span style={{ fontSize: 11, color: "#6B7280" }}>{k.label}</span>
-                        <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700, color: k.color }}>{k.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ background: "#F8FAFC", border: "1px solid #EEF1F6", borderRadius: 4, padding: "8px 12px" }}>
-                  <div style={{ height: 5, background: "#EEF1F6", borderRadius: 3, marginBottom: 4 }}>
-                    <div style={{ height: 5, width: `${accuracyStats.accuracy}%`, background: accuracyStats.accuracy >= 80 ? "#2E7D32" : "#E65100", borderRadius: 3 }} />
-                  </div>
-                  <div style={{ fontSize: 10, color: "#9CA3AF" }}>Target 95% — {accuracyStats.accuracy >= 95 ? "Met." : `${95 - accuracyStats.accuracy}% gap, ${accuracyStats.total - accuracyStats.counted} SKUs uncounted`}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Recovery Actions */}
-            <div style={{ border: "1px solid #EEF1F6", borderRadius: 5, overflow: "hidden" }}>
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid #F0F3F7", display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#7C3AED", display: "inline-block" }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#0C1B33", fontFamily: "Outfit", flex: 1 }}>Recovery Actions</span>
-                <span style={{ fontSize: 10, padding: "1px 6px", background: "#F3E8FF", color: "#7C3AED", fontWeight: 700 }}>{recoveryActions.filter(r => r.urgency === "Critical").length} critical</span>
-              </div>
-              {recoveryActions.map((d, i) => {
-                const us = d.urgency === "Critical" ? { bg: "#FFEBEE", color: "#C62828" } : d.urgency === "High" ? { bg: "#FFF3E0", color: "#E65100" } : { bg: "#F8FAFC", color: "#6B7280" };
-                return (
-                  <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: i < recoveryActions.length - 1 ? "1px solid #F0F3F7" : "none" }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", background: us.bg, color: us.color, minWidth: 48, textAlign: "center" as const, borderRadius: 3 }}>{d.urgency}</span>
-                    <span style={{ fontSize: 12, color: "#1A2436", flex: 1 }}>{d.name}</span>
-                    <span style={{ fontSize: 11, color: "#6B7280", fontStyle: "italic" as const }}>{d.action}</span>
-                    <button onClick={() => setSel(d)} style={{ fontSize: 11, padding: "2px 7px", border: "1px solid #DDE3EC", background: "#F8FAFC", color: "#1B6CA8", cursor: "pointer", borderRadius: 4 }}>View</button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Action Queue */}
-            <div style={{ border: "1px solid #EEF1F6", borderRadius: 5, overflow: "hidden" }}>
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid #F0F3F7", display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#00ACC1", display: "inline-block" }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#0C1B33", fontFamily: "Outfit", flex: 1 }}>Action Queue</span>
-                <span style={{ fontSize: 10, padding: "1px 6px", background: "#E0F7FA", color: "#00ACC1", fontWeight: 700 }}>{actionItems.length} needed</span>
-              </div>
-              {actionItems.length === 0 ? (
-                <div style={{ padding: 16, textAlign: "center" as const, fontSize: 13, color: "#9CA3AF" }}>No immediate actions required.</div>
-              ) : actionItems.map((item, i) => {
-                const typeStyle: Record<string, { bg: string; color: string }> = {
-                  "Stockout": { bg: "#FFEBEE", color: "#C62828" },
-                  "Low Stock": { bg: "#FFF3E0", color: "#E65100" },
-                  "No Movement": { bg: "#F3F4F6", color: "#6B7280" },
-                  "Overstock": { bg: "#EFF6FF", color: "#1B6CA8" },
-                };
-                const ts = typeStyle[item.type] || { bg: "#F3F4F6", color: "#6B7280" };
-                return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: i < actionItems.length - 1 ? "1px solid #F0F3F7" : "none" }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, minWidth: 16, color: "#9CA3AF", fontFamily: "JetBrains Mono" }}>#{item.priority}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", background: ts.bg, color: ts.color, borderRadius: 3 }}>{item.type}</span>
-                    <span style={{ fontSize: 12, color: "#1A2436", flex: 1 }}>{item.drug}</span>
-                    <span style={{ fontSize: 11, color: "#00ACC1", fontWeight: 600 }}>{item.action}</span>
-                  </div>
-                );
-              })}
-            </div>
-
+      {/* ── KPI tiles ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        {[
+          { label: "Total SKUs",       value: drugs.length,                         color: "#1B6CA8", bg: "#EFF6FF",  fmt: (v: number) => v.toString() },
+          { label: "Total Stock Value", value: totalValue,                           color: "#2E7D32", bg: "#E8F5E9",  fmt: (v: number) => `₹${v.toFixed(0)}` },
+          { label: "Low Stock",         value: lowStockCount,                        color: "#E65100", bg: "#FFF3E0",  fmt: (v: number) => v.toString() },
+          { label: "Out of Stock",      value: outOfStockCount,                      color: "#C62828", bg: "#FFEBEE",  fmt: (v: number) => v.toString() },
+        ].map(k => (
+          <div key={k.label} style={{ background: "#fff", border: "1px solid #DDE3EC", borderRadius: 6, padding: "14px 18px" }}>
+            <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: "JetBrains Mono", fontSize: 26, fontWeight: 800, color: k.color }}>{k.fmt(k.value)}</div>
           </div>
-        )}
+        ))}
       </div>
+
+      {/* ── Auto-reorder banner ── */}
+      {reorderDrugs.length > 0 && !showReorder && (
+        <div style={{ background: "#FFF3E0", border: "1px solid #FFCC80", borderRadius: 6, padding: "10px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#E65100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#E65100" }}>{reorderDrugs.length} item{reorderDrugs.length !== 1 ? "s" : ""} at or below reorder level</span>
+            <span style={{ fontSize: 12, color: "#92400E" }}>{reorderDrugs.map(d => d.name).join(" · ")}</span>
+          </div>
+          <button onClick={() => setShowReorder(true)}
+            style={{ padding: "6px 16px", border: "none", borderRadius: 6, background: "#E65100", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter", whiteSpace: "nowrap" as const }}>
+            Review &amp; Generate POs
+          </button>
+        </div>
+      )}
+
+      {/* ── Reorder review panel ── */}
+      {showReorder && (
+        <div style={{ background: "#fff", border: "1px solid #FFCC80", borderRadius: 6, overflow: "hidden" }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", background: "#FFFBF0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", fontFamily: "Outfit" }}>Reorder Review — Draft POs</span>
+            <button onClick={() => setShowReorder(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9CA3AF", fontSize: 20 }}>&times;</button>
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#FAFBFD" }}>
+                {["Drug", "Current Stock", "Reorder Level", "Suggested Order Qty", "Supplier"].map(h => (
+                  <th key={h} style={{ padding: "8px 14px", fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6", textAlign: "left" as const }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {reorderDrugs.map(d => {
+                const suggestedQty = Math.max(1, d.minStock * 2 - d.stock);
+                return (
+                  <tr key={d.id} style={{ borderBottom: "1px solid #F0F3F7" }}>
+                    <td style={{ padding: "10px 14px" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{d.name}</div>
+                      <div style={{ fontSize: 11, color: "#9CA3AF" }}>{d.category}</div>
+                    </td>
+                    <td style={{ padding: "10px 14px", fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 700, color: "#C62828" }}>{d.stock} {d.unit}</td>
+                    <td style={{ padding: "10px 14px", fontFamily: "JetBrains Mono", fontSize: 12, color: "#9CA3AF" }}>{d.minStock}</td>
+                    <td style={{ padding: "10px 14px", fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 700, color: "#1B6CA8" }}>{suggestedQty}</td>
+                    <td style={{ padding: "10px 14px", fontSize: 12, color: "#6B7280" }}>{d.supplier}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div style={{ padding: "12px 16px", borderTop: "1px solid #EEF1F6", display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <button onClick={() => setShowReorder(false)} style={{ padding: "7px 16px", border: "1px solid #DDE3EC", borderRadius: 6, background: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "Inter" }}>Dismiss</button>
+            <button onClick={() => { setShowReorder(false); onNavigate?.("purchases"); }}
+              style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>
+              Create Draft POs in Purchases
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Main data card ── */}
       <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
@@ -438,6 +236,7 @@ export default function StockOverview() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr>
                   <Th onSort={() => handleSort("name")} sortDir={sortCol === "name" ? sortDir : null}>Product Name</Th>
+                  <Th>ABC</Th>
                   <Th onSort={() => handleSort("location")} sortDir={sortCol === "location" ? sortDir : null}>Location</Th>
                   <Th onSort={() => handleSort("stock")} sortDir={sortCol === "stock" ? sortDir : null}>Stock Qty</Th>
                   <Th onSort={() => handleSort("minStock")} sortDir={sortCol === "minStock" ? sortDir : null}>Min Stock</Th>
@@ -448,6 +247,7 @@ export default function StockOverview() {
                   <Th>Stock Value</Th>
                   <Th>Confidence</Th>
                   <Th>Velocity/wk</Th>
+                  <Th>Days Left</Th>
                   <Th onSort={() => handleSort("status")} sortDir={sortCol === "status" ? sortDir : null}>Status</Th>
                 </tr></thead>
                 <tbody>
@@ -465,6 +265,11 @@ export default function StockOverview() {
                           <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? "#1B6CA8" : "#1A2436" }}>{d.name}</div>
                           <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2, fontFamily: "Inter" }}>{d.category}</div>
                         </td>
+                        {(() => {
+                          const cls = abcClass(d.name);
+                          const as_ = ABC_STYLE[cls];
+                          return <td style={{ padding: "11px 14px", textAlign: "center" as const }}><span style={{ fontFamily: "JetBrains Mono", fontSize: 11, fontWeight: 800, padding: "2px 7px", borderRadius: 3, background: as_.bg, color: as_.color }}>{cls}</span></td>;
+                        })()}
                         <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{d.location}</td>
                         <td style={{ padding: "11px 14px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 700, color: d.stock === 0 ? "#C62828" : d.stock < d.minStock ? "#F57F17" : "#1A2436", textAlign: "right" as const }}>{d.stock.toLocaleString()}</td>
                         <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#9CA3AF", textAlign: "right" as const }}>{d.minStock}</td>
@@ -492,6 +297,14 @@ export default function StockOverview() {
                             </td>
                           );
                         })()}
+                        {(() => {
+                          const vel = weeklyVelocity(d);
+                          const days = vel > 0 ? Math.round(d.stock / (vel / 7)) : null;
+                          if (days === null) return <td style={{ padding: "11px 14px", fontFamily: "JetBrains Mono", fontSize: 12, color: "#9CA3AF", textAlign: "center" as const }}>—</td>;
+                          const col = days < 7 ? "#C62828" : days < 14 ? "#E65100" : "#2E7D32";
+                          const bg  = days < 7 ? "#FFEBEE" : days < 14 ? "#FFF3E0" : "#E8F5E9";
+                          return <td style={{ padding: "11px 14px", textAlign: "center" as const }}><span style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: bg, color: col }}>{days}d</span></td>;
+                        })()}
                         <td style={{ padding: "11px 14px" }}><Pill label={d.status} bg={statusStyle.bg} color={statusStyle.color} /></td>
                       </tr>
                     );
@@ -503,6 +316,66 @@ export default function StockOverview() {
           </div>
 
 
+      </div>
+
+      {/* ── Cycle Count Schedule card ── */}
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
+        <div style={{ padding: "12px 16px", borderBottom: showCycleCount ? "1px solid #EEF1F6" : "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Cycle Count Schedule</span>
+          <button onClick={() => setShowCycleCount(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+            {showCycleCount ? "Collapse ▲" : "Expand ▼"}
+          </button>
+        </div>
+        {showCycleCount && (
+          <div style={{ overflowX: "auto" as const }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#FAFBFD" }}>
+                  {["Drug", "ABC Class", "Frequency", "Last Count (Proxy)", "Next Due", "Status"].map(h => (
+                    <th key={h} style={{ padding: "8px 14px", fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6", textAlign: "left" as const }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {drugs.map(d => {
+                  const cls = abcClass(d.name);
+                  const freq = cls === "A" ? 30 : cls === "B" ? 90 : 180;
+                  const lastMs = new Date(d.lastMove).getTime();
+                  const nextMs = lastMs + freq * 86400000;
+                  const today = Date.now();
+                  const daysUntil = Math.round((nextMs - today) / 86400000);
+                  const overdue = daysUntil < 0;
+                  const dueSoon = !overdue && daysUntil < 7;
+                  const statusLabel = overdue ? "Overdue" : dueSoon ? "Due Soon" : "On Track";
+                  const statusBg = overdue ? "#FFEBEE" : dueSoon ? "#FFF3E0" : "#E8F5E9";
+                  const statusColor = overdue ? "#C62828" : dueSoon ? "#E65100" : "#2E7D32";
+                  const as_ = ABC_STYLE[cls];
+                  return (
+                    <tr key={d.id} style={{ borderBottom: "1px solid #F0F3F7" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      <td style={{ padding: "9px 14px", fontSize: 13, fontWeight: 500, color: "#1A2436" }}>{d.name}</td>
+                      <td style={{ padding: "9px 14px", textAlign: "center" as const }}><span style={{ fontFamily: "JetBrains Mono", fontSize: 11, fontWeight: 800, padding: "2px 7px", borderRadius: 3, background: as_.bg, color: as_.color }}>{cls}</span></td>
+                      <td style={{ padding: "9px 14px", fontFamily: "JetBrains Mono", fontSize: 12, color: "#6B7280" }}>Every {freq}d</td>
+                      <td style={{ padding: "9px 14px", fontFamily: "JetBrains Mono", fontSize: 12, color: "#6B7280" }}>{d.lastMove}</td>
+                      <td style={{ padding: "9px 14px", fontFamily: "JetBrains Mono", fontSize: 12, color: overdue ? "#C62828" : "#1A2436" }}>{new Date(nextMs).toISOString().slice(0, 10)}</td>
+                      <td style={{ padding: "9px 14px" }}><span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: statusBg, color: statusColor }}>{statusLabel}</span></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {showCycleCount && (
+          <div style={{ padding: "10px 14px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={() => alert("Open the Investigation tab to start a new cycle count.")}
+              style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>
+              Start Count
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Filter Drawer ── */}
@@ -685,7 +558,7 @@ export default function StockOverview() {
                     {genericName(sel.name)} &middot; {dosageForm(sel.unit)} &middot; {sel.name.match(/\d+\s*mg/i)?.[0] || sel.unit}
                   </div>
                 </div>
-                <button onClick={() => setSel(null)} style={{ border: "none", background: "transparent", color: "#9CA3AF", cursor: "pointer", fontSize: 22, lineHeight: 1, padding: "0 2px", flexShrink: 0, marginLeft: 12 }}>Ã—</button>
+                <button onClick={() => setSel(null)} style={{ border: "none", background: "transparent", color: "#9CA3AF", cursor: "pointer", fontSize: 22, lineHeight: 1, padding: "0 2px", flexShrink: 0, marginLeft: 12 }}>&times;</button>
               </div>
               {/* Badges */}
               <div style={{ padding: "0 24px 14px", display: "flex", gap: 6, alignItems: "center" }}>
@@ -840,10 +713,10 @@ export default function StockOverview() {
                         done: !!latestGRN,
                       },
                       {
-                        icon: "GRN",
-                        label: "Goods Received",
+                        icon: "PUR",
+                        label: "Purchase",
                         ref: latestGRN?.ref ?? "—",
-                        meta: latestGRN ? `${latestGRN.date} · ${latestGRN.qty} ${sel.unit} · by ${latestGRN.user}` : "No GRN on record",
+                        meta: latestGRN ? `${latestGRN.date} · ${latestGRN.qty} ${sel.unit} · by ${latestGRN.user}` : "No purchase on record",
                         color: "#1B6CA8",
                         bg: "#EFF6FF",
                         done: !!latestGRN,
@@ -965,6 +838,7 @@ export default function StockOverview() {
                 const stockOut = allMoves.filter(m => m.qty < 0).reduce((s, m) => s + m.qty, 0);
                 const netChange = stockIn + stockOut;
 
+                const TYPE_LABEL: Record<string, string> = { "GRN": "Purchase" };
                 const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
                   "GRN":          { bg: "#E8F5E9", color: "#2E7D32" },
                   "Sale":         { bg: "#FFEBEE", color: "#C62828" },
@@ -975,7 +849,7 @@ export default function StockOverview() {
                 };
 
                 const typeDesc: Record<string, string> = {
-                  "GRN":          "Goods received into stock",
+                  "GRN":          "Purchase received into stock",
                   "Sale":         "Dispensed to patient",
                   "Transfer In":  "Received via transfer",
                   "Transfer Out": "Sent via transfer",
@@ -1003,7 +877,7 @@ export default function StockOverview() {
                     {/* Type legend */}
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
                       {Object.entries(TYPE_STYLE).map(([t, s]) => (
-                        <span key={t} style={{ fontSize: 10, padding: "2px 8px", background: s.bg, color: s.color, fontWeight: 700, letterSpacing: "0.03em" }}>{t}</span>
+                        <span key={t} style={{ fontSize: 10, padding: "2px 8px", background: s.bg, color: s.color, fontWeight: 700, letterSpacing: "0.03em" }}>{TYPE_LABEL[t] ?? t}</span>
                       ))}
                     </div>
 
@@ -1021,7 +895,7 @@ export default function StockOverview() {
                             {/* Row 1: type badge + ref + date + qty */}
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                                <span style={{ fontSize: 10, padding: "2px 8px", background: ts.bg, color: ts.color, fontWeight: 700, letterSpacing: "0.04em", flexShrink: 0 }}>{m.type}</span>
+                                <span style={{ fontSize: 10, padding: "2px 8px", background: ts.bg, color: ts.color, fontWeight: 700, letterSpacing: "0.04em", flexShrink: 0 }}>{TYPE_LABEL[m.type] ?? m.type}</span>
                                 <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#1B6CA8", fontWeight: 600 }}>{m.ref}</span>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1111,7 +985,7 @@ export default function StockOverview() {
                           const c = TYPE_COLOR[t.type] ?? "#9CA3AF";
                           return (
                             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}
-                              title={`${t.date}: ${t.type} (${t.qty > 0 ? "+" : ""}${t.qty}) → ${t.snapQty} units`}>
+                              title={`${t.date}: ${t.type === "GRN" ? "Purchase" : t.type} (${t.qty > 0 ? "+" : ""}${t.qty}) → ${t.snapQty} units`}>
                               <div style={{ height: h, minHeight: 4, background: c, width: "100%", opacity: 0.85 }} />
                             </div>
                           );
@@ -1140,7 +1014,7 @@ export default function StockOverview() {
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                  <span style={{ fontSize: 10, padding: "1px 6px", background: c + "22", color: c, fontWeight: 700 }}>{m.type}</span>
+                                  <span style={{ fontSize: 10, padding: "1px 6px", background: c + "22", color: c, fontWeight: 700 }}>{m.type === "GRN" ? "Purchase" : m.type}</span>
                                   <span style={{ fontFamily: "JetBrains Mono", fontSize: 11, color: "#9CA3AF" }}>{m.date}</span>
                                 </div>
                                 <span style={{ fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 700, color: m.qty > 0 ? "#2E7D32" : "#C62828" }}>
@@ -1166,7 +1040,7 @@ export default function StockOverview() {
             <div style={{ padding: "14px 20px", borderTop: "1px solid #E8ECF4", background: "#fff", display: "flex", gap: 10, flexShrink: 0 }}>
               <button onClick={() => setShowAdjust(true)} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>Adjust Stock</button>
               <button onClick={() => setShowPO(true)} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>Create PO</button>
-              <button onClick={() => setSel(null)} style={{ flex: 1, padding: "9px 0", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>View in Inventory</button>
+              <button onClick={() => { setSel(null); onNavigate?.("inventory"); }} style={{ flex: 1, padding: "9px 0", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>View in Inventory</button>
             </div>
 
           </aside>
@@ -1179,7 +1053,7 @@ export default function StockOverview() {
           <div style={{ background: "#fff", width: 480, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #EEF1F6" }}>
               <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>New Stock Adjustment</div>
-              <button onClick={() => setShowAdjust(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>Ã—</button>
+              <button onClick={() => setShowAdjust(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>&times;</button>
             </div>
             <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
               {[
@@ -1209,7 +1083,7 @@ export default function StockOverview() {
           <div style={{ background: "#fff", width: 480, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #EEF1F6" }}>
               <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>Create Purchase Order</div>
-              <button onClick={() => setShowPO(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>Ã—</button>
+              <button onClick={() => setShowPO(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>&times;</button>
             </div>
             <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
               {[
@@ -1226,7 +1100,7 @@ export default function StockOverview() {
               ))}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
                 <button onClick={() => setShowPO(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-                <button onClick={() => setShowPO(false)} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Create PO</button>
+                <button onClick={() => { setShowPO(false); setSel(null); onNavigate?.("purchases"); }} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Create PO</button>
               </div>
             </div>
           </div>

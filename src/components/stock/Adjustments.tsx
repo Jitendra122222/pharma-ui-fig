@@ -77,6 +77,24 @@ export default function Adjustments() {
     if (!adjForm.reason)             errs.reason     = "Select a reason";
     if (!adjForm.requestedBy)        errs.requestedBy = "Enter requestor name";
     if (Object.keys(errs).length > 0) { setAdjFormErrors(errs); return; }
+    const qty = adjForm.adjDirection === "-" ? -adjQtyNum : adjQtyNum;
+    const before = selectedDrug!.stock;
+    const newRow: AdjRow = {
+      id: `ADJ-${Date.now()}`,
+      date: new Date().toISOString().slice(0, 10),
+      drug: selectedDrug!.name,
+      type: adjForm.adjType,
+      qtyBefore: before,
+      qty,
+      qtyAfter: before + qty,
+      reason: adjForm.customReason || adjForm.reason,
+      ref: adjForm.refNo || `ADJ-REF-${Date.now()}`,
+      by: adjForm.requestedBy,
+    };
+    setExtraAdjustments(prev => [newRow, ...prev]);
+    setExtraApprovalMap(prev => ({ ...prev, [newRow.id]: "Pending" }));
+    setAdjForm(EMPTY_ADJ_FORM);
+    setAdjFormErrors({});
     setNewAdjPage(false);
     setShowModal(false);
   }
@@ -979,7 +997,7 @@ export default function Adjustments() {
                         style={{ ...inputBase(false, !!adjForm.batchId), appearance: "none" as const }}>
                         <option value="">— All batches / unspecified —</option>
                         {drugBatches.map(b => (
-                          <option key={b.id} value={b.id}>{b.id} · Exp {b.expiry} · Qty {b.quantity}</option>
+                          <option key={b.id} value={b.id}>{b.id} · Exp {b.expiry} · Qty {b.qtyCurrent}</option>
                         ))}
                       </select>
                     </div>
@@ -1145,7 +1163,7 @@ export default function Adjustments() {
                 style={{ padding: "8px 18px", border: "1px solid #DDE3EC", borderRadius: 6, background: "#fff", fontFamily: "Inter", fontSize: 13, fontWeight: 500, color: "#1A2436", cursor: "pointer" }}>
                 Cancel
               </button>
-              <button
+              <button onClick={() => { setNewAdjPage(false); setShowModal(false); }}
                 style={{ padding: "8px 18px", border: "1px solid #1B6CA8", borderRadius: 6, background: "#EFF6FF", fontFamily: "Inter", fontSize: 13, fontWeight: 600, color: "#1B6CA8", cursor: "pointer" }}>
                 Save Draft
               </button>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SL } from "../styles/sales";
 import type { Tab } from "./sales/salesData";
 import SalesInvoices from "./sales/SalesInvoices";
 import CounterSales from "./sales/CounterSales";
@@ -19,21 +20,15 @@ export default function Sales() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexShrink: 0 }}>
-        <h1 style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#1A2436", margin: 0, letterSpacing: "-0.02em" }}>Sales</h1>
+        <h1 style={SL.pageTitle}>Sales</h1>
       </div>
 
-      <div style={{ display: "flex", background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", flexShrink: 0 }}>
+      <div style={SL.tabContainer}>
         {TABS.map((t, i) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{
-              flex: 1, padding: "14px 16px", border: "none",
-              borderBottom: tab === t.id ? "2px solid #1B6CA8" : "2px solid transparent",
-              background: tab === t.id ? "#F0F6FF" : "transparent",
-              borderRight: i < TABS.length - 1 ? "1px solid #EEF1F6" : undefined,
-              cursor: "pointer", textAlign: "left",
-            }}>
-            <div style={{ fontSize: 13, fontWeight: tab === t.id ? 700 : 500, color: tab === t.id ? "#1B6CA8" : "#6B7280", fontFamily: "Inter" }}>{t.label}</div>
-            <div style={{ fontSize: 11, color: tab === t.id ? "#5AA0D6" : "#C8CDD8", marginTop: 2, fontFamily: "Inter" }}>{t.sub}</div>
+            style={SL.tabBtn(tab === t.id, i < TABS.length - 1)}>
+            <div style={SL.tabLabel(tab === t.id)}>{t.label}</div>
+            <div style={SL.tabSub(tab === t.id)}>{t.sub}</div>
           </button>
         ))}
       </div>

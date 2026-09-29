@@ -5,6 +5,7 @@ import {
   MEDICINES, salesInvoices,
   formatDMY, calcAmount, pickBatch,
 } from "./salesData";
+import { drugs as stockDrugs } from "../../data/mockData";
 
 // ─── Calendar / chevron icons ─────────────────────────────────────────────────
 
@@ -342,25 +343,40 @@ export function MedicineSearchCell({
 
       {open && !batchMed && results.length > 0 && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 280 }}>
-          {results.map(m => (
-            <button key={m.name} onClick={() => { setBatchMed(m); setQuery(m.name); }}
-              style={{ width: "100%", textAlign: "left", padding: "8px 12px", border: "none", background: "transparent", cursor: "pointer", borderBottom: "1px solid #F4F6FA", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#F0F6FF")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#1A2436" }}>{m.name}</div>
-                <div style={{ fontSize: 10, color: "#9CA3AF", fontFamily: "JetBrains Mono" }}>{m.barcode}</div>
-              </div>
-              <div style={{ fontSize: 11, color: "#6B7280" }}>{m.batches.length} batch{m.batches.length !== 1 ? "es" : ""}</div>
-            </button>
-          ))}
+          {results.map(m => {
+            const sd = stockDrugs.find(d => d.name === m.name);
+            const isOut = sd?.status === "Out of Stock";
+            const isLow = sd?.status === "Low Stock";
+            return (
+              <button key={m.name} onClick={() => { setBatchMed(m); setQuery(m.name); }}
+                style={{ width: "100%", textAlign: "left", padding: "8px 12px", border: "none", background: "transparent", cursor: "pointer", borderBottom: "1px solid #F4F6FA", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#F0F6FF")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#1A2436" }}>{m.name}</div>
+                  <div style={{ fontSize: 10, color: "#9CA3AF", fontFamily: "JetBrains Mono" }}>{m.barcode}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {isOut && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#FFEBEE", color: "#C62828", letterSpacing: "0.03em" }}>Out of Stock</span>}
+                  {isLow && !isOut && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#FFF3E0", color: "#E65100", letterSpacing: "0.03em" }}>Low Stock</span>}
+                  {sd?.schedule && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 5px", borderRadius: 3, background: "#FFEBEE", color: "#C62828", letterSpacing: "0.05em" }}>Sch {sd.schedule}</span>}
+                  <span style={{ fontSize: 11, color: "#6B7280" }}>{m.batches.length} batch{m.batches.length !== 1 ? "es" : ""}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 
       {batchMed && (
         <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 680 }}>
-          <div style={{ padding: "8px 12px", background: "#F0F6FF", borderBottom: "1px solid #E8ECF4", fontSize: 11, fontWeight: 700, color: "#1B6CA8", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            Select Batch — {batchMed.name}
+          <div style={{ padding: "8px 12px", background: "#F0F6FF", borderBottom: "1px solid #E8ECF4", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#1B6CA8", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Select Batch — {batchMed.name}</span>
+            {alloc === "FEFO" && (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: "#1B6CA8", color: "#fff", letterSpacing: "0.04em" }}>
+                FEFO · Earliest expiry first
+              </span>
+            )}
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -371,15 +387,21 @@ export function MedicineSearchCell({
               </tr>
             </thead>
             <tbody>
-              {[...batchMed.batches].sort((a, b) => alloc === "FEFO" ? a.expDate.localeCompare(b.expDate) : b.expDate.localeCompare(a.expDate)).map(b => {
-                const nearExpiry = new Date(b.expDate) < new Date("2025-12-31");
+              {[...batchMed.batches].sort((a, b) => alloc === "FEFO" ? a.expDate.localeCompare(b.expDate) : b.expDate.localeCompare(a.expDate)).map((b, bIdx) => {
+                const daysToExp = Math.round((new Date(b.expDate).getTime() - Date.now()) / 86400000);
+                const nearExpiry = daysToExp > 0 && daysToExp < 90;
                 const margin = ((b.saleRate - b.ptr) / b.saleRate * 100);
+                const isFEFO = bIdx === 0 && alloc === "FEFO";
+                const rowBg = isFEFO ? "#F0FFF4" : nearExpiry ? "#FFFBEB" : "transparent";
                 return (
                   <tr key={b.id} onClick={() => { onSelect(batchMed, b); setOpen(false); setBatchMed(null); }}
-                    style={{ cursor: "pointer", borderBottom: "1px solid #F4F6FA", background: nearExpiry ? "#FFFBEB" : "transparent" }}
+                    style={{ cursor: "pointer", borderBottom: "1px solid #F4F6FA", background: rowBg, opacity: alloc === "FEFO" && bIdx > 0 ? 0.72 : 1 }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#EFF6FF")}
-                    onMouseLeave={e => (e.currentTarget.style.background = nearExpiry ? "#FFFBEB" : "transparent")}>
-                    <td style={{ padding: "7px 10px", fontSize: 13, fontFamily: "JetBrains Mono", color: "#1B6CA8" }}>{b.id}</td>
+                    onMouseLeave={e => (e.currentTarget.style.background = rowBg)}>
+                    <td style={{ padding: "7px 10px", fontSize: 13, fontFamily: "JetBrains Mono", color: "#1B6CA8" }}>
+                      {b.id}
+                      {isFEFO && <span style={{ fontSize: 9, fontWeight: 800, marginLeft: 5, padding: "1px 4px", borderRadius: 3, background: "#E8F5E9", color: "#2E7D32" }}>FEFO</span>}
+                    </td>
                     <td style={{ padding: "7px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, color: b.qty < 20 ? "#C62828" : "#1A2436" }}>{b.qty}</td>
                     <td style={{ padding: "7px 10px", fontSize: 13, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{b.packs}</td>
                     <td style={{ padding: "7px 10px", fontSize: 11, fontFamily: "JetBrains Mono", color: nearExpiry ? "#E65100" : "#6B7280", fontWeight: nearExpiry ? 600 : 400 }}>{b.expDate}</td>

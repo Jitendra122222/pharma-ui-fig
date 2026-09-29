@@ -1,6 +1,6 @@
 import { drugs } from "../../data/mockData";
 
-export type SubTab = "overview" | "adjustments" | "batches" | "expiry" | "transfer" | "investigation" | "locations";
+export type SubTab = "overview" | "adjustments" | "batches" | "expiry" | "transfer" | "investigation" | "locations" | "narcotic" | "recall";
 
 export const TABS: { id: SubTab; label: string; sub: string }[] = [
   { id: "overview",      label: "Stock Overview",    sub: "Current stock levels" },
@@ -10,6 +10,8 @@ export const TABS: { id: SubTab; label: string; sub: string }[] = [
   { id: "expiry",        label: "Expiry Management",  sub: "Near-expiry alerts" },
   { id: "transfer",      label: "Stock Transfer",     sub: "Inter-branch transfers" },
   { id: "investigation", label: "Investigation",      sub: "Stock difference investigation" },
+  { id: "narcotic",      label: "Narcotic Register",  sub: "Schedule H1 running balance" },
+  { id: "recall",        label: "Drug Recall",        sub: "Batch recall & patient traceability" },
 ];
 
 export type StorageType = "alphabetical" | "company" | "category" | "custom";
@@ -57,7 +59,7 @@ export const batches = [
 ];
 
 export const expiryItems = [...drugs]
-  .map(d => ({ ...d, daysLeft: Math.round((new Date(d.expiry).getTime() - new Date("2025-07-28").getTime()) / 86400000) }))
+  .map(d => ({ ...d, daysLeft: Math.round((new Date(d.expiry).getTime() - Date.now()) / 86400000) }))
   .sort((a, b) => a.daysLeft - b.daysLeft);
 
 export type MovementType = "GRN" | "Sale" | "Adjustment" | "Transfer In" | "Transfer Out" | "Return";
@@ -150,3 +152,20 @@ export const MOVEMENTS: Record<string, StockMovement[]> = {
     { id: "GRN-2025-0119", date: "2025-07-12", type: "GRN", ref: "GRN-2025-0119", qty: 400, user: "Store Manager", batch: "BT-2025-0122", toLocation: "A3-01" },
   ],
 };
+
+export const COLD_LOG: { ts: string; tempC: number }[] = [
+  { ts: "2026-09-27 06:00", tempC: 4.2 },
+  { ts: "2026-09-27 10:00", tempC: 4.8 },
+  { ts: "2026-09-27 14:00", tempC: 5.1 },
+  { ts: "2026-09-27 18:00", tempC: 4.6 },
+  { ts: "2026-09-27 22:00", tempC: 3.9 },
+  { ts: "2026-09-28 06:00", tempC: 4.1 },
+  { ts: "2026-09-28 10:00", tempC: 9.1 },
+  { ts: "2026-09-28 14:00", tempC: 5.3 },
+  { ts: "2026-09-28 18:00", tempC: 4.7 },
+  { ts: "2026-09-28 22:00", tempC: 4.0 },
+  { ts: "2026-09-29 06:00", tempC: 3.8 },
+  { ts: "2026-09-29 10:00", tempC: 4.4 },
+  { ts: "2026-09-29 14:00", tempC: 4.9 },
+  { ts: "2026-09-29 18:00", tempC: 5.0 },
+];

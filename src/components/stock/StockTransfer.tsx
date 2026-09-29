@@ -82,6 +82,11 @@ export default function StockTransfer() {
   const [histStatus, setHistStatus] = useState<"All" | TransferStatus>("All");
   const [varianceFilter, setVarianceFilter] = useState<"All" | "Short" | "Over" | "Matched" | "Pending">("All");
   const [cocSearch, setCocSearch] = useState("");
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  function showToast(msg: string, type: "success" | "error" = "success") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  }
 
   const histFiltered = TRANSFER_HISTORY.filter(t => {
     const q = histSearch.toLowerCase();
@@ -200,8 +205,8 @@ export default function StockTransfer() {
             </div>
 
             <div style={{ padding: "16px 22px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Save Draft</button>
-              <button style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Post Transfer</button>
+              <button onClick={() => showToast("Transfer saved as draft.", "success")} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Save Draft</button>
+              <button onClick={() => showToast("Transfer posted successfully.", "success")} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Post Transfer</button>
             </div>
           </>
         )}
@@ -398,6 +403,11 @@ export default function StockTransfer() {
           </>
         )}
       </div>
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: toast.type === "success" ? "#2E7D32" : "#C62828", color: "#fff", padding: "10px 20px", borderRadius: 6, fontSize: 13, fontFamily: "Inter", fontWeight: 600, zIndex: 500, boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
+          {toast.msg}
+        </div>
+      )}
     </div>
   );
 }

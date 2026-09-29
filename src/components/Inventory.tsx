@@ -1,5 +1,7 @@
 ﻿import { useState, useEffect, useRef, Fragment } from "react";
 import { createPortal } from "react-dom";
+import { S } from "../styles/common";
+import { IV } from "../styles/inventory";
 import { AreaChart, Area, BarChart, Bar, Cell, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { drugs } from "../data/mockData";
 import { purchaseOrders, PAYMENT_TERMS_OPTIONS } from "./purchases/purchasesData";
@@ -277,7 +279,7 @@ function AddManufacturerModal({ initialName, onClose, onSaved }: { initialName: 
             <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>New Manufacturer</div>
             <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>Add manufacturer</div>
           </div>
-          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>{"×"}</button>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
         </div>
         <div style={{ padding: "20px 22px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>
@@ -374,7 +376,7 @@ function AddCompositionModal({ initialName, onClose, onSaved }: { initialName: s
             <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>New Composition</div>
             <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>Add composition</div>
           </div>
-          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>{"×"}</button>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
         </div>
         <div style={{ padding: "20px 22px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>
@@ -963,8 +965,8 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
                       style={{ width: "100%", height: "100%", objectFit: "cover" as const, display: "block" }} />
                     {!isView && (
                       <button type="button" onClick={() => removeImage(idx)}
-                        style={{ position: "absolute" as const, top: 5, right: 5, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 14, lineHeight: "1", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
-                        ×
+                        style={{ position: "absolute" as const, top: 5, right: 5, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1L1 9" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/></svg>
                       </button>
                     )}
                   </div>
@@ -1057,7 +1059,7 @@ function AddToShortBookDrawer({ drug, onClose }: { drug: (typeof drugs)[0]; onCl
         <Modal>
           <div style={{ padding: "18px 22px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
             <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>Already in Short Book</div>
-            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
           </div>
           <div style={{ padding: "20px 22px" }}>
             <div style={{ padding: "14px 16px", borderRadius: 6, background: "#FFF8E1", border: "1px solid #FFE082", fontSize: 13, color: "#F57F17" }}>
@@ -1089,7 +1091,7 @@ function AddToShortBookDrawer({ drug, onClose }: { drug: (typeof drugs)[0]; onCl
               <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Reorder</div>
               <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>Add to Short Book</div>
             </div>
-            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
           </div>
         </div>
         {/* Body */}
@@ -1357,18 +1359,18 @@ const DRUG_PRESCRIPTION: Record<string, "OTC" | "Schedule H" | "Schedule H1" | "
 };
 
 const DRUG_STORAGE: Record<string, { label: string; icon: string; color: string; bg: string }> = {
-  "Amoxicillin 500mg":   { label: "15–30°C", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" },
-  "Metformin 1000mg":    { label: "15–30°C", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" },
-  "Lisinopril 10mg":     { label: "15–30°C", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" },
-  "Atorvastatin 20mg":   { label: "< 25°C",  icon: "◫", color: "#E65100", bg: "#FFF3E0" },
-  "Omeprazole 20mg":     { label: "< 25°C",  icon: "◫", color: "#E65100", bg: "#FFF3E0" },
-  "Salbutamol Inhaler":  { label: "15–30°C", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" },
-  "Paracetamol 500mg":   { label: "15–30°C", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" },
-  "Ciprofloxacin 500mg": { label: "15–30°C", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" },
-  "Amlodipine 5mg":      { label: "15–30°C", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" },
+  "Amoxicillin 500mg":   { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" },
+  "Metformin 1000mg":    { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" },
+  "Lisinopril 10mg":     { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" },
+  "Atorvastatin 20mg":   { label: "< 25°C",  icon: "", color: "#E65100", bg: "#FFF3E0" },
+  "Omeprazole 20mg":     { label: "< 25°C",  icon: "", color: "#E65100", bg: "#FFF3E0" },
+  "Salbutamol Inhaler":  { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" },
+  "Paracetamol 500mg":   { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" },
+  "Ciprofloxacin 500mg": { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" },
+  "Amlodipine 5mg":      { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" },
   "Insulin Glargine":    { label: "2–8°C",   icon: "", color: "#1B6CA8", bg: "#EFF6FF" },
-  "Warfarin 5mg":        { label: "15–30°C", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" },
-  "Sertraline 50mg":     { label: "< 25°C",  icon: "◫", color: "#E65100", bg: "#FFF3E0" },
+  "Warfarin 5mg":        { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" },
+  "Sertraline 50mg":     { label: "< 25°C",  icon: "", color: "#E65100", bg: "#FFF3E0" },
 };
 
 const DRUG_INDICATIONS: Record<string, string> = {
@@ -1519,9 +1521,7 @@ function FiltersDrawer(props: FiltersDrawerProps) {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #EEF1F6", flexShrink: 0 }}>
           <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>Filters</div>
-          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {"×"}
-          </button>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
         </div>
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
@@ -2688,9 +2688,9 @@ const PHARMACY_INFO = { name: "City Pharmacy", address: "12 MG Road, Bengaluru",
 
 type LabelSize = "small" | "standard" | "large";
 const LABEL_SIZES: { key: LabelSize; label: string; dim: string; w: number; h: number }[] = [
-  { key: "small",    label: "Small",    dim: "30 × 20 mm", w: 252, h: 168 },
-  { key: "standard", label: "Standard", dim: "50 × 30 mm", w: 320, h: 192 },
-  { key: "large",    label: "Large",    dim: "70 × 40 mm", w: 420, h: 240 },
+  { key: "small",    label: "Small",    dim: "30 x 20 mm", w: 252, h: 168 },
+  { key: "standard", label: "Standard", dim: "50 x 30 mm", w: 320, h: 192 },
+  { key: "large",    label: "Large",    dim: "70 x 40 mm", w: 420, h: 240 },
 ];
 
 function FakeBarcode({ value, width, height }: { value: string; width: number; height: number }) {
@@ -2717,7 +2717,7 @@ function LabelPreview({ batch, drug, size }: { batch: typeof INV_BATCHES[0] | nu
   const form   = DRUG_DOSAGE_FORM[drug.name] ?? drug.unit;
   const mfr    = DRUG_MANUFACTURER[drug.name] ?? drug.supplier;
   const pack   = DRUG_PACK[drug.name] ?? "";
-  const store  = DRUG_STORAGE[drug.name] ?? { label: "Room Temperature (15–30°C)", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" };
+  const store  = DRUG_STORAGE[drug.name] ?? { label: "Room Temperature (15–30°C)", icon: "", color: "#2E7D32", bg: "#E8F5E9" };
   const rx     = DRUG_PRESCRIPTION[drug.name] ?? "OTC";
   const expiry = batch?.expiry ?? "—";
   const batchNo= batch?.id ?? "—";
@@ -3378,7 +3378,7 @@ function Toast({ toast, onDone }: { toast: ToastState; onDone: () => void }) {
             </svg>
           )}
           <span style={{ flex: 1, fontSize: 13, fontFamily: "Inter", fontWeight: 600, color: "#fff", lineHeight: 1.4 }}>{toast.msg}</span>
-          <button onClick={onDone} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.75)", cursor: "pointer", fontSize: 19, lineHeight: 1, padding: "0 0 0 8px", flexShrink: 0 }}>×</button>
+          <button onClick={onDone} style={{ background: "transparent", border: "none", cursor: "pointer", padding: "0 0 0 8px", flexShrink: 0, display: "flex", alignItems: "center" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
         </div>
         <div style={{ height: 3, background: "rgba(255,255,255,0.25)", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: 0, left: 0, height: "100%", background: "rgba(255,255,255,0.6)", animation: "toast-progress 2s linear forwards" }} />
@@ -3510,7 +3510,7 @@ function InvViewHistoryModal({ drugName, distributorName, baseCost, onClose }: {
             <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Distributor History</div>
             <div style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter", marginTop: 2 }}>{drugName} · {distributorName}</div>
           </div>
-          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22, lineHeight: 1, padding: "0 2px" }}>×</button>
+          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "0 2px", display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
         </div>
 
         {/* Stats row */}
@@ -3677,7 +3677,7 @@ function InvPlaceOrderModal({ drugName, distributorName, lastRate, onClose, onDo
               {drugName} · {distributorName}
             </div>
           </div>
-          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22, lineHeight: 1, padding: "0 2px", flexShrink: 0 }}>×</button>
+          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "0 2px", flexShrink: 0, display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
         </div>
 
         {/* Body */}
@@ -3903,7 +3903,7 @@ function InvLocationStockModal({ drug, onClose }: { drug: typeof drugs[0]; onClo
               </span>
             )}
           </div>
-          <button onClick={onClose} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #E8ECF4", borderRadius: 4, background: "#fff", cursor: "pointer", fontSize: 16, color: "#6B7280" }}>×</button>
+          <button onClick={onClose} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #E8ECF4", borderRadius: 4, background: "#fff", cursor: "pointer" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 22 }}>
@@ -4059,7 +4059,7 @@ function InvExpiryRiskModal({ drug, onClose }: { drug: typeof drugs[0]; onClose:
               </span>
             )}
           </div>
-          <button onClick={onClose} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #E8ECF4", borderRadius: 4, background: "#fff", cursor: "pointer", fontSize: 16, color: "#6B7280" }}>×</button>
+          <button onClick={onClose} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #E8ECF4", borderRadius: 4, background: "#fff", cursor: "pointer" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 22 }}>
@@ -4273,7 +4273,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
   function batchHealth(expiry: string) {
     const d = Math.floor((new Date(expiry).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (d <= 0) return { label: "Expired", color: "#C62828", icon: "" };
-    if (d <= 180) return { label: "Near Expiry", color: "#E65100", icon: "⚠" };
+    if (d <= 180) return { label: "Near Expiry", color: "#E65100", icon: "!" };
     return { label: "Healthy", color: "#2E7D32", icon: "" };
   }
 
@@ -4282,10 +4282,10 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
     return d > 0 && d <= 180;
   });
   const insights: { icon: string; ok: boolean; text: string }[] = [
-    ...(nearExpiryBatch ? [{ icon: "⚠", ok: false, text: `${toPacks(nearExpiryBatch.qtyCurrent)} ${packUnitShort} may reach expiry before expected sale` }] : []),
-    { icon: "✓", ok: true, text: `Open PO of ${toPacks(openPO)} ${packUnitShort} already arriving` },
-    ...(drugBatches.length > 0 ? [{ icon: "✓", ok: true, text: `${drugBatches[0].supplier} currently offers lowest effective cost` }] : []),
-    ...(nearExpiryBatch ? [{ icon: "⚠", ok: false, text: `Batch ${nearExpiryBatch.id} has higher expiry risk` }] : []),
+    ...(nearExpiryBatch ? [{ icon: "!", ok: false, text: `${toPacks(nearExpiryBatch.qtyCurrent)} ${packUnitShort} may reach expiry before expected sale` }] : []),
+    { icon: "+", ok: true, text: `Open PO of ${toPacks(openPO)} ${packUnitShort} already arriving` },
+    ...(drugBatches.length > 0 ? [{ icon: "+", ok: true, text: `${drugBatches[0].supplier} currently offers lowest effective cost` }] : []),
+    ...(nearExpiryBatch ? [{ icon: "!", ok: false, text: `Batch ${nearExpiryBatch.id} has higher expiry risk` }] : []),
   ];
 
   const kpiRow1 = [
@@ -4340,7 +4340,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
               const rc = rx === "OTC" ? "#2E7D32" : rx === "Schedule H" ? "#1B6CA8" : rx === "Schedule H1" ? "#E65100" : "#C62828";
               const rb = rx === "OTC" ? "#E8F5E9" : rx === "Schedule H" ? "#EFF6FF" : rx === "Schedule H1" ? "#FFF3E0" : "#FFEBEE";
               const required = rx !== "OTC";
-              const s = DRUG_STORAGE[drug.name] ?? { label: "15–30°C", icon: "◫", color: "#2E7D32", bg: "#E8F5E9" };
+              const s = DRUG_STORAGE[drug.name] ?? { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" };
               return (
                 <>
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999, background: rb, color: rc, flexShrink: 0 }}>{rx}</span>
@@ -4357,7 +4357,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
               style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 13, fontFamily: "Inter", fontWeight: 600, cursor: "pointer", minHeight: 40, boxSizing: "border-box" as const }}
               onMouseEnter={e => (e.currentTarget.style.background = "#155A8A")}
               onMouseLeave={e => (e.currentTarget.style.background = "#1B6CA8")}>
-              <span style={{ fontSize: 12 }}>⚡</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}><path d="M7 1L2 7h5l-2 4 5-6H5l2-4Z" fill="#fff"/></svg>
               Quick Actions
               <svg width="9" height="9" viewBox="0 0 10 10" fill="none" style={{ transform: showQuickActions ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
                 <path d="M1 3l4 4 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -4472,7 +4472,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
               <div style={{ background: "#fff", border: "1px solid #FED7AA" }}>
                 {/* Header */}
                 <div style={{ padding: "10px 16px", borderBottom: "1px solid #FED7AA", background: "#FFF7ED", display: "flex", alignItems: "center", gap: 7 }}>
-                  <span style={{ fontSize: 13 }}>⚠</span>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L13 12H1L7 1Z" stroke="#C2410C" strokeWidth="1.5" strokeLinejoin="round"/><path d="M7 5v3M7 10v.5" stroke="#C2410C" strokeWidth="1.5" strokeLinecap="round"/></svg>
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#C2410C", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Low Stock</span>
                 </div>
                 {/* Rows */}
@@ -5047,7 +5047,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                             <td style={{ padding: "10px 12px", textAlign: "center" as const, fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{s.totalOrders}</td>
                             {/* Rating */}
                             <td style={{ padding: "10px 12px", textAlign: "center" as const }}>
-                              <span style={{ fontSize: 13, color: "#F59E0B", letterSpacing: 2 }}>{"★".repeat(s.rating)}{"☆".repeat(5 - s.rating)}</span>
+                              <span style={{ fontFamily: "JetBrains Mono", fontSize: 13, color: "#F59E0B" }}>{s.rating}/5</span>
                             </td>
                             {/* Actions */}
                             <td style={{ padding: "10px 12px", textAlign: "center" as const }}>
@@ -6148,7 +6148,7 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
       {/* ─── HEADER ─── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
-          <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", margin: 0, letterSpacing: "-0.02em" }}>Inventory</h1>
+          <h1 style={S.pageTitle}>Inventory</h1>
           <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2, fontFamily: "Inter" }}>
             <span style={{ fontFamily: "JetBrains Mono", fontWeight: 600, color: "#1A2436" }}>{allDrugs.length.toLocaleString()}</span>
             {" Medicines · "}
@@ -6165,10 +6165,10 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
         </div>
       </div>
 
-      {/* ─── TODAY'S INVENTORY ACTIONS ─── */}
-      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC" }}>
-        <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>{"Today’s Inventory Actions"}</span>
+      {/* ─── TODAY’S INVENTORY ACTIONS ─── */}
+      <div style={IV.sectionCard}>
+        <div style={IV.cardSectionHeader}>
+          <span style={IV.cardSectionLabel}>{"Today’s Inventory Actions"}</span>
         </div>
         <div style={{ padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
           {([
@@ -6192,9 +6192,9 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
       </div>
 
       {/* ─── STOCK HEALTH ─── */}
-      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC" }}>
-        <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Stock Health</span>
+      <div style={IV.sectionCard}>
+        <div style={IV.cardSectionHeader}>
+          <span style={IV.cardSectionLabel}>Stock Health</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr" }}>
           {([
@@ -6216,11 +6216,11 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
       </div>
 
       {/* ─── TABLE CARD ─── */}
-      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
+      <div style={IV.tableCard}>
 
         {/* SEARCH & FILTER header */}
-        <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Search & Filter</span>
+        <div style={IV.cardSectionHeader}>
+          <span style={IV.cardSectionLabel}>Search & Filter</span>
         </div>
 
         {/* Search + Filter bar */}

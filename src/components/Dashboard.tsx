@@ -1,13 +1,15 @@
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { salesData, categoryData, recentTransactions, dailySalesData, drugs } from "../data/mockData";
+import { S, stockBadge } from "../styles/common";
+import { D } from "../styles/dashboard";
 
 const PIE_COLORS = ["#1B6CA8", "#00ACC1", "#2E7D32", "#E65100", "#7B1FA2", "#37474F"];
 
 const KPI = ({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) => (
-  <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "20px 22px" }}>
-    <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
-    <div style={{ fontFamily: "Outfit", fontSize: 28, fontWeight: 700, color, marginBottom: 4, letterSpacing: "-0.02em" }}>{value}</div>
-    <div style={{ fontSize: 12, color: "#6B7280" }}>{sub}</div>
+  <div style={D.kpiCard}>
+    <div style={D.kpiLabel}>{label}</div>
+    <div style={{ ...D.kpiValue, color }}>{value}</div>
+    <div style={D.kpiSub}>{sub}</div>
   </div>
 );
 
@@ -19,16 +21,12 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", margin: 0, letterSpacing: "-0.02em" }}>Dashboard</h1>
-          <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>Monday, 28 July 2025 · Today's Overview</div>
+          <h1 style={S.pageTitle}>Dashboard</h1>
+          <div style={{ ...S.mutedText, marginTop: 2 }}>Monday, 28 July 2025 · Today's Overview</div>
         </div>
         <div className="flex gap-2">
-          <button style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>
-            Export Report
-          </button>
-          <button style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter" }}>
-            New Sale
-          </button>
+          <button style={S.btnSecondary}>Export Report</button>
+          <button style={S.btnPrimary}>New Sale</button>
         </div>
       </div>
 
@@ -43,15 +41,15 @@ export default function Dashboard() {
       {/* Charts row */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "2fr 1fr" }}>
         {/* Revenue chart */}
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "20px 22px" }}>
+        <div style={D.chartCard}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div>
-              <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 600, color: "#0C1B33" }}>Revenue & Profit</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>6-month trend</div>
+              <div style={D.chartTitle}>Revenue & Profit</div>
+              <div style={D.chartSubtitle}>6-month trend</div>
             </div>
-            <div className="flex gap-4" style={{ fontSize: 12 }}>
-              <span style={{ color: "#1B6CA8" }}>&#9679; Revenue</span>
-              <span style={{ color: "#00ACC1" }}>&#9679; Profit</span>
+            <div className="flex gap-4">
+              <span style={D.legendDot("#1B6CA8")}>&#9679; Revenue</span>
+              <span style={D.legendDot("#00ACC1")}>&#9679; Profit</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={180}>
@@ -69,7 +67,7 @@ export default function Dashboard() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
               <Tooltip
-                contentStyle={{ borderRadius: 0, border: "1px solid #DDE3EC", fontSize: 12 }}
+                contentStyle={D.chartTooltip}
                 formatter={(v) => [`₹${(v as number).toLocaleString()}`, ""]}
               />
               <Area type="monotone" dataKey="revenue" stroke="#1B6CA8" strokeWidth={2} fill="url(#rev)" />
@@ -79,25 +77,25 @@ export default function Dashboard() {
         </div>
 
         {/* Category pie */}
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "20px 22px" }}>
-          <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 600, color: "#0C1B33", marginBottom: 4 }}>Sales by Category</div>
-          <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 12 }}>Current month</div>
+        <div style={D.chartCard}>
+          <div style={{ ...D.chartTitle, marginBottom: 4 }}>Sales by Category</div>
+          <div style={D.chartSubtitle}>Current month</div>
           <ResponsiveContainer width="100%" height={120}>
             <PieChart>
               <Pie data={categoryData} cx="50%" cy="50%" innerRadius={35} outerRadius={55} dataKey="value" strokeWidth={2} stroke="#fff">
                 {categoryData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
-              <Tooltip contentStyle={{ borderRadius: 0, border: "1px solid #DDE3EC", fontSize: 11 }} />
+              <Tooltip contentStyle={D.chartTooltipSm} />
             </PieChart>
           </ResponsiveContainer>
           <div className="flex flex-col gap-1 mt-2">
             {categoryData.slice(0, 4).map((c, i) => (
-              <div key={c.name} className="flex items-center justify-between" style={{ fontSize: 11, color: "#6B7280" }}>
+              <div key={c.name} className="flex items-center justify-between" style={D.legendItem}>
                 <span className="flex items-center gap-1.5">
-                  <span style={{ width: 8, height: 8, background: PIE_COLORS[i], display: "inline-block" }} />
+                  <span style={D.legendDotBox(PIE_COLORS[i])} />
                   {c.name}
                 </span>
-                <span style={{ fontFamily: "JetBrains Mono", color: "#0C1B33" }}>{c.value}%</span>
+                <span style={S.mono}>{c.value}%</span>
               </div>
             ))}
           </div>
@@ -107,57 +105,50 @@ export default function Dashboard() {
       {/* Bottom row */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
         {/* Hourly sales */}
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "20px 22px" }}>
-          <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 600, color: "#0C1B33", marginBottom: 4 }}>Hourly Sales</div>
-          <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 12 }}>Today's transactions</div>
+        <div style={D.chartCard}>
+          <div style={{ ...D.chartTitle, marginBottom: 4 }}>Hourly Sales</div>
+          <div style={D.chartSubtitle}>Today's transactions</div>
           <ResponsiveContainer width="100%" height={110}>
             <BarChart data={dailySalesData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <XAxis dataKey="hour" tick={{ fontSize: 9, fill: "#9CA3AF" }} axisLine={false} tickLine={false} interval={2} />
               <YAxis hide />
-              <Tooltip contentStyle={{ borderRadius: 0, border: "1px solid #DDE3EC", fontSize: 11 }} />
+              <Tooltip contentStyle={D.chartTooltipSm} />
               <Bar dataKey="sales" fill="#1B6CA8" radius={0} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Recent transactions */}
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "20px 22px" }}>
-          <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 600, color: "#0C1B33", marginBottom: 14 }}>Recent Sales</div>
+        <div style={D.chartCard}>
+          <div style={{ ...D.chartTitle, marginBottom: 14 }}>Recent Sales</div>
           <div className="flex flex-col gap-3">
             {recentTransactions.map((t) => (
               <div key={t.id} className="flex items-center justify-between">
                 <div>
-                  <div style={{ fontSize: 12, color: "#0C1B33", fontWeight: 500 }}>{t.patient}</div>
-                  <div style={{ fontSize: 11, color: "#6B7280", fontFamily: "JetBrains Mono" }}>{t.id} · {t.time}</div>
+                  <div style={D.txPatient}>{t.patient}</div>
+                  <div style={D.txMeta}>{t.id} · {t.time}</div>
                 </div>
                 <div className="text-right">
-                  <div style={{ fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 500, color: "#0C1B33" }}>₹{t.total.toFixed(2)}</div>
-                  <div style={{ fontSize: 10, color: "#6B7280" }}>{t.method}</div>
+                  <div style={D.txAmount}>₹{t.total.toFixed(2)}</div>
+                  <div style={D.txMethod}>{t.method}</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Alerts */}
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "20px 22px" }}>
-          <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 600, color: "#0C1B33", marginBottom: 14 }}>Stock Alerts</div>
+        {/* Stock alerts */}
+        <div style={D.chartCard}>
+          <div style={{ ...D.chartTitle, marginBottom: 14 }}>Stock Alerts</div>
           <div className="flex flex-col gap-3">
             {lowStockItems.map((d) => (
               <div key={d.id} className="flex items-center justify-between">
                 <div>
-                  <div style={{ fontSize: 12, color: "#0C1B33", fontWeight: 500 }}>{d.name}</div>
-                  <div style={{ fontSize: 11, color: "#6B7280" }}>{d.location}</div>
+                  <div style={D.txPatient}>{d.name}</div>
+                  <div style={S.mutedTextSm}>{d.location}</div>
                 </div>
                 <div className="text-right">
-                  <div
-                    style={{
-                      fontSize: 11, fontFamily: "JetBrains Mono", fontWeight: 600,
-                      color: d.status === "Out of Stock" ? "#C62828" : "#E65100",
-                      padding: "2px 8px",
-                      background: d.status === "Out of Stock" ? "#FFEBEE" : "#FFF3E0",
-                    }}
-                  >
+                  <div style={stockBadge(d.status)}>
                     {d.stock === 0 ? "OUT" : d.stock + " left"}
                   </div>
                 </div>

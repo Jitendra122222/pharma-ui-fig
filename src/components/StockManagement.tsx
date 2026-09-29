@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SK } from "../styles/stock";
 import { type SubTab, TABS } from "./stock/stockData";
 import type { StorageType } from "./stock/stockData";
 import StockOverview from "./stock/StockOverview";
@@ -8,6 +9,8 @@ import StockExpiry from "./stock/StockExpiry";
 import StockTransfer from "./stock/StockTransfer";
 import StockInvestigation from "./stock/StockInvestigation";
 import StockLocations from "./stock/StockLocations";
+import NarcoticRegister from "./stock/NarcoticRegister";
+import DrugRecall from "./stock/DrugRecall";
 
 const TAB_SUBTITLE: Record<SubTab, string> = {
   overview: "Stock levels, expiry, and inventory health across all SKUs",
@@ -17,15 +20,18 @@ const TAB_SUBTITLE: Record<SubTab, string> = {
   expiry: "Monitor near-expiry items and manage quarantine",
   transfer: "Manage inter-location stock movements and chain of custody",
   investigation: "Investigate and resolve stock count discrepancies",
+  narcotic: "Schedule H1 controlled substance running balance register",
+  recall: "Batch-level drug recall search and patient traceability",
 };
 
 interface Props {
   storageType: StorageType;
+  onNavigate?: (m: string) => void;
 }
 
 const FULL_PAGE_TABS: SubTab[] = ["adjustments"];
 
-export default function StockManagement({ storageType }: Props) {
+export default function StockManagement({ storageType, onNavigate }: Props) {
   const [tab, setTab] = useState<SubTab>("overview");
 
   const isFullPage = FULL_PAGE_TABS.includes(tab);
@@ -37,73 +43,62 @@ export default function StockManagement({ storageType }: Props) {
         {/* ── Module Header ── */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div>
-            <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#1A2436", margin: 0, letterSpacing: "-0.02em" }}>Stock Management</h1>
-            <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 3, fontFamily: "Inter" }}>{TAB_SUBTITLE[isFullPage ? "overview" : tab]}</div>
+            <h1 style={SK.pageTitle}>Stock Management</h1>
+            <div style={SK.subtitle}>{TAB_SUBTITLE[isFullPage ? "overview" : tab]}</div>
           </div>
-          <button style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33", fontFamily: "Inter" }}>Export</button>
+          <button style={SK.exportBtn}>Export</button>
         </div>
 
         {/* ── Tab Bar ── */}
-        <div style={{ display: "flex", borderBottom: "2px solid #EEF1F6" }}>
+        <div style={SK.tabBar}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id as SubTab)}
-              style={{
-                padding: "10px 20px", border: "none", background: "transparent", cursor: "pointer",
-                fontSize: 13, fontFamily: "Inter", fontWeight: tab === t.id ? 600 : 400,
-                color: tab === t.id ? "#1B6CA8" : "#6B7280",
-                borderBottom: `2px solid ${tab === t.id ? "#1B6CA8" : "transparent"}`,
-                marginBottom: -2, whiteSpace: "nowrap" as const,
-              }}>
+              style={SK.tabBtn(tab === t.id)}>
               {t.label}
             </button>
           ))}
         </div>
 
         {/* ── Tab Content (non-full-page tabs) ── */}
-        {tab === "overview" && <StockOverview />}
+        {tab === "overview" && <StockOverview onNavigate={onNavigate} />}
         {tab === "locations" && <StockLocations storageType={storageType} />}
         {tab === "batches" && <BatchTracking />}
         {tab === "expiry" && <StockExpiry />}
         {tab === "transfer" && <StockTransfer />}
         {tab === "investigation" && <StockInvestigation />}
+        {tab === "narcotic" && <NarcoticRegister />}
+        {tab === "recall" && <DrugRecall />}
       </div>
 
       {/* ── Adjustments: Full-page overlay ── */}
       {tab === "adjustments" && (
-        <div style={{
-          position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0,
-          zIndex: 50, background: "#F0F3F7", display: "flex", flexDirection: "column", overflow: "hidden",
-        }}>
+        <div style={SK.overlay}>
           {/* Page header */}
-          <div style={{
-            background: "#fff", borderBottom: "1px solid #DDE3EC",
-            padding: "0 24px", height: 52, flexShrink: 0,
-            display: "flex", alignItems: "center", gap: 12,
-          }}>
+          <div style={SK.overlayHeader}>
             <button onClick={() => setTab("overview")}
               style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", padding: "0 12px 0 0", height: "100%", flexShrink: 0, width: 40 }}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="#1A2436" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "Inter" }}>
-              <span style={{ fontSize: 12, color: "#9CA3AF" }}>Stock Management</span>
+              <span style={SK.breadcrumbParent}>Stock Management</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="m9 18 6-6-6-6" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              <span style={{ fontSize: 13, color: "#1A2436", fontWeight: 700 }}>Adjustments</span>
+              <span style={SK.breadcrumbCurrent}>Adjustments</span>
             </div>
             <div style={{ flex: 1 }} />
           </div>
 
           {/* Section header */}
           <div style={{ padding: "16px 24px 0 24px", flexShrink: 0 }}>
-            <div style={{ background: "#fff", border: "1px solid #DDE3EC", borderRadius: 8, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={SK.sectionHeaderCard}>
               <div>
-                <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>Stock Adjustments</div>
-                <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 3, fontFamily: "Inter" }}>Record and approve stock write-offs, damages, and count corrections</div>
+                <div style={SK.sectionTitle}>Stock Adjustments</div>
+                <div style={SK.subtitle}>Record and approve stock write-offs, damages, and count corrections</div>
               </div>
             </div>
           </div>
 
           {/* Scrollable Adjustments content */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px 20px 24px" }}>
+          <div style={SK.overlayBody}>
             <Adjustments />
           </div>
         </div>

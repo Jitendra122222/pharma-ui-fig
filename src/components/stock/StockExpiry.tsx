@@ -3,6 +3,7 @@ import { Th } from "../shared/Th";
 import { Pill } from "../shared/Pill";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
 import { expiryItems } from "./stockData";
+import { drugs } from "../../data/mockData";
 
 type QuarantineStatus = "Quarantined" | "Under Review" | "Cleared" | "Disposed";
 
@@ -40,6 +41,8 @@ export default function StockExpiry() {
   const [qFilter, setQFilter] = useState<"All" | QuarantineStatus>("All");
   const [quarantine, setQuarantine] = useState<QuarantineRecord[]>(QUARANTINE_DATA);
   const [showAddQ, setShowAddQ] = useState(false);
+  const EMPTY_Q_FORM = { drug: "", qty: "", reason: "", location: "", reviewDate: "" };
+  const [qForm, setQForm] = useState(EMPTY_Q_FORM);
   const [expirySearch, setExpirySearch] = useState("");
   const [qSearch, setQSearch] = useState("");
 
@@ -308,28 +311,68 @@ export default function StockExpiry() {
               <button onClick={() => setShowAddQ(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>×</button>
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
-              {[
-                { label: "Drug", type: "select", opts: expiryItems.map(d => d.name) },
-                { label: "Quantity to Quarantine", type: "number", ph: "Units" },
-                { label: "Reason", type: "select", opts: ["Near-expiry (< 30 days)", "Damaged packaging", "Cold chain breach suspected", "Quality hold", "Supplier recall", "Other"] },
-                { label: "Storage Location", type: "select", opts: ["Quarantine Bay 1", "Quarantine Bay 2", "Cold Quarantine", "Controlled Quarantine"] },
-                { label: "Review By Date", type: "date" },
-              ].map((f: any) => (
-                <div key={f.label}>
-                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>{f.label}</label>
-                  {f.type === "select" ? (
-                    <select style={{ width: "100%", padding: "9px 12px", borderRadius: 4, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}>
-                      {f.opts.map((o: string) => <option key={o}>{o}</option>)}
-                    </select>
-                  ) : (
-                    <input type={f.type} placeholder={f.ph}
-                      style={{ width: "100%", padding: "9px 12px", borderRadius: 4, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
-                  )}
-                </div>
-              ))}
+              {/* Drug */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Drug</label>
+                <select value={qForm.drug} onChange={e => setQForm(p => ({ ...p, drug: e.target.value }))}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 4, border: `1px solid ${!qForm.drug ? "#E8ECF4" : "#DDE3EC"}`, fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}>
+                  <option value="">— Select drug —</option>
+                  {expiryItems.map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
+                </select>
+              </div>
+              {/* Quantity */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Quantity to Quarantine</label>
+                <input type="number" placeholder="Units" value={qForm.qty} onChange={e => setQForm(p => ({ ...p, qty: e.target.value }))}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 4, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
+              </div>
+              {/* Reason */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Reason</label>
+                <select value={qForm.reason} onChange={e => setQForm(p => ({ ...p, reason: e.target.value }))}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 4, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}>
+                  <option value="">— Select reason —</option>
+                  {["Near-expiry (< 30 days)", "Damaged packaging", "Cold chain breach suspected", "Quality hold", "Supplier recall", "Other"].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </div>
+              {/* Storage Location */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Storage Location</label>
+                <select value={qForm.location} onChange={e => setQForm(p => ({ ...p, location: e.target.value }))}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 4, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}>
+                  <option value="">— Select location —</option>
+                  {["Quarantine Bay 1", "Quarantine Bay 2", "Cold Quarantine", "Controlled Quarantine"].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </div>
+              {/* Review By Date */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Review By Date</label>
+                <input type="date" value={qForm.reviewDate} onChange={e => setQForm(p => ({ ...p, reviewDate: e.target.value }))}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 4, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
+              </div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button onClick={() => setShowAddQ(false)} style={{ padding: "9px 16px", borderRadius: 4, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-                <button onClick={() => setShowAddQ(false)} style={{ padding: "9px 20px", border: "none", borderRadius: 4, background: "#C62828", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Quarantine Stock</button>
+                <button onClick={() => { setShowAddQ(false); setQForm(EMPTY_Q_FORM); }} style={{ padding: "9px 16px", borderRadius: 4, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+                <button
+                  onClick={() => {
+                    if (!qForm.drug || !qForm.qty || !qForm.reason) return;
+                    const drugRecord = drugs.find(d => d.name === qForm.drug);
+                    const newRecord: QuarantineRecord = {
+                      id: `QRN-${Date.now()}`,
+                      drug: qForm.drug,
+                      qty: Number(qForm.qty),
+                      reason: qForm.reason,
+                      startDate: new Date().toISOString().slice(0, 10),
+                      reviewDate: qForm.reviewDate || new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
+                      status: "Quarantined",
+                      location: qForm.location || "Quarantine Bay 1",
+                      value: drugRecord ? Math.round(drugRecord.cost * Number(qForm.qty)) : 0,
+                      daysInQuarantine: 0,
+                    };
+                    setQuarantine(prev => [newRecord, ...prev]);
+                    setQForm(EMPTY_Q_FORM);
+                    setShowAddQ(false);
+                  }}
+                  style={{ padding: "9px 20px", border: "none", borderRadius: 4, background: "#C62828", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Quarantine Stock</button>
               </div>
             </div>
           </div>

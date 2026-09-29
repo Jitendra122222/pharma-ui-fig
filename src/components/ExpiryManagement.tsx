@@ -123,7 +123,7 @@ function ExpiryDetailDrawer({ item, onClose }: { item: ExpiryItem; onClose: () =
               <RiskPill risk={item.risk} />
               <ReturnPill status={item.returnStatus} />
             </div>
-            <button onClick={onClose} style={{ border: "none", background: "transparent", color: "#9CA3AF", cursor: "pointer", fontSize: 22, lineHeight: 1, padding: "0 2px" }}>×</button>
+            <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "0 2px", display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
           </div>
           <div style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 4 }}>{item.medicine}</div>
           <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 16 }}>{item.manufacturer} &middot; {item.category}</div>

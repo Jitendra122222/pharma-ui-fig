@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { S } from "../styles/common";
+import { PT } from "../styles/patients";
 import { patients } from "../data/mockData";
 import AddPatientDrawer from "./AddPatientDrawer";
 import { Th } from "./shared/Th";
@@ -19,12 +21,12 @@ export default function Patients() {
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", margin: 0, letterSpacing: "-0.02em" }}>Patients</h1>
-          <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>{patients.length} registered patients</div>
+          <h1 style={S.pageTitle}>Patients</h1>
+          <div style={{ ...S.mutedText, marginTop: 2 }}>{patients.length} registered patients</div>
         </div>
         <button
           onClick={() => setDrawerOpen(true)}
-          style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff" }}
+          style={S.btnPrimary}
         >
           + Add Patient
         </button>
@@ -33,7 +35,7 @@ export default function Patients() {
       <AddPatientDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <div className="grid gap-4" style={{ gridTemplateColumns: selected ? "1fr 360px" : "1fr" }}>
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC" }}>
+        <div style={PT.tableCard}>
           <div style={{ padding: "14px 20px", borderBottom: "1px solid #DDE3EC" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "5px 10px" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -65,10 +67,10 @@ export default function Patients() {
                   onMouseEnter={(e) => { if (selected?.id !== p.id) e.currentTarget.style.background = "#F8FAFC"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = selected?.id === p.id ? "#EFF6FF" : "transparent"; }}
                 >
-                  <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1B6CA8" }}>{p.id}</td>
-                  <td style={{ padding: "11px 14px", fontSize: 13, color: "#0C1B33", fontWeight: 500, whiteSpace: "nowrap" }}>{p.name}</td>
-                  <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{p.dob}</td>
-                  <td style={{ padding: "11px 14px", fontSize: 12, color: "#6B7280" }}>{p.gender}</td>
+                  <td style={PT.rowId}>{p.id}</td>
+                  <td style={PT.rowName}>{p.name}</td>
+                  <td style={PT.rowMono}>{p.dob}</td>
+                  <td style={PT.rowMuted}>{p.gender}</td>
                   <td style={{ padding: "11px 14px" }}>
                     <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", fontWeight: 700, padding: "2px 7px", background: "#FFF3E0", color: "#E65100" }}>{p.bloodGroup}</span>
                   </td>
@@ -82,7 +84,7 @@ export default function Patients() {
                       </div>
                     ) : <span style={{ fontSize: 12, color: "#9CA3AF" }}>None</span>}
                   </td>
-                  <td style={{ padding: "11px 14px", fontSize: 12, color: "#6B7280" }}>{p.lastVisit}</td>
+                  <td style={PT.rowMuted}>{p.lastVisit}</td>
                   <td style={{ padding: "11px 14px", fontSize: 13, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{p.prescriptions}</td>
                   <td style={{ padding: "11px 14px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: p.balance > 0 ? 600 : 400, color: p.balance > 0 ? "#C62828" : "#9CA3AF" }}>
                     {p.balance > 0 ? `₹${p.balance.toFixed(2)}` : "—"}
@@ -95,13 +97,13 @@ export default function Patients() {
 
         {/* Patient detail */}
         {selected && (
-          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={PT.detailCard}>
             <div className="flex justify-between items-start">
               <div>
-                <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>{selected.name}</div>
-                <div style={{ fontSize: 12, fontFamily: "JetBrains Mono", color: "#1B6CA8", marginTop: 2 }}>{selected.id}</div>
+                <div style={PT.detailName}>{selected.name}</div>
+                <div style={PT.detailId}>{selected.id}</div>
               </div>
-              <button onClick={() => setSelected(null)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 18 }}>×</button>
+              <button onClick={() => setSelected(null)} style={{ border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
             </div>
 
             <div style={{ background: "#F8FAFC", padding: "14px 16px" }}>
@@ -115,15 +117,15 @@ export default function Patients() {
                   { label: "Total Rx", value: selected.prescriptions.toString() },
                 ].map(r => (
                   <div key={r.label}>
-                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 2 }}>{r.label}</div>
-                    <div style={{ fontSize: 13, color: "#0C1B33", fontWeight: 500 }}>{r.value}</div>
+                    <div style={PT.fieldLabel}>{r.label}</div>
+                    <div style={PT.fieldValue}>{r.value}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             <div>
-              <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Allergies</div>
+              <div style={PT.sectionLabel}>Allergies</div>
               {selected.allergies.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {selected.allergies.map(a => (

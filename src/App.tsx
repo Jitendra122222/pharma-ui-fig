@@ -185,7 +185,7 @@ export default function App() {
         <main style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", minHeight: 0 }}>
           {module === "dashboard" && <Dashboard />}
           {module === "inventory" && <Inventory onEditDistributor={navigateToEditDistributor} />}
-          {module === "stock" && <StockManagement storageType={storageType} />}
+          {module === "stock" && <StockManagement storageType={storageType} onNavigate={(m) => navigateTo(m as Module)} />}
           {module === "shortbook" && <ShortBook />}
           {module === "expiry" && <ExpiryManagement />}
           {module === "sales" && <Sales />}
