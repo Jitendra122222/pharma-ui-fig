@@ -2,20 +2,24 @@ import { useState } from "react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type Reason = "Low Stock" | "Out of Stock" | "Today's Sales" | "Manual" | "Customer Demand";
-type SBStatus = "Ready" | "Pending" | "Ordered";
+export type Reason = "Low Stock" | "Out of Stock" | "Today's Sales" | "Manual" | "Customer Demand";
+export type SBStatus = "Ready" | "Pending" | "Ordered";
 
-interface ShortBookItem {
+export interface ShortBookItem {
   id: string;
   medicine: string;
   manufacturer: string;
   reason: Reason;
   currentStock: number;
+  minStock?: number;
+  unit?: string;
+  priority?: "High" | "Medium" | "Low";
   suggestedQty: number;
   orderQty: number;
   bestSupplier: string;
   status: SBStatus;
   addedOn: string;
+  source?: string;
 }
 
 interface SupplierOption {
@@ -32,15 +36,15 @@ interface SupplierOption {
 
 // ─── Mock data ─────────────────────────────────────────────────────────────────
 
-const MOCK_SHORT_BOOK: ShortBookItem[] = [
-  { id: "SB-001", medicine: "Dolo 650", manufacturer: "Micro Labs", reason: "Low Stock", currentStock: 8, suggestedQty: 42, orderQty: 42, bestSupplier: "ABC Pharma", status: "Ready", addedOn: "2025-07-28" },
-  { id: "SB-002", medicine: "Pantoprazole 40mg", manufacturer: "Sun Pharma", reason: "Today's Sales", currentStock: 12, suggestedQty: 30, orderQty: 30, bestSupplier: "XYZ Pharma", status: "Ready", addedOn: "2025-07-28" },
-  { id: "SB-003", medicine: "Azithromycin 500mg", manufacturer: "Cipla", reason: "Out of Stock", currentStock: 0, suggestedQty: 50, orderQty: 50, bestSupplier: "Medico", status: "Ready", addedOn: "2025-07-27" },
-  { id: "SB-004", medicine: "Metformin 500mg", manufacturer: "USV Ltd", reason: "Low Stock", currentStock: 15, suggestedQty: 100, orderQty: 80, bestSupplier: "ABC Pharma", status: "Ready", addedOn: "2025-07-27" },
-  { id: "SB-005", medicine: "Cetirizine 10mg", manufacturer: "Lupin", reason: "Customer Demand", currentStock: 22, suggestedQty: 40, orderQty: 40, bestSupplier: "XYZ Pharma", status: "Pending", addedOn: "2025-07-26" },
-  { id: "SB-006", medicine: "Atorvastatin 20mg", manufacturer: "Dr. Reddy's", reason: "Low Stock", currentStock: 18, suggestedQty: 60, orderQty: 60, bestSupplier: "ABC Pharma", status: "Ready", addedOn: "2025-07-26" },
-  { id: "SB-007", medicine: "Omeprazole 20mg", manufacturer: "Cipla", reason: "Manual", currentStock: 45, suggestedQty: 50, orderQty: 50, bestSupplier: "Medico", status: "Pending", addedOn: "2025-07-25" },
-  { id: "SB-008", medicine: "Amlodipine 5mg", manufacturer: "Torrent Pharma", reason: "Today's Sales", currentStock: 5, suggestedQty: 30, orderQty: 30, bestSupplier: "XYZ Pharma", status: "Ready", addedOn: "2025-07-25" },
+export const MOCK_SHORT_BOOK: ShortBookItem[] = [
+  { id: "SB-001", medicine: "Dolo 650", manufacturer: "Micro Labs", reason: "Low Stock", currentStock: 8, minStock: 30, suggestedQty: 42, orderQty: 42, bestSupplier: "ABC Pharma", status: "Ready", addedOn: "2026-09-28", source: "Stock Count" },
+  { id: "SB-002", medicine: "Pantoprazole 40mg", manufacturer: "Sun Pharma", reason: "Today's Sales", currentStock: 12, minStock: 25, suggestedQty: 30, orderQty: 30, bestSupplier: "XYZ Pharma", status: "Ready", addedOn: "2026-09-28", source: "Stock Management" },
+  { id: "SB-003", medicine: "Azithromycin 500mg", manufacturer: "Cipla", reason: "Out of Stock", currentStock: 0, minStock: 20, suggestedQty: 50, orderQty: 50, bestSupplier: "Medico", status: "Ready", addedOn: "2026-09-27", source: "Stock Management" },
+  { id: "SB-004", medicine: "Metformin 500mg", manufacturer: "USV Ltd", reason: "Low Stock", currentStock: 15, minStock: 50, suggestedQty: 100, orderQty: 80, bestSupplier: "ABC Pharma", status: "Ready", addedOn: "2026-09-27", source: "Purchase GRN" },
+  { id: "SB-005", medicine: "Cetirizine 10mg", manufacturer: "Lupin", reason: "Customer Demand", currentStock: 22, minStock: 30, suggestedQty: 40, orderQty: 40, bestSupplier: "XYZ Pharma", status: "Pending", addedOn: "2026-09-26", source: "Manual" },
+  { id: "SB-006", medicine: "Atorvastatin 20mg", manufacturer: "Dr. Reddy's", reason: "Low Stock", currentStock: 18, minStock: 40, suggestedQty: 60, orderQty: 60, bestSupplier: "ABC Pharma", status: "Ready", addedOn: "2026-09-26", source: "Stock Count" },
+  { id: "SB-007", medicine: "Omeprazole 20mg", manufacturer: "Cipla", reason: "Manual", currentStock: 45, minStock: 30, suggestedQty: 50, orderQty: 50, bestSupplier: "Medico", status: "Pending", addedOn: "2026-09-25", source: "Manual" },
+  { id: "SB-008", medicine: "Amlodipine 5mg", manufacturer: "Torrent Pharma", reason: "Today's Sales", currentStock: 5, minStock: 20, suggestedQty: 30, orderQty: 30, bestSupplier: "XYZ Pharma", status: "Ready", addedOn: "2026-09-25", source: "Sales Return" },
 ];
 
 const SUPPLIER_OPTIONS: Record<string, SupplierOption[]> = {
@@ -98,6 +102,32 @@ function ReasonPill({ reason }: { reason: Reason }) {
 function StatusPill({ status }: { status: SBStatus }) {
   const s = STATUS_STYLE[status] || { bg: "#F3F4F6", color: "#4B5563" };
   return <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", background: s.bg, color: s.color, letterSpacing: "0.02em" }}>{status}</span>;
+}
+
+const PRIORITY_STYLE: Record<string, { bg: string; color: string }> = {
+  "High":   { bg: "#FFEBEE", color: "#C62828" },
+  "Medium": { bg: "#FFF3E0", color: "#E65100" },
+  "Low":    { bg: "#F0F3F7", color: "#6B7280" },
+};
+
+function PriorityPill({ priority }: { priority?: string }) {
+  if (!priority) return null;
+  const s = PRIORITY_STYLE[priority] || { bg: "#F3F4F6", color: "#4B5563" };
+  return <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 10, background: s.bg, color: s.color, letterSpacing: "0.02em" }}>{priority}</span>;
+}
+
+const SOURCE_STYLE: Record<string, { bg: string; color: string }> = {
+  "Stock Management": { bg: "#EFF6FF", color: "#1B6CA8" },
+  "Manual":           { bg: "#F3F4F6", color: "#4B5563" },
+  "Sales Return":     { bg: "#F3E5F5", color: "#7B1FA2" },
+  "Purchase GRN":     { bg: "#E8F5E9", color: "#2E7D32" },
+  "Stock Count":      { bg: "#FFF3E0", color: "#E65100" },
+};
+
+function SourcePill({ source }: { source?: string }) {
+  if (!source) return <span style={{ fontSize: 12, color: "#9CA3AF" }}>—</span>;
+  const s = SOURCE_STYLE[source] || { bg: "#F3F4F6", color: "#4B5563" };
+  return <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 4, background: s.bg, color: s.color, whiteSpace: "nowrap" as const }}>{source}</span>;
 }
 
 // ─── Supplier Comparison Drawer ────────────────────────────────────────────────
@@ -263,7 +293,8 @@ function AddMedicineDrawer({
       orderQty: Number(orderQty),
       bestSupplier: supplier,
       status: "Ready",
-      addedOn: "2025-07-28",
+      addedOn: new Date().toISOString().slice(0, 10),
+      source: "Manual",
     };
     onAdd(newItem);
     setSaved(true);
@@ -514,13 +545,26 @@ function PurchasePlanDrawer({ items, onClose }: { items: ShortBookItem[]; onClos
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function ShortBook() {
-  const [items, setItems] = useState<ShortBookItem[]>(MOCK_SHORT_BOOK);
+export default function ShortBook({
+  items: propItems,
+  onItemsChange,
+}: {
+  items?: ShortBookItem[];
+  onItemsChange?: (items: ShortBookItem[]) => void;
+} = {}) {
+  const [localItems, setLocalItems] = useState<ShortBookItem[]>(MOCK_SHORT_BOOK);
+  const items = propItems ?? localItems;
+  const setItems = (updater: ShortBookItem[] | ((prev: ShortBookItem[]) => ShortBookItem[])) => {
+    const next = typeof updater === "function" ? updater(items) : updater;
+    if (onItemsChange) onItemsChange(next);
+    else setLocalItems(next);
+  };
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"All" | "Low Stock" | "Out of Stock" | "Today's Sales" | "Manual">("All");
   const [showAdd, setShowAdd] = useState(false);
   const [compareItem, setCompareItem] = useState<ShortBookItem | null>(null);
   const [showPlan, setShowPlan] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const filtered = items.filter(item => {
     const matchSearch = search === "" ||
@@ -640,10 +684,13 @@ export default function ShortBook() {
                 <tr>
                   <Th>Medicine</Th>
                   <Th>Reason</Th>
+                  <Th>Priority</Th>
                   <Th right>Current Stock</Th>
                   <Th right>Suggested Qty</Th>
                   <Th right>Order Qty</Th>
                   <Th>Best Supplier</Th>
+                  <Th>Source</Th>
+                  <Th>Added On</Th>
                   <Th>Status</Th>
                   <Th>Action</Th>
                 </tr>
@@ -659,6 +706,7 @@ export default function ShortBook() {
                       <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{item.manufacturer}</div>
                     </Td>
                     <Td><ReasonPill reason={item.reason} /></Td>
+                    <Td><PriorityPill priority={item.priority} /></Td>
                     <Td right mono>
                       <span style={{ color: item.currentStock === 0 ? "#C62828" : item.currentStock < 10 ? "#F57F17" : "#1A2436" }}>
                         {item.currentStock}
@@ -671,17 +719,40 @@ export default function ShortBook() {
                     <Td>
                       <div style={{ fontSize: 13, color: "#1A2436" }}>{item.bestSupplier}</div>
                     </Td>
+                    <Td><SourcePill source={item.source} /></Td>
+                    <Td mono>
+                      <span style={{ fontSize: 12, color: "#6B7280" }}>{item.addedOn}</span>
+                    </Td>
                     <Td><StatusPill status={item.status} /></Td>
                     <Td>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => setCompareItem(item)}
-                          style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
-                          Compare
+                      <div style={{ position: "relative" }}>
+                        <button
+                          onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === item.id ? null : item.id); }}
+                          style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: 0 }}>
+                          <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#6B7280", display: "block" }} />
+                          <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#6B7280", display: "block" }} />
+                          <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#6B7280", display: "block" }} />
                         </button>
-                        <button onClick={() => handleRemove(item.id)}
-                          style={{ padding: "5px 10px", border: "1px solid #FFCDD2", background: "#FFEBEE", fontSize: 11, cursor: "pointer", color: "#C62828", fontFamily: "Inter", whiteSpace: "nowrap" }}>
-                          Remove
-                        </button>
+                        {openMenuId === item.id && (
+                          <>
+                            <div onClick={() => setOpenMenuId(null)} style={{ position: "fixed", inset: 0, zIndex: 49 }} />
+                            <div style={{ position: "absolute", right: 0, top: 32, background: "#fff", border: "1px solid #E8ECF4", borderRadius: 6, boxShadow: "0 4px 16px rgba(10,22,44,0.12)", zIndex: 50, minWidth: 160, overflow: "hidden" }}>
+                              {[
+                                { label: "Compare Suppliers", action: () => { setCompareItem(item); setOpenMenuId(null); }, color: "#1A2436" },
+                                { label: "Mark as Ordered", action: () => { setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: "Ordered" as const } : i)); setOpenMenuId(null); }, color: "#1A2436" },
+                                { label: "Mark as Pending", action: () => { setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: "Pending" as const } : i)); setOpenMenuId(null); }, color: "#1A2436" },
+                                { label: "Remove", action: () => { handleRemove(item.id); setOpenMenuId(null); }, color: "#C62828" },
+                              ].map(opt => (
+                                <button key={opt.label} onClick={opt.action}
+                                  style={{ width: "100%", textAlign: "left", padding: "9px 14px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: opt.color, fontFamily: "Inter", borderBottom: "1px solid #F4F6FA", display: "block" }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = "#F7F9FC")}
+                                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </Td>
                   </tr>

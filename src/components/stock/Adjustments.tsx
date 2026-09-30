@@ -479,7 +479,7 @@ export default function Adjustments() {
                         </td>
                         <td style={{ padding: "10px 13px" }}>
                           <button onClick={() => { setBlindDrugId(d.id); setShowBlind(true); }}
-                            style={{ padding: "5px 12px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
+                            style={{ padding: "5px 12px", border: "1px solid #DDE3EC", borderRadius: 6, background: "#fff", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>
                             Count Now
                           </button>
                         </td>

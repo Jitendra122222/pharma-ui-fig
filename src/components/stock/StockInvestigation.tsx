@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { SK } from "../../styles/stock";
 import { drugs } from "../../data/mockData";
 import { Pill } from "../shared/Pill";
 import { Th } from "../shared/Th";
@@ -423,7 +424,7 @@ export default function StockInvestigation() {
 
         return (
           <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC" }}>
-            <div style={{ padding: "12px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Variance Resolution Center</div>
               <span style={{ fontSize: 11, color: "#9CA3AF" }}>{resolved.length} of {cases.length} cases resolved</span>
             </div>
@@ -497,31 +498,24 @@ export default function StockInvestigation() {
       <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
         {/* Toolbar */}
         <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px", flex: "0 0 260px", minHeight: 40, boxSizing: "border-box" as const }}>
+          <div style={SK.searchWrapper}>
             <svg width="14" height="14" fill="none" stroke="#9CA3AF" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input value={invSearch} onChange={e => setInvSearch(e.target.value)} placeholder="Search cases..." style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+            <input value={invSearch} onChange={e => setInvSearch(e.target.value)} placeholder="Search cases..." style={SK.searchInput} />
           </div>
-          <div style={{ display: "flex", gap: 3 }}>
+          <div style={{ display: "flex", gap: 6 }}>
             {STATUS_FILTERS.map(f => (
-              <button key={f} onClick={() => setStatusFilter(f)}
-                style={{
-                  padding: "5px 11px", border: `1px solid ${statusFilter === f ? "#1B6CA8" : "#DDE3EC"}`,
-                  background: statusFilter === f ? "#1B6CA8" : "#fff",
-                  color: statusFilter === f ? "#fff" : "#6B7280",
-                  fontSize: 11, cursor: "pointer", fontFamily: "Inter", fontWeight: 600,
-                }}>
+              <button key={f} onClick={() => setStatusFilter(f)} style={SK.filterPill(statusFilter === f)}>
                 {f}
               </button>
             ))}
           </div>
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <button onClick={() => { setShowAuditReplay(true); setReplayIdx(0); setReplayRunning(false); }}
-              style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", color: "#0C1B33", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 6 }}>
+              style={{ ...SK.btnSecondary, display: "flex", alignItems: "center", gap: 6 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               Audit Trail
             </button>
-            <button onClick={openNewCase}
-              style={{ padding: "7px 14px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+            <button onClick={openNewCase} style={SK.btnPrimary}>
               + New Investigation
             </button>
           </div>

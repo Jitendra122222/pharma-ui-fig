@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SK } from "../styles/stock";
 import { type SubTab, TABS } from "./stock/stockData";
 import type { StorageType } from "./stock/stockData";
+import type { ShortBookItem } from "./ShortBook";
 import StockOverview from "./stock/StockOverview";
 import Adjustments from "./stock/Adjustments";
 import BatchTracking from "./stock/BatchTracking";
@@ -27,11 +28,12 @@ const TAB_SUBTITLE: Record<SubTab, string> = {
 interface Props {
   storageType: StorageType;
   onNavigate?: (m: string) => void;
+  onAddToShortBook?: (item: ShortBookItem) => void;
 }
 
 const FULL_PAGE_TABS: SubTab[] = ["adjustments"];
 
-export default function StockManagement({ storageType, onNavigate }: Props) {
+export default function StockManagement({ storageType, onNavigate, onAddToShortBook }: Props) {
   const [tab, setTab] = useState<SubTab>("overview");
 
   const isFullPage = FULL_PAGE_TABS.includes(tab);
@@ -60,7 +62,7 @@ export default function StockManagement({ storageType, onNavigate }: Props) {
         </div>
 
         {/* ── Tab Content (non-full-page tabs) ── */}
-        {tab === "overview" && <StockOverview onNavigate={onNavigate} />}
+        {tab === "overview" && <StockOverview onNavigate={onNavigate} onAddToShortBook={onAddToShortBook} />}
         {tab === "locations" && <StockLocations storageType={storageType} />}
         {tab === "batches" && <BatchTracking />}
         {tab === "expiry" && <StockExpiry />}

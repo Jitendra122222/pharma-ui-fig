@@ -1,4 +1,5 @@
-﻿import { useState } from "react";
+﻿import { useState, useRef } from "react";
+import { SK } from "../../styles/stock";
 import { drugs } from "../../data/mockData";
 import { Th } from "../shared/Th";
 import { Pill } from "../shared/Pill";
@@ -6,18 +7,52 @@ import { useTableSort } from "../shared/useTableSort";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
 import { adjustments, batches, MOVEMENTS } from "./stockData";
 import type { StockMovement } from "./stockData";
+import type { ShortBookItem } from "../ShortBook";
 
-interface StockOverviewProps { onNavigate?: (m: string) => void; }
+interface StockOverviewProps {
+  onNavigate?: (m: string) => void;
+  onAddToShortBook?: (item: ShortBookItem) => void;
+}
 
-export default function StockOverview({ onNavigate }: StockOverviewProps = {}) {
+export default function StockOverview({ onNavigate, onAddToShortBook }: StockOverviewProps = {}) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [sel, setSel] = useState<typeof drugs[0] | null>(null);
   const [dTab, setDTab] = useState<"overview" | "clinical" | "movements" | "history">("overview");
   const [showAdjust, setShowAdjust] = useState(false);
-  const [showPO, setShowPO] = useState(false);
+  const [adjType, setAdjType] = useState("Write-off");
+  const [adjTypeOpen, setAdjTypeOpen] = useState(false);
   const [showReorder, setShowReorder] = useState(false);
-  const [showCycleCount, setShowCycleCount] = useState(false);
+  const [sbToast, setSbToast] = useState<string | null>(null);
+  const [sbToastKey, setSbToastKey] = useState(0);
+  const sbTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function addToShortBook(d: typeof drugs[0]) {
+    if (!onAddToShortBook) return;
+    const qtyNeeded = Math.max(1, d.minStock - d.stock);
+    const priority: "High" | "Medium" | "Low" = d.status === "Out of Stock" ? "High" : d.status === "Low Stock" ? "Medium" : "Low";
+    const reason = (d.status === "Out of Stock" ? "Out of Stock" : d.status === "Low Stock" ? "Low Stock" : "Manual") as ShortBookItem["reason"];
+    onAddToShortBook({
+      id: `SB-${Date.now()}`,
+      medicine: d.name,
+      manufacturer: d.supplier,
+      reason,
+      currentStock: d.stock,
+      minStock: d.minStock,
+      unit: d.unit,
+      priority,
+      suggestedQty: qtyNeeded,
+      orderQty: qtyNeeded,
+      bestSupplier: d.supplier,
+      status: "Ready",
+      addedOn: new Date().toISOString().slice(0, 10),
+      source: "Stock Management",
+    });
+    if (sbTimerRef.current) clearTimeout(sbTimerRef.current);
+    setSbToast(`${d.name} added to Short Book`);
+    setSbToastKey(k => k + 1);
+    sbTimerRef.current = setTimeout(() => setSbToast(null), 2000);
+  }
   const [filterDrawer, setFilterDrawer] = useState(false);
   const [fCategories, setFCategories] = useState<string[]>([]);
   const [fSuppliers, setFSuppliers] = useState<string[]>([]);
@@ -123,9 +158,9 @@ export default function StockOverview({ onNavigate }: StockOverviewProps = {}) {
           { label: "Low Stock",         value: lowStockCount,                        color: "#E65100", bg: "#FFF3E0",  fmt: (v: number) => v.toString() },
           { label: "Out of Stock",      value: outOfStockCount,                      color: "#C62828", bg: "#FFEBEE",  fmt: (v: number) => v.toString() },
         ].map(k => (
-          <div key={k.label} style={{ background: "#fff", border: "1px solid #DDE3EC", borderRadius: 6, padding: "14px 18px" }}>
-            <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6 }}>{k.label}</div>
-            <div style={{ fontFamily: "JetBrains Mono", fontSize: 26, fontWeight: 800, color: k.color }}>{k.fmt(k.value)}</div>
+          <div key={k.label} style={SK.kpiTile}>
+            <div style={SK.kpiLabel}>{k.label}</div>
+            <div style={SK.kpiValue(k.color)}>{k.fmt(k.value)}</div>
           </div>
         ))}
       </div>
@@ -148,15 +183,15 @@ export default function StockOverview({ onNavigate }: StockOverviewProps = {}) {
       {/* ── Reorder review panel ── */}
       {showReorder && (
         <div style={{ background: "#fff", border: "1px solid #FFCC80", borderRadius: 6, overflow: "hidden" }}>
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", background: "#FFFBF0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", fontFamily: "Outfit" }}>Reorder Review — Draft POs</span>
+          <div style={{ ...SK.cardHeader, background: "#FFFBF0" }}>
+            <span style={SK.cardHeaderTitle}>Reorder Review — Draft POs</span>
             <button onClick={() => setShowReorder(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9CA3AF", fontSize: 20 }}>&times;</button>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#FAFBFD" }}>
                 {["Drug", "Current Stock", "Reorder Level", "Suggested Order Qty", "Supplier"].map(h => (
-                  <th key={h} style={{ padding: "8px 14px", fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6", textAlign: "left" as const }}>{h}</th>
+                  <th key={h} style={SK.th}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -179,9 +214,8 @@ export default function StockOverview({ onNavigate }: StockOverviewProps = {}) {
             </tbody>
           </table>
           <div style={{ padding: "12px 16px", borderTop: "1px solid #EEF1F6", display: "flex", gap: 10, justifyContent: "flex-end" }}>
-            <button onClick={() => setShowReorder(false)} style={{ padding: "7px 16px", border: "1px solid #DDE3EC", borderRadius: 6, background: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "Inter" }}>Dismiss</button>
-            <button onClick={() => { setShowReorder(false); onNavigate?.("purchases"); }}
-              style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>
+            <button onClick={() => setShowReorder(false)} style={SK.btnSecondary}>Dismiss</button>
+            <button onClick={() => { setShowReorder(false); onNavigate?.("purchases"); }} style={SK.btnPrimary}>
               Create Draft POs in Purchases
             </button>
           </div>
@@ -191,20 +225,19 @@ export default function StockOverview({ onNavigate }: StockOverviewProps = {}) {
       {/* ── Main data card ── */}
       <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
         {/* Toolbar */}
-        <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 8, alignItems: "center" }}>
-          <div style={{ position: "relative", flex: "0 0 280px" }}>
-            <svg style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="14" height="14" fill="none" stroke="#9CA3AF" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <div style={SK.toolbar}>
+          <div style={SK.searchWrapper}>
+            <svg width="14" height="14" fill="none" stroke="#9CA3AF" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input
               type="text"
               placeholder="Medicine / Barcode / Batch..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{ width: "100%", paddingTop: 9, paddingBottom: 9, paddingLeft: 36, paddingRight: 12, borderRadius: 8, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", outline: "none", boxSizing: "border-box" as const }}
+              style={{ ...SK.searchInput, flex: "1 1 auto" }}
             />
           </div>
           {["All", "Low Stock", "Out of Stock"].map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              style={{ fontSize: 12, fontFamily: "Inter", fontWeight: filter === f ? 600 : 400, padding: "0 14px", borderRadius: 999, border: filter === f ? "1.5px solid #1B6CA8" : "1px solid #DDE3EC", background: filter === f ? "#EFF6FF" : "#fff", color: filter === f ? "#1B6CA8" : "#6B7280", cursor: "pointer", whiteSpace: "nowrap" as const, minHeight: 40, boxSizing: "border-box" as const, flexShrink: 0 }}>
+            <button key={f} onClick={() => setFilter(f)} style={{ ...SK.filterPill(filter === f), minHeight: 40 }}>
               {f}
             </button>
           ))}
@@ -316,66 +349,6 @@ export default function StockOverview({ onNavigate }: StockOverviewProps = {}) {
           </div>
 
 
-      </div>
-
-      {/* ── Cycle Count Schedule card ── */}
-      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
-        <div style={{ padding: "12px 16px", borderBottom: showCycleCount ? "1px solid #EEF1F6" : "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Cycle Count Schedule</span>
-          <button onClick={() => setShowCycleCount(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-            {showCycleCount ? "Collapse ▲" : "Expand ▼"}
-          </button>
-        </div>
-        {showCycleCount && (
-          <div style={{ overflowX: "auto" as const }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: "#FAFBFD" }}>
-                  {["Drug", "ABC Class", "Frequency", "Last Count (Proxy)", "Next Due", "Status"].map(h => (
-                    <th key={h} style={{ padding: "8px 14px", fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6", textAlign: "left" as const }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {drugs.map(d => {
-                  const cls = abcClass(d.name);
-                  const freq = cls === "A" ? 30 : cls === "B" ? 90 : 180;
-                  const lastMs = new Date(d.lastMove).getTime();
-                  const nextMs = lastMs + freq * 86400000;
-                  const today = Date.now();
-                  const daysUntil = Math.round((nextMs - today) / 86400000);
-                  const overdue = daysUntil < 0;
-                  const dueSoon = !overdue && daysUntil < 7;
-                  const statusLabel = overdue ? "Overdue" : dueSoon ? "Due Soon" : "On Track";
-                  const statusBg = overdue ? "#FFEBEE" : dueSoon ? "#FFF3E0" : "#E8F5E9";
-                  const statusColor = overdue ? "#C62828" : dueSoon ? "#E65100" : "#2E7D32";
-                  const as_ = ABC_STYLE[cls];
-                  return (
-                    <tr key={d.id} style={{ borderBottom: "1px solid #F0F3F7" }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                      <td style={{ padding: "9px 14px", fontSize: 13, fontWeight: 500, color: "#1A2436" }}>{d.name}</td>
-                      <td style={{ padding: "9px 14px", textAlign: "center" as const }}><span style={{ fontFamily: "JetBrains Mono", fontSize: 11, fontWeight: 800, padding: "2px 7px", borderRadius: 3, background: as_.bg, color: as_.color }}>{cls}</span></td>
-                      <td style={{ padding: "9px 14px", fontFamily: "JetBrains Mono", fontSize: 12, color: "#6B7280" }}>Every {freq}d</td>
-                      <td style={{ padding: "9px 14px", fontFamily: "JetBrains Mono", fontSize: 12, color: "#6B7280" }}>{d.lastMove}</td>
-                      <td style={{ padding: "9px 14px", fontFamily: "JetBrains Mono", fontSize: 12, color: overdue ? "#C62828" : "#1A2436" }}>{new Date(nextMs).toISOString().slice(0, 10)}</td>
-                      <td style={{ padding: "9px 14px" }}><span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: statusBg, color: statusColor }}>{statusLabel}</span></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {showCycleCount && (
-          <div style={{ padding: "10px 14px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end" }}>
-            <button
-              onClick={() => alert("Open the Investigation tab to start a new cycle count.")}
-              style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>
-              Start Count
-            </button>
-          </div>
-        )}
       </div>
 
       {/* ── Filter Drawer ── */}
@@ -1039,7 +1012,7 @@ export default function StockOverview({ onNavigate }: StockOverviewProps = {}) {
             {/* Footer */}
             <div style={{ padding: "14px 20px", borderTop: "1px solid #E8ECF4", background: "#fff", display: "flex", gap: 10, flexShrink: 0 }}>
               <button onClick={() => setShowAdjust(true)} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>Adjust Stock</button>
-              <button onClick={() => setShowPO(true)} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>Create PO</button>
+              <button onClick={() => sel && addToShortBook(sel)} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>+ Short Book</button>
               <button onClick={() => { setSel(null); onNavigate?.("inventory"); }} style={{ flex: 1, padding: "9px 0", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>View in Inventory</button>
             </div>
 
@@ -1056,56 +1029,98 @@ export default function StockOverview({ onNavigate }: StockOverviewProps = {}) {
               <button onClick={() => setShowAdjust(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>&times;</button>
             </div>
             <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
-              {[
-                { label: "Drug / Item", el: <input type="text" defaultValue={sel.name} readOnly style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} /> },
-                { label: "Adjustment Type", el: <select style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}><option>Write-off</option><option>Stock Count</option><option>Damage</option><option>Donation</option><option>Other</option></select> },
-                { label: "Quantity Change", el: <input type="number" placeholder="Use negative for reduction (e.g. -10)" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
-                { label: "Reason", el: <input type="text" placeholder="Describe the reason for adjustment" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} /> },
-                { label: "Reference #", el: <input type="text" placeholder="e.g. COUNT-AUG29" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
-              ].map(f => (
-                <div key={f.label}>
-                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>{f.label}</label>
-                  {f.el}
+
+              {/* Drug / Item */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Drug / Item</label>
+                <input type="text" defaultValue={sel.name} readOnly style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} />
+              </div>
+
+              {/* Adjustment Type — custom dropdown */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Adjustment Type</label>
+                <div style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setAdjTypeOpen(o => !o)}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: adjTypeOpen ? "1.5px solid #1B6CA8" : "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#fff", color: "#1A2436", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", boxSizing: "border-box" as const, outline: "none" }}>
+                    <span>{adjType}</span>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ transition: "transform 0.15s", transform: adjTypeOpen ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>
+                      <path d="M3 5l4 4 4-4" stroke="#6B7280" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {adjTypeOpen && (
+                    <>
+                      <div onClick={() => setAdjTypeOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 219 }} />
+                      <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", borderRadius: 6, boxShadow: "0 6px 24px rgba(10,22,44,0.13)", zIndex: 220, overflow: "hidden" }}>
+                        {["Write-off", "Stock Count", "Damage", "Donation", "Other"].map(opt => (
+                          <button key={opt} onMouseDown={() => { setAdjType(opt); setAdjTypeOpen(false); }}
+                            style={{ width: "100%", textAlign: "left", padding: "10px 14px", border: "none", background: adjType === opt ? "#EFF6FF" : "transparent", cursor: "pointer", fontSize: 13, fontFamily: "Inter", fontWeight: adjType === opt ? 600 : 400, color: adjType === opt ? "#1B6CA8" : "#1A2436", borderBottom: "1px solid #F4F6FA", display: "block" }}
+                            onMouseEnter={e => { if (adjType !== opt) e.currentTarget.style.background = "#F7F9FC"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = adjType === opt ? "#EFF6FF" : "transparent"; }}>
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
-              ))}
+              </div>
+
+              {/* Quantity Change */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Quantity Change</label>
+                <input type="number" placeholder="Use negative for reduction (e.g. -10)" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} />
+              </div>
+
+              {/* Reason */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Reason</label>
+                <input type="text" placeholder="Describe the reason for adjustment" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
+              </div>
+
+              {/* Reference # */}
+              <div>
+                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Reference #</label>
+                <input type="text" placeholder="e.g. COUNT-AUG29" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} />
+              </div>
+
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
-                <button onClick={() => setShowAdjust(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-                <button onClick={() => setShowAdjust(false)} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Post Adjustment</button>
+                <button onClick={() => { setShowAdjust(false); setAdjTypeOpen(false); }} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+                <button onClick={() => {
+                  setShowAdjust(false);
+                  setAdjTypeOpen(false);
+                  if (sbTimerRef.current) clearTimeout(sbTimerRef.current);
+                  setSbToast(`${adjType} adjustment posted successfully`);
+                  setSbToastKey(k => k + 1);
+                  sbTimerRef.current = setTimeout(() => setSbToast(null), 2000);
+                }} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Post Adjustment</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Create PO modal */}
-      {showPO && sel && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 210, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", width: 480, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #EEF1F6" }}>
-              <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>Create Purchase Order</div>
-              <button onClick={() => setShowPO(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>&times;</button>
+      {/* Short Book toast */}
+      {sbToast && (
+        <div style={{ position: "fixed", bottom: 28, left: "var(--sidebar-w, 228px)", right: 0, display: "flex", justifyContent: "center", zIndex: 1000, pointerEvents: "none" }}>
+          <div key={sbToastKey} style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", minWidth: 320, maxWidth: 480, overflow: "hidden", background: "#2E7D32", boxShadow: "0 6px 24px rgba(0,0,0,0.22)", animation: "toast-slide-up 0.22s ease-out" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px" }}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
+                <circle cx="10" cy="10" r="9" fill="rgba(255,255,255,0.2)" />
+                <path d="M6 10l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span style={{ flex: 1, fontSize: 13, fontFamily: "Inter", fontWeight: 600, color: "#fff", lineHeight: 1.4 }}>{sbToast}</span>
+              <button onClick={() => { setSbToast(null); if (sbTimerRef.current) clearTimeout(sbTimerRef.current); }} style={{ background: "transparent", border: "none", cursor: "pointer", padding: "0 0 0 8px", flexShrink: 0, display: "flex", alignItems: "center" }}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
             </div>
-            <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
-              {[
-                { label: "Medicine", el: <input type="text" defaultValue={sel.name} readOnly style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} /> },
-                { label: "Supplier", el: <input type="text" defaultValue={sel.supplier} readOnly style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} /> },
-                { label: "Order Quantity", el: <input type="number" placeholder={`Current stock: ${sel.stock} ${sel.unit}`} style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
-                { label: "Expected Delivery Date", el: <input type="date" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
-                { label: "Notes", el: <input type="text" placeholder="Reason for order or special instructions" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} /> },
-              ].map(f => (
-                <div key={f.label}>
-                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>{f.label}</label>
-                  {f.el}
-                </div>
-              ))}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
-                <button onClick={() => setShowPO(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-                <button onClick={() => { setShowPO(false); setSel(null); onNavigate?.("purchases"); }} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Create PO</button>
-              </div>
+            <div style={{ height: 3, background: "rgba(255,255,255,0.25)", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, height: "100%", background: "rgba(255,255,255,0.6)", animation: "toast-progress 2s linear forwards" }} />
             </div>
           </div>
         </div>
       )}
+
 
     </div>
   );

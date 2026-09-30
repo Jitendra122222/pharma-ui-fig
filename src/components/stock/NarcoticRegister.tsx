@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SK } from "../../styles/stock";
 import { Pill } from "../shared/Pill";
 
 const H1_DRUGS = ["Tramadol 50mg", "Alprazolam 0.5mg", "Codeine 30mg"];
@@ -112,26 +113,24 @@ export default function NarcoticRegister() {
           { label: "Total Issues",    value: `-${totalIssues}`,    color: "#C62828", bg: "#FFEBEE" },
           { label: "Closing Balance", value: closingBalance,       color: "#0C1B33", bg: "#F0F3F7" },
         ].map(k => (
-          <div key={k.label} style={{ background: k.bg, border: `1px solid ${k.bg}`, borderRadius: 6, padding: "12px 16px" }}>
-            <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6 }}>{k.label}</div>
-            <div style={{ fontFamily: "JetBrains Mono", fontSize: 24, fontWeight: 800, color: k.color }}>{k.value}</div>
+          <div key={k.label} style={{ ...SK.kpiTile, background: k.bg }}>
+            <div style={SK.kpiLabel}>{k.label}</div>
+            <div style={SK.kpiValue(k.color)}>{k.value}</div>
           </div>
         ))}
       </div>
 
       {/* Register table */}
       <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
-        <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", fontFamily: "Outfit" }}>
+        <div style={SK.cardHeader}>
+          <span style={SK.cardHeaderTitle}>
             {selDrug} — Schedule H1 Register
           </span>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => showToast(`Day register closed for ${selDrug} — ${MONTHS[month]} ${year}`)}
-              style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>
+            <button onClick={() => showToast(`Day register closed for ${selDrug} — ${MONTHS[month]} ${year}`)} style={SK.btnSecondary}>
               Close Day
             </button>
-            <button onClick={() => window.print()}
-              style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+            <button onClick={() => window.print()} style={SK.btnPrimary}>
               Print Register
             </button>
           </div>
@@ -141,7 +140,7 @@ export default function NarcoticRegister() {
             <thead>
               <tr style={{ background: "#FAFBFD" }}>
                 {["Date", "Time", "Type", "Ref #", "Prescriber", "Patient", "Qty", "Balance", "Signed By"].map(h => (
-                  <th key={h} style={{ padding: "8px 12px", fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6", textAlign: "left" as const, whiteSpace: "nowrap" as const }}>{h}</th>
+                  <th key={h} style={SK.th}>{h}</th>
                 ))}
               </tr>
             </thead>

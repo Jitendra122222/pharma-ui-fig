@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SK } from "../../styles/stock";
 import { Th } from "../shared/Th";
 import { Pill } from "../shared/Pill";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
@@ -87,6 +88,21 @@ export default function StockExpiry() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
+      {/* ── KPI tiles ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        {[
+          { label: "Expired — Write-off Required", value: `₹${expiredValue.toFixed(0)}`, sub: `${expiredItems.length} SKUs`, color: "#C62828" },
+          { label: "Critical Risk (≤ 30 days)",    value: `₹${criticalValue.toFixed(0)}`, sub: `${criticalItems.length} SKUs`, color: "#E65100" },
+          { label: "Warning Zone (≤ 90 days)",     value: `₹${warningValue.toFixed(0)}`,  sub: `${warningItems.length} SKUs`,  color: "#F57F17" },
+          { label: "Total Capital at Risk",         value: `₹${totalAtRisk.toFixed(0)}`,   sub: "Combined exposure",             color: "#1A2436" },
+        ].map(k => (
+          <div key={k.label} style={SK.kpiTile}>
+            <div style={SK.kpiLabel}>{k.label}</div>
+            <div style={SK.kpiValue(k.color)}>{k.value}</div>
+            <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 4, fontFamily: "Inter" }}>{k.sub}</div>
+          </div>
+        ))}
+      </div>
 
       {/* ── Tabbed Card: Expiry Alerts / Quarantine ── */}
       <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
@@ -118,8 +134,7 @@ export default function StockExpiry() {
           {/* Right action */}
           {expiryView === "quarantine" && (
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", paddingRight: 12 }}>
-              <button onClick={() => setShowAddQ(true)}
-                style={{ padding: "7px 16px", border: "none", borderRadius: 5, background: "#1B6CA8", color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "Inter", fontWeight: 600 }}>
+              <button onClick={() => setShowAddQ(true)} style={SK.btnPrimary}>
                 + Add to Quarantine
               </button>
             </div>
@@ -131,26 +146,11 @@ export default function StockExpiry() {
           <>
             {/* Search bar */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px", flex: "0 0 260px", minHeight: 40, boxSizing: "border-box" as const }}>
+              <div style={SK.searchWrapper}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input type="text" placeholder="Search by drug or category..." value={expirySearch} onChange={e => setExpirySearch(e.target.value)}
-                  style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+                  style={SK.searchInput} />
               </div>
-            </div>
-            {/* Financial exposure compact strip */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderBottom: "1px solid #EEF1F6" }}>
-              {[
-                { label: "Expired — Write-off Required", value: `₹${expiredValue.toFixed(0)}`, sub: `${expiredItems.length} SKUs`, color: "#C62828", bg: "#FFFAFA" },
-                { label: "Critical Risk (≤ 30 days)", value: `₹${criticalValue.toFixed(0)}`, sub: `${criticalItems.length} SKUs`, color: "#E65100", bg: "#FFFBF7" },
-                { label: "Warning Zone (≤ 90 days)", value: `₹${warningValue.toFixed(0)}`, sub: `${warningItems.length} SKUs`, color: "#F57F17", bg: "#FFFDF4" },
-                { label: "Total Capital at Risk", value: `₹${totalAtRisk.toFixed(0)}`, sub: "Combined exposure", color: "#1A2436", bg: "#F8FAFC" },
-              ].map((k, i) => (
-                <div key={k.label} style={{ padding: "14px 18px", borderRight: i < 3 ? "1px solid #EEF1F6" : "none", background: k.bg }}>
-                  <div style={{ fontSize: 9, color: k.color, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: 6 }}>{k.label}</div>
-                  <div style={{ fontFamily: "JetBrains Mono", fontSize: 18, fontWeight: 800, color: k.color, marginBottom: 2 }}>{k.value}</div>
-                  <div style={{ fontSize: 11, color: k.color, opacity: 0.7 }}>{k.sub}</div>
-                </div>
-              ))}
             </div>
             {/* Expiry table */}
             <div style={{ overflowX: "auto" }}>

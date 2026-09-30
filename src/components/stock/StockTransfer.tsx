@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SK } from "../../styles/stock";
 import { drugs } from "../../data/mockData";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
 
@@ -205,8 +206,8 @@ export default function StockTransfer() {
             </div>
 
             <div style={{ padding: "16px 22px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button onClick={() => showToast("Transfer saved as draft.", "success")} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Save Draft</button>
-              <button onClick={() => showToast("Transfer posted successfully.", "success")} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Post Transfer</button>
+              <button onClick={() => showToast("Transfer saved as draft.", "success")} style={SK.btnSecondary}>Save Draft</button>
+              <button onClick={() => showToast("Transfer posted successfully.", "success")} style={SK.btnPrimary}>Post Transfer</button>
             </div>
           </>
         )}
@@ -215,15 +216,14 @@ export default function StockTransfer() {
         {transferView === "history" && (
           <>
             <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" as const }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px", flex: "0 0 260px", minHeight: 40, boxSizing: "border-box" as const }}>
+              <div style={SK.searchWrapper}>
                 <svg width="14" height="14" fill="none" stroke="#9CA3AF" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input type="text" placeholder="Search transfers..." value={histSearch} onChange={e => setHistSearch(e.target.value)}
-                  style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+                  style={SK.searchInput} />
               </div>
-              <div style={{ display: "flex", gap: 3 }}>
+              <div style={{ display: "flex", gap: 6 }}>
                 {(["All", "Drafted", "In Transit", "Received", "Cancelled"] as const).map(s => (
-                  <button key={s} onClick={() => setHistStatus(s)}
-                    style={{ padding: "5px 11px", fontSize: 11, cursor: "pointer", fontFamily: "Inter", fontWeight: 600, border: `1px solid ${histStatus === s ? "#1B6CA8" : "#DDE3EC"}`, background: histStatus === s ? "#1B6CA8" : "#fff", color: histStatus === s ? "#fff" : "#6B7280" }}>
+                  <button key={s} onClick={() => setHistStatus(s)} style={SK.filterPill(histStatus === s)}>
                     {s}
                   </button>
                 ))}
@@ -234,7 +234,7 @@ export default function StockTransfer() {
                 <thead>
                   <tr>
                     {["Transfer #", "Date", "From", "To", "Items", "Requested By", "Approved By", "Status", "Notes"].map(h => (
-                      <th key={h} style={{ padding: "9px 13px", fontSize: 10, fontWeight: 700, color: "#9CA3AF", textAlign: "left" as const, letterSpacing: "0.1em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6", background: "#FAFBFD" }}>{h}</th>
+                      <th key={h} style={{ ...SK.th, background: "#FAFBFD" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -280,15 +280,11 @@ export default function StockTransfer() {
           <>
             <div style={{ padding: "10px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 8, alignItems: "center" }}>
               <span style={{ fontSize: 12, color: "#6B7280", marginRight: 4 }}>Filter:</span>
-              {(["All", "Short", "Over", "Matched", "Pending"] as const).map(f => {
-                const fColor = f === "Short" ? "#C62828" : f === "Over" ? "#E65100" : f === "Matched" ? "#2E7D32" : f === "Pending" ? "#6B7280" : "#1B6CA8";
-                return (
-                  <button key={f} onClick={() => setVarianceFilter(f)}
-                    style={{ padding: "4px 11px", fontSize: 11, cursor: "pointer", fontWeight: 600, fontFamily: "Inter", border: `1px solid ${varianceFilter === f ? fColor : "#DDE3EC"}`, background: varianceFilter === f ? fColor : "#fff", color: varianceFilter === f ? "#fff" : "#6B7280" }}>
-                    {f}
-                  </button>
-                );
-              })}
+              {(["All", "Short", "Over", "Matched", "Pending"] as const).map(f => (
+                <button key={f} onClick={() => setVarianceFilter(f)} style={SK.filterPill(varianceFilter === f)}>
+                  {f}
+                </button>
+              ))}
               {variances > 0 && (
                 <span style={{ marginLeft: "auto", fontSize: 12, padding: "3px 10px", background: "#FFEBEE", color: "#C62828", fontWeight: 700 }}>
                   {variances} variance{variances !== 1 ? "s" : ""} detected
@@ -300,7 +296,7 @@ export default function StockTransfer() {
                 <thead>
                   <tr>
                     {["Ref", "Transfer #", "Drug", "Sent", "Received", "Variance", "Status", ""].map(h => (
-                      <th key={h} style={{ padding: "9px 13px", fontSize: 10, fontWeight: 700, color: "#9CA3AF", textAlign: h === "Sent" || h === "Received" || h === "Variance" ? "right" as const : "left" as const, letterSpacing: "0.1em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6", background: "#FAFBFD" }}>{h}</th>
+                      <th key={h} style={{ ...SK.th, background: "#FAFBFD", textAlign: (h === "Sent" || h === "Received" || h === "Variance") ? "right" : "left" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -349,10 +345,10 @@ export default function StockTransfer() {
         {transferView === "custody" && (
           <>
             <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 8, alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px", flex: "0 0 260px", minHeight: 40, boxSizing: "border-box" as const }}>
+              <div style={SK.searchWrapper}>
                 <svg width="14" height="14" fill="none" stroke="#9CA3AF" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input type="text" placeholder="Search chain of custody..." value={cocSearch} onChange={e => setCocSearch(e.target.value)}
-                  style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+                  style={SK.searchInput} />
               </div>
               {missingSigs > 0 && (
                 <span style={{ marginLeft: "auto", fontSize: 12, padding: "3px 10px", background: "#FFF3E0", color: "#E65100", fontWeight: 700 }}>
@@ -365,7 +361,7 @@ export default function StockTransfer() {
                 <thead>
                   <tr>
                     {["Custody ID", "Transfer #", "Drug", "Qty", "Action", "From → To", "Handed By", "Received By", "Date & Time", "Signature"].map(h => (
-                      <th key={h} style={{ padding: "9px 13px", fontSize: 10, fontWeight: 700, color: "#9CA3AF", textAlign: "left" as const, letterSpacing: "0.1em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6", background: "#FAFBFD", whiteSpace: "nowrap" as const }}>{h}</th>
+                      <th key={h} style={{ ...SK.th, background: "#FAFBFD" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>

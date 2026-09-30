@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SK } from "../../styles/stock";
 import { Th } from "../shared/Th";
 import { Pill } from "../shared/Pill";
 import { useTableSort } from "../shared/useTableSort";
@@ -34,19 +35,19 @@ export default function BatchTracking() {
           { label: "Expired",         value: expiredCount,      color: "#C62828", bg: "#FFEBEE" },
           { label: "Total Batches",   value: batches.length,    color: "#1B6CA8", bg: "#EFF6FF" },
         ].map(k => (
-          <div key={k.label} style={{ background: "#fff", border: "1px solid #DDE3EC", borderRadius: 6, padding: "14px 18px" }}>
-            <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6 }}>{k.label}</div>
-            <div style={{ fontFamily: "JetBrains Mono", fontSize: 26, fontWeight: 800, color: k.color }}>{k.value}</div>
+          <div key={k.label} style={SK.kpiTile}>
+            <div style={SK.kpiLabel}>{k.label}</div>
+            <div style={SK.kpiValue(k.color)}>{k.value}</div>
           </div>
         ))}
       </div>
 
       {/* ── Table Card ── */}
       <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
-        <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px", flex: "0 0 260px", minHeight: 40, boxSizing: "border-box" as const }}>
+        <div style={SK.toolbar}>
+          <div style={SK.searchWrapper}>
             <svg width="14" height="14" fill="none" stroke="#9CA3AF" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input value={batchSearch} onChange={e => setBatchSearch(e.target.value)} placeholder="Search batches..." style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+            <input value={batchSearch} onChange={e => setBatchSearch(e.target.value)} placeholder="Search batches..." style={SK.searchInput} />
           </div>
         </div>
         <div style={{ overflowX: "auto" as const }}>

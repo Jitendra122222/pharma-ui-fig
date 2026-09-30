@@ -14,7 +14,8 @@ import Suppliers from "./components/Suppliers";
 import Reports from "./components/Reports";
 import Settings from "./components/Settings";
 import StockManagement from "./components/StockManagement";
-import ShortBook from "./components/ShortBook";
+import ShortBook, { MOCK_SHORT_BOOK } from "./components/ShortBook";
+import type { ShortBookItem } from "./components/ShortBook";
 import ExpiryManagement from "./components/ExpiryManagement";
 import Accounts from "./components/Accounts";
 import HR from "./components/HR";
@@ -53,6 +54,7 @@ export default function App() {
   const [storageType, setStorageType] = useState<StorageType>("alphabetical");
   const [loading, setLoading] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const [shortBookItems, setShortBookItems] = useState<ShortBookItem[]>(MOCK_SHORT_BOOK);
   const [purchasesDeepLink, setPurchasesDeepLink] = useState<PurchasesDeepLink | null>(null);
   const [suppliersEditDist, setSuppliersEditDist] = useState<string | null>(null);
   const pendingDeepLink = useRef<PurchasesDeepLink | null>(null);
@@ -185,8 +187,8 @@ export default function App() {
         <main style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", minHeight: 0 }}>
           {module === "dashboard" && <Dashboard />}
           {module === "inventory" && <Inventory onEditDistributor={navigateToEditDistributor} />}
-          {module === "stock" && <StockManagement storageType={storageType} onNavigate={(m) => navigateTo(m as Module)} />}
-          {module === "shortbook" && <ShortBook />}
+          {module === "stock" && <StockManagement storageType={storageType} onNavigate={(m) => navigateTo(m as Module)} onAddToShortBook={(item) => setShortBookItems(prev => prev.some(i => i.medicine === item.medicine) ? prev : [...prev, item])} />}
+          {module === "shortbook" && <ShortBook items={shortBookItems} onItemsChange={setShortBookItems} />}
           {module === "expiry" && <ExpiryManagement />}
           {module === "sales" && <Sales />}
           {module === "prescriptions" && <Prescriptions />}
