@@ -50,12 +50,18 @@ export const adjustments = [
 ];
 
 export const batches = [
-  { id: "BT-2025-0118", drug: "Amoxicillin 500mg", supplier: "MedLine Pharma", received: "2025-07-29", expiry: "2026-08-15", qtyReceived: 500, qtyCurrent: 240, unit: "Capsules", location: "A1-02", status: "Active" },
-  { id: "BT-2025-0117", drug: "Metformin 1000mg", supplier: "GenPharm Ltd", received: "2025-07-15", expiry: "2025-12-31", qtyReceived: 200, qtyCurrent: 18, unit: "Tablets", location: "B3-05", status: "Low" },
-  { id: "BT-2025-0116", drug: "Insulin Glargine", supplier: "BioPharm AG", received: "2025-07-10", expiry: "2025-10-15", qtyReceived: 60, qtyCurrent: 45, unit: "Vial", location: "COLD-01", status: "Expiring Soon" },
-  { id: "BT-2025-0115", drug: "Atorvastatin 20mg", supplier: "MedLine Pharma", received: "2025-07-01", expiry: "2027-01-10", qtyReceived: 600, qtyCurrent: 312, unit: "Tablets", location: "C1-04", status: "Active" },
-  { id: "BT-2025-0114", drug: "Warfarin 5mg", supplier: "PharmaCo Inc", received: "2025-06-20", expiry: "2026-04-01", qtyReceived: 100, qtyCurrent: 6, unit: "Tablets", location: "B4-02", status: "Low" },
-  { id: "BT-2025-0113", drug: "Ciprofloxacin 500mg", supplier: "PharmaCo Inc", received: "2025-06-15", expiry: "2025-11-20", qtyReceived: 120, qtyCurrent: 12, unit: "Tablets", location: "A1-06", status: "Expiring Soon" },
+  { id: "BT-2025-0118", drug: "Amoxicillin 500mg",  manufacturer: "Cipla",               category: "Antibiotics",       supplier: "MedLine Pharma",  received: "2025-07-29", expiry: "2026-08-15", qtyReceived: 500,  qtyCurrent: 240,  unit: "Capsules", location: "A1-02",   status: "Active"       },
+  { id: "BT-2025-0117", drug: "Metformin 1000mg",   manufacturer: "Sun Pharma",          category: "Antidiabetics",     supplier: "GenPharm Ltd",    received: "2025-07-15", expiry: "2025-12-31", qtyReceived: 200,  qtyCurrent: 18,   unit: "Tablets",  location: "B3-05",   status: "Low"          },
+  { id: "BT-2025-0116", drug: "Insulin Glargine",   manufacturer: "Novo Nordisk",        category: "Hormones",          supplier: "BioPharm AG",     received: "2025-07-10", expiry: "2025-10-15", qtyReceived: 60,   qtyCurrent: 45,   unit: "Vial",     location: "COLD-01", status: "Expiring Soon"},
+  { id: "BT-2025-0115", drug: "Atorvastatin 20mg",  manufacturer: "Pfizer",              category: "Statins",           supplier: "MedLine Pharma",  received: "2025-07-01", expiry: "2027-01-10", qtyReceived: 600,  qtyCurrent: 312,  unit: "Tablets",  location: "C1-04",   status: "Active"       },
+  { id: "BT-2025-0114", drug: "Warfarin 5mg",       manufacturer: "Bristol-Myers Squibb",category: "Anticoagulants",    supplier: "PharmaCo Inc",    received: "2025-06-20", expiry: "2026-04-01", qtyReceived: 100,  qtyCurrent: 6,    unit: "Tablets",  location: "B4-02",   status: "Low"          },
+  { id: "BT-2025-0113", drug: "Ciprofloxacin 500mg",manufacturer: "Bayer",               category: "Antibiotics",       supplier: "PharmaCo Inc",    received: "2025-06-15", expiry: "2025-11-20", qtyReceived: 120,  qtyCurrent: 12,   unit: "Tablets",  location: "A1-06",   status: "Expiring Soon"},
+  { id: "BT-2025-0112", drug: "Lisinopril 10mg",    manufacturer: "Abbott",              category: "Antihypertensives", supplier: "PharmaCo Inc",    received: "2025-06-01", expiry: "2026-03-20", qtyReceived: 200,  qtyCurrent: 0,    unit: "Tablets",  location: "B2-01",   status: "Out of Stock" },
+  { id: "BT-2025-0111", drug: "Omeprazole 20mg",    manufacturer: "AstraZeneca",         category: "Antacids",          supplier: "BioPharm AG",     received: "2025-05-20", expiry: "2026-09-05", qtyReceived: 300,  qtyCurrent: 145,  unit: "Capsules", location: "A3-01",   status: "Active"       },
+  { id: "BT-2025-0110", drug: "Salbutamol Inhaler", manufacturer: "GSK",                 category: "Bronchodilators",   supplier: "RespiCare Ltd",   received: "2025-05-10", expiry: "2026-06-30", qtyReceived: 50,   qtyCurrent: 28,   unit: "Inhaler",  location: "D1-01",   status: "Active"       },
+  { id: "BT-2025-0109", drug: "Paracetamol 500mg",  manufacturer: "GSK",                 category: "Analgesics",        supplier: "GenPharm Ltd",    received: "2025-05-01", expiry: "2027-05-15", qtyReceived: 2000, qtyCurrent: 1200, unit: "Tablets",  location: "A3-01",   status: "Active"       },
+  { id: "BT-2025-0108", drug: "Amlodipine 5mg",     manufacturer: "Abbott",              category: "Antihypertensives", supplier: "MedLine Pharma",  received: "2025-04-20", expiry: "2026-11-30", qtyReceived: 500,  qtyCurrent: 380,  unit: "Tablets",  location: "B2-03",   status: "Active"       },
+  { id: "BT-2025-0107", drug: "Sertraline 50mg",    manufacturer: "Pfizer",              category: "Antidepressants",   supplier: "MedLine Pharma",  received: "2025-04-10", expiry: "2027-02-20", qtyReceived: 300,  qtyCurrent: 220,  unit: "Tablets",  location: "C1-04",   status: "Active"       },
 ];
 
 export const expiryItems = [...drugs]

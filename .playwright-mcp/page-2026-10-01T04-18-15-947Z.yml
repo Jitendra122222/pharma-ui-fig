@@ -1,0 +1,309 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e476]:
+    - complementary [ref=f1e477]:
+      - generic [ref=f1e478]:
+        - generic [ref=f1e479]:
+          - generic [ref=f1e480]: Rx
+          - generic [ref=f1e481]:
+            - generic [ref=f1e482]: PharmERP
+            - generic [ref=f1e483]: City Central Pharmacy
+        - button "Collapse sidebar" [ref=f1e484] [cursor=pointer]: «
+      - navigation [ref=f1e485]:
+        - generic [ref=f1e486]:
+          - generic [ref=f1e487]: Core Operations
+          - button "Dashboard" [ref=f1e488] [cursor=pointer]
+          - button "Sales 2" [ref=f1e493] [cursor=pointer]:
+            - generic [ref=f1e497]: Sales
+            - generic [ref=f1e498]: "2"
+          - button "Prescriptions 2" [ref=f1e499] [cursor=pointer]:
+            - generic [ref=f1e503]: Prescriptions
+            - generic [ref=f1e504]: "2"
+          - button "Patients" [ref=f1e505] [cursor=pointer]
+        - generic [ref=f1e510]:
+          - generic [ref=f1e511]: Inventory & Stock
+          - button "Inventory 3" [ref=f1e512] [cursor=pointer]:
+            - generic [ref=f1e516]: Inventory
+            - generic [ref=f1e517]: "3"
+          - button "Stock Management" [ref=f1e518] [cursor=pointer]
+          - button "Short Book 8" [ref=f1e524] [cursor=pointer]:
+            - generic [ref=f1e528]: Short Book
+            - generic [ref=f1e529]: "8"
+          - button "Expiry Management 12" [ref=f1e530] [cursor=pointer]:
+            - generic [ref=f1e535]: Expiry Management
+            - generic [ref=f1e536]: "12"
+        - generic [ref=f1e537]:
+          - generic [ref=f1e538]: Purchasing
+          - button "Purchasing" [ref=f1e539] [cursor=pointer]
+          - button "Distributors" [ref=f1e546] [cursor=pointer]
+        - generic [ref=f1e552]:
+          - generic [ref=f1e553]: Finance
+          - button "Accounts" [ref=f1e554] [cursor=pointer]
+          - button "Insurance & Claims" [ref=f1e560] [cursor=pointer]
+        - generic [ref=f1e565]:
+          - generic [ref=f1e566]: Analytics
+          - button "Reports" [ref=f1e567] [cursor=pointer]
+        - generic [ref=f1e572]:
+          - generic [ref=f1e573]: Administration
+          - button "HR & Payroll" [ref=f1e574] [cursor=pointer]
+          - button "Settings" [ref=f1e579] [cursor=pointer]
+      - generic [ref=f1e585]:
+        - generic [ref=f1e586]: JD
+        - generic [ref=f1e587]:
+          - generic [ref=f1e588]: Jane Doe
+          - generic [ref=f1e589]: Head Pharmacist
+    - generic [ref=f1e590]:
+      - banner [ref=f1e591]:
+        - generic [ref=f1e592]:
+          - generic [ref=f1e593]: PharmERP
+          - generic [ref=f1e594]: ›
+          - generic [ref=f1e595]: Stock Management
+        - generic [ref=f1e596]:
+          - generic [ref=f1e597]:
+            - textbox "Quick search..." [ref=f1e598]
+            - generic [ref=f1e599]: ⌕
+          - generic [ref=f1e600] [cursor=pointer]:
+            - text: 🔔
+            - generic [ref=f1e601]: "5"
+          - generic [ref=f1e602]: 28 Jul 2025
+          - generic [ref=f1e604]:
+            - generic [ref=f1e605]: RK
+            - generic [ref=f1e607]:
+              - generic [ref=f1e608]: Rajesh Kumar
+              - generic [ref=f1e609]: Pharmacist
+            - button "Logout" [ref=f1e610] [cursor=pointer]
+      - main [ref=f1e611]:
+        - generic [ref=f1e612]:
+          - generic [ref=f1e613]:
+            - generic [ref=f1e614]:
+              - heading "Stock Management" [level=1] [ref=f1e615]
+              - generic [ref=f1e616]: Stock levels, expiry, and inventory health across all SKUs
+            - button "Export" [ref=f1e617] [cursor=pointer]
+          - generic [ref=f1e618]:
+            - button "Stock Overview" [ref=f1e619] [cursor=pointer]
+            - button "Locations" [ref=f1e620] [cursor=pointer]
+            - button "Adjustments" [active] [ref=f1e621] [cursor=pointer]
+            - button "Batch Tracking" [ref=f1e622] [cursor=pointer]
+            - button "Expiry Management" [ref=f1e623] [cursor=pointer]
+            - button "Stock Transfer" [ref=f1e624] [cursor=pointer]
+            - button "Investigation" [ref=f1e625] [cursor=pointer]
+            - button "Narcotic Register" [ref=f1e626] [cursor=pointer]
+            - button "Drug Recall" [ref=f1e627] [cursor=pointer]
+        - generic [ref=f1e949]:
+          - generic [ref=f1e950]:
+            - button [ref=f1e951] [cursor=pointer]
+            - generic [ref=f1e954]:
+              - generic [ref=f1e955]: Stock Management
+              - generic [ref=f1e958]: Adjustments
+          - generic [ref=f1e961]:
+            - generic [ref=f1e962]: Stock Adjustments
+            - generic [ref=f1e963]: Record and approve stock write-offs, damages, and count corrections
+          - generic [ref=f1e965]:
+            - generic [ref=f1e966]:
+              - generic [ref=f1e967]:
+                - generic [ref=f1e968]: Pending Approvals
+                - generic [ref=f1e969]: "2"
+              - generic [ref=f1e970]:
+                - generic [ref=f1e971]: High Risk Items
+                - generic [ref=f1e972]: "10"
+              - generic [ref=f1e973]:
+                - generic [ref=f1e974]: Active Session
+                - generic [ref=f1e975]: "0"
+              - generic [ref=f1e976]:
+                - generic [ref=f1e977]: Adjustments Today
+                - generic [ref=f1e978]: "0"
+            - generic [ref=f1e979]:
+              - generic [ref=f1e980]:
+                - button "Work Queue 10" [ref=f1e981] [cursor=pointer]:
+                  - text: Work Queue
+                  - generic [ref=f1e982]: "10"
+                - button "Adjustment Log 2" [ref=f1e983] [cursor=pointer]:
+                  - text: Adjustment Log
+                  - generic [ref=f1e984]: "2"
+              - generic [ref=f1e985]:
+                - generic [ref=f1e986]:
+                  - generic [ref=f1e987]: Verification Queue
+                  - generic [ref=f1e988]: "10"
+                  - generic [ref=f1e989]:
+                    - button "Quick Blind Count" [ref=f1e990] [cursor=pointer]
+                    - textbox "Search drugs..." [ref=f1e995]
+                - table [ref=f1e997]:
+                  - rowgroup [ref=f1e998]:
+                    - row [ref=f1e999]:
+                      - columnheader [ref=f1e1000]:
+                        - checkbox [ref=f1e1001] [cursor=pointer]
+                      - columnheader "Priority" [ref=f1e1002]
+                      - columnheader "Product" [ref=f1e1003]
+                      - columnheader "Current Stock" [ref=f1e1004]
+                      - columnheader "Min Stock" [ref=f1e1005]
+                      - columnheader "Last Count" [ref=f1e1006]
+                      - columnheader "Risk Factors" [ref=f1e1007]
+                      - columnheader "Actions" [ref=f1e1008]
+                  - rowgroup [ref=f1e1009]:
+                    - row [ref=f1e1010]:
+                      - cell [ref=f1e1011]:
+                        - checkbox [ref=f1e1012] [cursor=pointer]
+                      - cell "1" [ref=f1e1013]
+                      - cell "Ciprofloxacin 500mg" [ref=f1e1015]
+                      - cell "12" [ref=f1e1016]
+                      - cell "40" [ref=f1e1017]
+                      - cell "2025-07-15" [ref=f1e1018]
+                      - cell "Low stock Near expiry" [ref=f1e1019]:
+                        - generic [ref=f1e1020]:
+                          - generic [ref=f1e1021]: Low stock
+                          - generic [ref=f1e1022]: Near expiry
+                      - cell [ref=f1e1023]:
+                        - generic [ref=f1e1024]:
+                          - button "Quick Count" [ref=f1e1025] [cursor=pointer]
+                          - button "+Session" [ref=f1e1026] [cursor=pointer]
+                    - row [ref=f1e1027]:
+                      - cell [ref=f1e1028]:
+                        - checkbox [ref=f1e1029] [cursor=pointer]
+                      - cell "2" [ref=f1e1030]
+                      - cell "Insulin Glargine" [ref=f1e1032]
+                      - cell "45" [ref=f1e1033]
+                      - cell "20" [ref=f1e1034]
+                      - cell "Never" [ref=f1e1035]
+                      - cell "Near expiry Controlled substance Never counted" [ref=f1e1036]:
+                        - generic [ref=f1e1037]:
+                          - generic [ref=f1e1038]: Near expiry
+                          - generic [ref=f1e1039]: Controlled substance
+                          - generic [ref=f1e1040]: Never counted
+                      - cell [ref=f1e1041]:
+                        - generic [ref=f1e1042]:
+                          - button "Quick Count" [ref=f1e1043] [cursor=pointer]
+                          - button "+Session" [ref=f1e1044] [cursor=pointer]
+                    - row [ref=f1e1045]:
+                      - cell [ref=f1e1046]:
+                        - checkbox [ref=f1e1047] [cursor=pointer]
+                      - cell "3" [ref=f1e1048]
+                      - cell "Warfarin 5mg" [ref=f1e1050]
+                      - cell "6" [ref=f1e1051]
+                      - cell "30" [ref=f1e1052]
+                      - cell "2025-07-10" [ref=f1e1053]
+                      - cell "Low stock Controlled substance" [ref=f1e1054]:
+                        - generic [ref=f1e1055]:
+                          - generic [ref=f1e1056]: Low stock
+                          - generic [ref=f1e1057]: Controlled substance
+                      - cell [ref=f1e1058]:
+                        - generic [ref=f1e1059]:
+                          - button "Quick Count" [ref=f1e1060] [cursor=pointer]
+                          - button "+Session" [ref=f1e1061] [cursor=pointer]
+                    - row [ref=f1e1062]:
+                      - cell [ref=f1e1063]:
+                        - checkbox [ref=f1e1064] [cursor=pointer]
+                      - cell "4" [ref=f1e1065]
+                      - cell "Lisinopril 10mg" [ref=f1e1067]
+                      - cell "0" [ref=f1e1068]
+                      - cell "40" [ref=f1e1069]
+                      - cell "Never" [ref=f1e1070]
+                      - cell "Low stock Never counted" [ref=f1e1071]:
+                        - generic [ref=f1e1072]:
+                          - generic [ref=f1e1073]: Low stock
+                          - generic [ref=f1e1074]: Never counted
+                      - cell [ref=f1e1075]:
+                        - generic [ref=f1e1076]:
+                          - button "Quick Count" [ref=f1e1077] [cursor=pointer]
+                          - button "+Session" [ref=f1e1078] [cursor=pointer]
+                    - row [ref=f1e1079]:
+                      - cell [ref=f1e1080]:
+                        - checkbox [ref=f1e1081] [cursor=pointer]
+                      - cell "5" [ref=f1e1082]
+                      - cell "Metformin 1000mg" [ref=f1e1084]
+                      - cell "18" [ref=f1e1085]
+                      - cell "30" [ref=f1e1086]
+                      - cell "2025-07-18" [ref=f1e1087]
+                      - cell "Low stock" [ref=f1e1088]
+                      - cell [ref=f1e1091]:
+                        - generic [ref=f1e1092]:
+                          - button "Quick Count" [ref=f1e1093] [cursor=pointer]
+                          - button "+Session" [ref=f1e1094] [cursor=pointer]
+                    - row [ref=f1e1095]:
+                      - cell [ref=f1e1096]:
+                        - checkbox [ref=f1e1097] [cursor=pointer]
+                      - cell "6" [ref=f1e1098]
+                      - cell "Sertraline 50mg" [ref=f1e1100]
+                      - cell "220" [ref=f1e1101]
+                      - cell "40" [ref=f1e1102]
+                      - cell "Never" [ref=f1e1103]
+                      - cell "Controlled substance Never counted" [ref=f1e1104]:
+                        - generic [ref=f1e1105]:
+                          - generic [ref=f1e1106]: Controlled substance
+                          - generic [ref=f1e1107]: Never counted
+                      - cell [ref=f1e1108]:
+                        - generic [ref=f1e1109]:
+                          - button "Quick Count" [ref=f1e1110] [cursor=pointer]
+                          - button "+Session" [ref=f1e1111] [cursor=pointer]
+                    - row [ref=f1e1112]:
+                      - cell [ref=f1e1113]:
+                        - checkbox [ref=f1e1114] [cursor=pointer]
+                      - cell "7" [ref=f1e1115]
+                      - cell "Atorvastatin 20mg" [ref=f1e1117]
+                      - cell "312" [ref=f1e1118]
+                      - cell "60" [ref=f1e1119]
+                      - cell "Never" [ref=f1e1120]
+                      - cell "Never counted" [ref=f1e1121]
+                      - cell [ref=f1e1124]:
+                        - generic [ref=f1e1125]:
+                          - button "Quick Count" [ref=f1e1126] [cursor=pointer]
+                          - button "+Session" [ref=f1e1127] [cursor=pointer]
+                    - row [ref=f1e1128]:
+                      - cell [ref=f1e1129]:
+                        - checkbox [ref=f1e1130] [cursor=pointer]
+                      - cell "8" [ref=f1e1131]
+                      - cell "Omeprazole 20mg" [ref=f1e1133]
+                      - cell "145" [ref=f1e1134]
+                      - cell "50" [ref=f1e1135]
+                      - cell "Never" [ref=f1e1136]
+                      - cell "Never counted" [ref=f1e1137]
+                      - cell [ref=f1e1140]:
+                        - generic [ref=f1e1141]:
+                          - button "Quick Count" [ref=f1e1142] [cursor=pointer]
+                          - button "+Session" [ref=f1e1143] [cursor=pointer]
+                    - row [ref=f1e1144]:
+                      - cell [ref=f1e1145]:
+                        - checkbox [ref=f1e1146] [cursor=pointer]
+                      - cell "9" [ref=f1e1147]
+                      - cell "Salbutamol Inhaler" [ref=f1e1149]
+                      - cell "28" [ref=f1e1150]
+                      - cell "25" [ref=f1e1151]
+                      - cell "Never" [ref=f1e1152]
+                      - cell "Never counted" [ref=f1e1153]
+                      - cell [ref=f1e1156]:
+                        - generic [ref=f1e1157]:
+                          - button "Quick Count" [ref=f1e1158] [cursor=pointer]
+                          - button "+Session" [ref=f1e1159] [cursor=pointer]
+                    - row [ref=f1e1160]:
+                      - cell [ref=f1e1161]:
+                        - checkbox [ref=f1e1162] [cursor=pointer]
+                      - cell "10" [ref=f1e1163]
+                      - cell "Amlodipine 5mg" [ref=f1e1165]
+                      - cell "380" [ref=f1e1166]
+                      - cell "60" [ref=f1e1167]
+                      - cell "Never" [ref=f1e1168]
+                      - cell "Never counted" [ref=f1e1169]
+                      - cell [ref=f1e1172]:
+                        - generic [ref=f1e1173]:
+                          - button "Quick Count" [ref=f1e1174] [cursor=pointer]
+                          - button "+Session" [ref=f1e1175] [cursor=pointer]
+                - generic [ref=f1e1176]:
+                  - generic [ref=f1e1177]: Showing 1–10 of 10
+                  - generic [ref=f1e1178]:
+                    - generic [ref=f1e1179]:
+                      - generic [ref=f1e1180]: "Rows per page:"
+                      - combobox [ref=f1e1181]:
+                        - option "5"
+                        - option "10" [selected]
+                        - option "25"
+                        - option "50"
+                    - generic [ref=f1e1182]:
+                      - button "«" [disabled] [ref=f1e1183]
+                      - button "‹" [disabled] [ref=f1e1184]
+                      - generic [ref=f1e1185]: 1 / 1
+                      - button "›" [disabled] [ref=f1e1186]
+                      - button "»" [disabled] [ref=f1e1187]
+              - generic [ref=f1e1188]:
+                - generic [ref=f1e1189]:
+                  - generic [ref=f1e1190]: Count Sessions
+                  - button "+ New Count Session" [ref=f1e1192] [cursor=pointer]
+                - generic [ref=f1e1193]: No completed sessions yet. Start a new count session to track physical inventory counts.
+  - generic [aria-hidden] [ref=f1e471]: ₹0k

@@ -418,78 +418,79 @@ export default function StockInvestigation() {
         resolved.forEach(c => {
           if (c.reason) rootCauseCounts[c.reason] = (rootCauseCounts[c.reason] ?? 0) + 1;
         });
-        const topCause = Object.entries(rootCauseCounts).sort((a, b) => b[1] - a[1])[0];
+        const rcEntries = Object.entries(rootCauseCounts).sort((a, b) => b[1] - a[1]);
+        const maxRC = rcEntries[0]?.[1] ?? 1;
+        const topCause = rcEntries[0];
         const rejectedCount = cases.filter(c => c.status === "Rejected").length;
-        const resolutionRate = cases.length > 0 ? Math.round(((resolved.length) / cases.length) * 100) : 0;
+        const resolutionRate = cases.length > 0 ? Math.round((resolved.length / cases.length) * 100) : 0;
 
         return (
           <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC" }}>
-            <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Variance Resolution Center</div>
-              <span style={{ fontSize: 11, color: "#9CA3AF" }}>{resolved.length} of {cases.length} cases resolved</span>
+
+            {/* Header */}
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Variance Resolution Center</div>
+              <span style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter" }}>{resolved.length} of {cases.length} cases resolved</span>
             </div>
-            {/* Resolution metrics */}
+
+            {/* KPI row */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", borderBottom: "1px solid #EEF1F6" }}>
               {[
-                { label: "Resolution Rate", value: `${resolutionRate}%`, color: resolutionRate >= 60 ? "#2E7D32" : "#E65100" },
-                { label: "Total Qty Adjusted", value: totalQtyAdj.toString(), color: "#1B6CA8" },
-                { label: "Top Root Cause", value: topCause ? topCause[0].replace(" / ", "/") : "—", color: "#1A2436", small: true },
-                { label: "Rejected", value: rejectedCount.toString(), color: rejectedCount > 0 ? "#C62828" : "#9CA3AF" },
+                { label: "Resolution Rate",    value: `${resolutionRate}%`,       color: resolutionRate >= 60 ? "#2E7D32" : "#E65100", mono: true  },
+                { label: "Total Qty Adjusted", value: String(totalQtyAdj),        color: "#1B6CA8",                                    mono: true  },
+                { label: "Top Root Cause",     value: topCause ? topCause[0] : "—", color: "#1A2436",                                 mono: false },
+                { label: "Rejected",           value: String(rejectedCount),      color: rejectedCount > 0 ? "#C62828" : "#9CA3AF",    mono: true  },
               ].map((k, i) => (
-                <div key={k.label} style={{ padding: "12px 16px", borderRight: i < 3 ? "1px solid #EEF1F6" : "none" }}>
-                  <div style={{ fontSize: 9, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 5 }}>{k.label}</div>
-                  <div style={{ fontFamily: (k as any).small ? "Inter" : "JetBrains Mono", fontSize: (k as any).small ? 12 : 18, fontWeight: 700, color: k.color, lineHeight: 1.2 }}>{k.value}</div>
+                <div key={k.label} style={{ padding: "16px 20px", borderRight: i < 3 ? "1px solid #EEF1F6" : "none" }}>
+                  <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 8, fontFamily: "Inter" }}>{k.label}</div>
+                  <div style={{ fontSize: k.mono ? 26 : 14, fontFamily: k.mono ? "JetBrains Mono" : "Inter", fontWeight: 700, color: k.color, lineHeight: 1.2 }}>{k.value}</div>
                 </div>
               ))}
             </div>
-            {/* Root cause breakdown */}
-            {Object.keys(rootCauseCounts).length > 0 && (
-              <div style={{ padding: "12px 18px 14px", borderBottom: "1px solid #EEF1F6" }}>
-                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 10 }}>Root Cause Breakdown</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                  {Object.entries(rootCauseCounts).sort((a, b) => b[1] - a[1]).map(([cause, count]) => {
-                    const pct = Math.round((count / resolved.length) * 100);
-                    return (
-                      <div key={cause} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ fontSize: 12, color: "#6B7280", minWidth: 180 }}>{cause}</div>
-                        <div style={{ flex: 1, height: 6, background: "#F0F3F7", position: "relative" as const }}>
-                          <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: "#1B6CA8" }} />
-                        </div>
-                        <div style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#1B6CA8", fontWeight: 700, minWidth: 28, textAlign: "right" as const }}>{count}</div>
+
+            {/* Root Cause Breakdown */}
+            {rcEntries.length > 0 && (
+              <div style={{ padding: "16px 20px 18px", borderBottom: "1px solid #EEF1F6" }}>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 14, fontFamily: "Inter" }}>Root Cause Breakdown</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+                  {rcEntries.map(([cause, count]) => (
+                    <div key={cause} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{ flex: "0 0 200px", fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{cause}</div>
+                      <div style={{ flex: 1, height: 6, background: "#F0F3F7", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round((count / maxRC) * 100)}%`, height: "100%", background: "#1B6CA8", borderRadius: 3 }} />
                       </div>
-                    );
-                  })}
+                      <div style={{ flex: "0 0 24px", fontSize: 12, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1B6CA8", textAlign: "right" as const }}>{count}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
-            {/* Recent resolutions */}
-            <div style={{ padding: "12px 18px 14px" }}>
-              <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 10 }}>Recent Resolutions</div>
-              {resolved.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {resolved.slice(0, 3).map(c => {
-                    const sc = statusPillProps(c.status);
-                    return (
-                      <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: "#F8FAFC", border: "1px solid #EEF1F6", borderRadius: 4 }}>
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#1A2436", marginBottom: 3 }}>{c.drugName}</div>
-                          <div style={{ fontSize: 11, color: "#9CA3AF" }}>
-                            {c.reason ?? "No root cause recorded"}
-                            {c.adjustmentRef && <span style={{ fontFamily: "JetBrains Mono", color: "#6B7280", marginLeft: 8 }}>{c.adjustmentRef}</span>}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "right" as const, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                          <Pill label={c.status} bg={sc.bg} color={sc.color} />
-                          <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700, color: c.variance < 0 ? "#C62828" : "#2E7D32" }}>{c.variance > 0 ? `+${c.variance}` : c.variance}</span>
-                        </div>
+
+            {/* Recent Resolutions */}
+            <div style={{ padding: "16px 20px 18px" }}>
+              <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12, fontFamily: "Inter" }}>Recent Resolutions</div>
+              {resolved.length > 0 ? resolved.slice(0, 3).map((c, idx, arr) => {
+                const sc = statusPillProps(c.status);
+                return (
+                  <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: idx < Math.min(arr.length, 3) - 1 ? "1px solid #F0F3F7" : "none" }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2436", fontFamily: "Inter", marginBottom: 4 }}>{c.drugName}</div>
+                      <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 8 }}>
+                        {c.reason ?? "No root cause recorded"}
+                        {c.adjustmentRef && <span style={{ fontFamily: "JetBrains Mono", color: "#9CA3AF" }}>{c.adjustmentRef}</span>}
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+                      <span style={{ fontSize: 10, padding: "2px 10px", borderRadius: 10, background: sc.bg, color: sc.color, fontWeight: 700, fontFamily: "Inter", whiteSpace: "nowrap" as const }}>{c.status}</span>
+                      <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700, color: c.variance < 0 ? "#C62828" : "#2E7D32" }}>{c.variance > 0 ? `+${c.variance}` : c.variance}</span>
+                    </div>
+                  </div>
+                );
+              }) : (
                 <div style={{ fontSize: 13, color: "#9CA3AF", textAlign: "center" as const, padding: "10px 0" }}>No resolved cases yet.</div>
               )}
             </div>
+
           </div>
         );
       })()}
