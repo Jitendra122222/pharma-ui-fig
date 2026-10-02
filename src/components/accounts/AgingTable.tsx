@@ -17,7 +17,7 @@ export default function AgingTable({ data, type }: { data: LedgerRow[]; type: "r
           <StatTile key={k.label} label={k.label} value={k.value} color={k.color} accentBorder fontSize={26} />
         ))}
       </div>
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>
           {type === "receivable" ? "Customer Receivables" : "Supplier Payables"} Ledger
         </div>

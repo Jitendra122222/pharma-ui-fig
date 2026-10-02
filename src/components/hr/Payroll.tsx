@@ -22,12 +22,12 @@ export default function Payroll() {
         ))}
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>July 2025 Payroll Run</div>
           <div className="flex gap-2">
-            <button style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Export Payslips</button>
-            <button style={{ padding: "7px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Process Payroll</button>
+            <button style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Export Payslips</button>
+            <button style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Process Payroll</button>
           </div>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>

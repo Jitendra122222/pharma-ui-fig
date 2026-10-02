@@ -51,10 +51,13 @@ export default function StockOverview() {
         ))}
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 10, alignItems: "center" }}>
-          <input type="text" placeholder="Search drug or category..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ flex: 1, padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "5px 10px", flex: 1 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" placeholder="Search drug or category..." value={search} onChange={e => setSearch(e.target.value)}
+              style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
+          </div>
           {["All", "Low Stock", "Out of Stock"].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               style={{ padding: "7px 14px", fontSize: 12, cursor: "pointer", border: "1px solid", borderColor: filter === f ? "#1B6CA8" : "#E8ECF4", background: filter === f ? "#1B6CA8" : "#fff", color: filter === f ? "#fff" : "#6B7280" }}>
@@ -175,7 +178,7 @@ export default function StockOverview() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
                   {/* 1. Stock Level */}
-                  <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "18px 20px" }}>
+                  <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "18px 20px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <div style={{ fontFamily: "JetBrains Mono", fontSize: 38, fontWeight: 700, color: "#0C1B33", lineHeight: 1 }}>{sel.stock}</div>
@@ -201,7 +204,7 @@ export default function StockOverview() {
                   </div>
 
                   {/* 2. Pricing Overview */}
-                  <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+                  <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                     <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Pricing Overview</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderBottom: "1px solid #EEF1F6" }}>
                       {[
@@ -230,7 +233,7 @@ export default function StockOverview() {
                   </div>
 
                   {/* 3. Active Batches */}
-                  <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+                  <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                     <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Active Batches</span>
                       <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#6B7280" }}>
@@ -268,7 +271,7 @@ export default function StockOverview() {
                   </div>
 
                   {/* 4. Supplier & Sourcing */}
-                  <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+                  <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                     <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Supplier & Sourcing</div>
                     {([
                       { label: "Supplier", value: sel.supplier, mono: false, highlight: "" },
@@ -284,7 +287,7 @@ export default function StockOverview() {
                   </div>
 
                   {/* 5. Product Details */}
-                  <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+                  <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                     <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Product Details</div>
                     {[
                       { label: "Generic Name", value: genericName(sel.name), mono: false },
@@ -307,7 +310,7 @@ export default function StockOverview() {
               )}
 
               {dTab === "clinical" && (
-                <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+                <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                   <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Clinical Information</div>
                   <div style={{ padding: 20 }}>
                     {[
@@ -343,7 +346,7 @@ export default function StockOverview() {
 
                     {/* Summary bar */}
                     {moves.length > 0 && (
-                      <div style={{ background: "#fff", border: "1px solid #E8ECF4", display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
+                      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
                         {[
                           { label: "Total Movements", value: moves.length.toString(), color: "#1A2436" },
                           { label: "Net Qty Change", value: netChange > 0 ? `+${netChange}` : netChange.toString(), color: netChange > 0 ? "#2E7D32" : "#C62828" },
@@ -358,7 +361,7 @@ export default function StockOverview() {
                     )}
 
                     {/* Movement entries */}
-                    <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+                    <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                       <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>
                         Recent Movements
                       </div>
@@ -416,9 +419,9 @@ export default function StockOverview() {
 
             {/* Footer */}
             <div style={{ padding: "14px 20px", borderTop: "1px solid #E8ECF4", background: "#fff", display: "flex", gap: 10, flexShrink: 0 }}>
-              <button onClick={() => setShowAdjust(true)} style={{ flex: 1, padding: "9px 0", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>Adjust Stock</button>
-              <button onClick={() => setShowPO(true)} style={{ flex: 1, padding: "9px 0", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>Create PO</button>
-              <button onClick={() => setSel(null)} style={{ flex: 1, padding: "9px 0", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>View in Inventory</button>
+              <button onClick={() => setShowAdjust(true)} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>Adjust Stock</button>
+              <button onClick={() => setShowPO(true)} style={{ flex: 1, padding: "9px 0", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>Create PO</button>
+              <button onClick={() => setSel(null)} style={{ flex: 1, padding: "9px 0", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>View in Inventory</button>
             </div>
 
           </aside>
@@ -428,18 +431,18 @@ export default function StockOverview() {
       {/* Adjust Stock modal */}
       {showAdjust && sel && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 210, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", width: 480, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div style={{ background: "#fff", width: 480, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #EEF1F6" }}>
               <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>New Stock Adjustment</div>
               <button onClick={() => setShowAdjust(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>×</button>
             </div>
             <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
               {[
-                { label: "Drug / Item", el: <input type="text" defaultValue={sel.name} readOnly style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} /> },
-                { label: "Adjustment Type", el: <select style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}><option>Write-off</option><option>Stock Count</option><option>Damage</option><option>Donation</option><option>Other</option></select> },
-                { label: "Quantity Change", el: <input type="number" placeholder="Use negative for reduction (e.g. -10)" style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
-                { label: "Reason", el: <input type="text" placeholder="Describe the reason for adjustment" style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} /> },
-                { label: "Reference #", el: <input type="text" placeholder="e.g. COUNT-AUG29" style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
+                { label: "Drug / Item", el: <input type="text" defaultValue={sel.name} readOnly style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} /> },
+                { label: "Adjustment Type", el: <select style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}><option>Write-off</option><option>Stock Count</option><option>Damage</option><option>Donation</option><option>Other</option></select> },
+                { label: "Quantity Change", el: <input type="number" placeholder="Use negative for reduction (e.g. -10)" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
+                { label: "Reason", el: <input type="text" placeholder="Describe the reason for adjustment" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} /> },
+                { label: "Reference #", el: <input type="text" placeholder="e.g. COUNT-AUG29" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
               ].map(f => (
                 <div key={f.label}>
                   <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>{f.label}</label>
@@ -447,8 +450,8 @@ export default function StockOverview() {
                 </div>
               ))}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
-                <button onClick={() => setShowAdjust(false)} style={{ padding: "9px 18px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-                <button onClick={() => setShowAdjust(false)} style={{ padding: "9px 22px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Post Adjustment</button>
+                <button onClick={() => setShowAdjust(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+                <button onClick={() => setShowAdjust(false)} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Post Adjustment</button>
               </div>
             </div>
           </div>
@@ -458,18 +461,18 @@ export default function StockOverview() {
       {/* Create PO modal */}
       {showPO && sel && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 210, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", width: 480, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div style={{ background: "#fff", width: 480, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #EEF1F6" }}>
               <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>Create Purchase Order</div>
               <button onClick={() => setShowPO(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>×</button>
             </div>
             <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
               {[
-                { label: "Medicine", el: <input type="text" defaultValue={sel.name} readOnly style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} /> },
-                { label: "Supplier", el: <input type="text" defaultValue={sel.supplier} readOnly style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} /> },
-                { label: "Order Quantity", el: <input type="number" placeholder={`Current stock: ${sel.stock} ${sel.unit}`} style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
-                { label: "Expected Delivery Date", el: <input type="date" style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
-                { label: "Notes", el: <input type="text" placeholder="Reason for order or special instructions" style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} /> },
+                { label: "Medicine", el: <input type="text" defaultValue={sel.name} readOnly style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} /> },
+                { label: "Supplier", el: <input type="text" defaultValue={sel.supplier} readOnly style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} /> },
+                { label: "Order Quantity", el: <input type="number" placeholder={`Current stock: ${sel.stock} ${sel.unit}`} style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
+                { label: "Expected Delivery Date", el: <input type="date" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} /> },
+                { label: "Notes", el: <input type="text" placeholder="Reason for order or special instructions" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} /> },
               ].map(f => (
                 <div key={f.label}>
                   <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>{f.label}</label>
@@ -477,8 +480,8 @@ export default function StockOverview() {
                 </div>
               ))}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
-                <button onClick={() => setShowPO(false)} style={{ padding: "9px 18px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-                <button onClick={() => setShowPO(false)} style={{ padding: "9px 22px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Create PO</button>
+                <button onClick={() => setShowPO(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+                <button onClick={() => setShowPO(false)} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Create PO</button>
               </div>
             </div>
           </div>

@@ -45,7 +45,7 @@ function PurchaseReturnList({ onNew, onView, returns }: { onNew: () => void; onV
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Purchase Returns</div>
         </div>
@@ -200,14 +200,14 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {initialData && viewMode && (
             <>
-              <button onClick={() => setPrintJob({ jobType: "Purchase Return", docId: initialData.id })} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Print</button>
-              <button onClick={() => setViewMode(false)} style={{ padding: "7px 20px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Edit</button>
+              <button onClick={() => setPrintJob({ jobType: "Purchase Return", docId: initialData.id })} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Print</button>
+              <button onClick={() => setViewMode(false)} style={{ padding: "7px 20px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Edit</button>
             </>
           )}
           {initialData && !viewMode && (
             <>
-              <button onClick={() => setViewMode(true)} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-              <button onClick={() => setSaved("posted")} style={{ padding: "7px 20px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save Changes</button>
+              <button onClick={() => setViewMode(true)} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+              <button onClick={() => setSaved("posted")} style={{ padding: "7px 20px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save Changes</button>
             </>
           )}
           {!initialData && (
@@ -234,7 +234,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
           <div style={{ flex: "0 0 320px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Distributor <span style={{ color: "#C62828" }}>*</span></div>
             {viewMode ? (
-              <div style={{ padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{distributor || "—"}</div>
+              <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{distributor || "—"}</div>
             ) : (
               <div style={{ display: "flex", gap: 6 }}>
                 <DistributorSearch
@@ -244,7 +244,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                   onAdd={() => setShowAddSupplier(true)}
                 />
                 {distributor && (
-                  <button onClick={() => setShowDetails(true)} style={{ padding: "8px 12px", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>Details</button>
+                  <button onClick={() => setShowDetails(true)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>Details</button>
                 )}
               </div>
             )}
@@ -253,30 +253,30 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
           <div style={{ flex: "0 0 160px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Original Invoice #</div>
             {viewMode ? (
-              <div style={{ padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", background: "#FAFBFD", color: "#1A2436" }}>{originalInvoice || "—"}</div>
+              <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", background: "#FAFBFD", color: "#1A2436" }}>{originalInvoice || "—"}</div>
             ) : (
               <input value={originalInvoice} onChange={e => setOriginalInvoice(e.target.value)} placeholder="PINV-2026-0073"
-                style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const, background: "#fff" }} />
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const, background: "#fff" }} />
             )}
           </div>
 
           <div style={{ flex: "0 0 150px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Original Invoice Date</div>
             {viewMode ? (
-              <div style={{ padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{originalInvoiceDate ? formatDMY(originalInvoiceDate) : "—"}</div>
+              <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{originalInvoiceDate ? formatDMY(originalInvoiceDate) : "—"}</div>
             ) : (
               <input type="date" value={originalInvoiceDate} onChange={e => setOriginalInvoiceDate(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const, background: "#fff" }} />
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const, background: "#fff" }} />
             )}
           </div>
 
           <div style={{ flex: "0 0 140px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Return Type</div>
             {viewMode ? (
-              <div style={{ padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{returnType}</div>
+              <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{returnType}</div>
             ) : (
               <select value={returnType} onChange={e => setReturnType(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", appearance: "none" as const, cursor: "pointer" }}>
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", appearance: "none" as const, cursor: "pointer" }}>
                 {RETURN_TYPES.map(t => <option key={t}>{t}</option>)}
               </select>
             )}
@@ -286,7 +286,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
       </div>
 
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", margin: "10px 20px 0" }}>
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
             <span style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Return Items</span>
             <span style={{ padding: "3px 12px", background: "#E0F7FA", color: "#00838F", fontSize: 12, fontWeight: 700, borderRadius: 999, fontFamily: "Inter" }}>
@@ -336,7 +336,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                         <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: "#1A2436" }}>{item.batchNo || "—"}</span>
                       ) : (
                         <input value={item.batchNo} onChange={e => updateItem(item.id, "batchNo", e.target.value)} placeholder="BATCH-#"
-                          style={{ width: 100, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#1A2436" }} />
+                          style={{ width: 100, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#1A2436" }} />
                       )}
                     </td>
                     <td style={{ padding: "6px 10px", textAlign: "left" }}>
@@ -344,7 +344,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                         <span style={{ fontFamily: "JetBrains Mono", fontSize: 11, color: item.expiryDate && item.expiryDate < "2026-12-31" ? "#E65100" : "#1A2436" }}>{item.expiryDate ? formatDMY(item.expiryDate) : "—"}</span>
                       ) : (
                         <input type="date" value={item.expiryDate} onChange={e => updateItem(item.id, "expiryDate", e.target.value)}
-                          style={{ width: 130, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: item.expiryDate && item.expiryDate < "2026-12-31" ? "#E65100" : "#1A2436" }} />
+                          style={{ width: 130, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: item.expiryDate && item.expiryDate < "2026-12-31" ? "#E65100" : "#1A2436" }} />
                       )}
                     </td>
                     <td style={{ padding: "6px 10px", textAlign: "right" }}>
@@ -352,7 +352,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                         <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: "#1A2436" }}>{item.packUnit || "—"}</span>
                       ) : (
                         <input value={item.packUnit} onChange={e => updateItem(item.id, "packUnit", e.target.value)}
-                          style={{ width: 58, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
+                          style={{ width: 58, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
                       )}
                     </td>
                     <td style={{ padding: "6px 10px", textAlign: "right" }}>
@@ -360,7 +360,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                         <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: "#1A2436" }}>{item.returnQty || "—"}</span>
                       ) : (
                         <input type="number" value={item.returnQty || ""} onChange={e => updateItem(item.id, "returnQty", parseFloat(e.target.value) || 0)}
-                          style={{ width: 62, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
+                          style={{ width: 62, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
                       )}
                     </td>
                     <td style={{ padding: "6px 10px", textAlign: "right" }}>
@@ -368,7 +368,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                         <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: "#6B7280" }}>{item.freeQty || "—"}</span>
                       ) : (
                         <input type="number" value={item.freeQty || ""} onChange={e => updateItem(item.id, "freeQty", parseFloat(e.target.value) || 0)}
-                          style={{ width: 50, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
+                          style={{ width: 50, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
                       )}
                     </td>
                     <td style={{ padding: "6px 10px", textAlign: "right" }}>
@@ -376,7 +376,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                         <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: "#1A2436" }}>₹{item.purchaseRate.toFixed(2)}</span>
                       ) : (
                         <input type="number" value={item.purchaseRate || ""} onChange={e => updateItem(item.id, "purchaseRate", parseFloat(e.target.value) || 0)}
-                          style={{ width: 74, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
+                          style={{ width: 74, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
                       )}
                     </td>
                     <td style={{ padding: "6px 10px", textAlign: "right" }}>
@@ -384,7 +384,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                         <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: "#1A2436" }}>₹{item.mrp.toFixed(2)}</span>
                       ) : (
                         <input type="number" value={item.mrp || ""} onChange={e => updateItem(item.id, "mrp", parseFloat(e.target.value) || 0)}
-                          style={{ width: 70, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
+                          style={{ width: 70, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: "#fff", color: "#1A2436" }} />
                       )}
                     </td>
                     <td style={{ padding: "6px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#1A2436", whiteSpace: "nowrap" }}>
@@ -395,7 +395,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                         <span style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{item.disposition}</span>
                       ) : (
                         <select value={item.disposition} onChange={e => updateItem(item.id, "disposition", e.target.value)}
-                          style={{ width: "100%", padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", minWidth: 110 }}>
+                          style={{ width: "100%", padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", minWidth: 110 }}>
                           {DISPOSITION_OPTIONS.map(d => <option key={d}>{d}</option>)}
                         </select>
                       )}
@@ -418,10 +418,10 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
             <div style={{ flex: "0 0 260px" }}>
               <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5, fontFamily: "Inter" }}>Reason</div>
               {viewMode ? (
-                <div style={{ padding: "7px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{reason || "—"}</div>
+                <div style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{reason || "—"}</div>
               ) : (
                 <select value={reason} onChange={e => setReason(e.target.value)}
-                  style={{ width: "100%", padding: "7px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer" }}>
+                  style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer" }}>
                   {RETURN_REASONS.map(r => <option key={r}>{r}</option>)}
                 </select>
               )}
@@ -429,19 +429,19 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
             <div style={{ flex: "0 0 220px" }}>
               <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5, fontFamily: "Inter" }}>Credit Note / RMA Reference</div>
               {viewMode ? (
-                <div style={{ padding: "7px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: creditNoteRef ? "#1A2436" : "#9CA3AF" }}>{creditNoteRef || "—"}</div>
+                <div style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: creditNoteRef ? "#1A2436" : "#9CA3AF" }}>{creditNoteRef || "—"}</div>
               ) : (
                 <input value={creditNoteRef} onChange={e => setCreditNoteRef(e.target.value)} placeholder="Optional supplier reference"
-                  style={{ width: "100%", padding: "7px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
+                  style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
               )}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5, fontFamily: "Inter" }}>Notes</div>
               {viewMode ? (
-                <div style={{ padding: "7px 10px", border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "Inter", background: "#FAFBFD", color: notes ? "#1A2436" : "#9CA3AF", minHeight: 54 }}>{notes || "—"}</div>
+                <div style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "Inter", background: "#FAFBFD", color: notes ? "#1A2436" : "#9CA3AF", minHeight: 54 }}>{notes || "—"}</div>
               ) : (
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Any additional notes about this return..."
-                  style={{ width: "100%", padding: "7px 10px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", resize: "none", background: "#fff", boxSizing: "border-box" as const }} />
+                  style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", resize: "none", background: "#fff", boxSizing: "border-box" as const }} />
               )}
             </div>
           </div>
@@ -451,7 +451,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
 
       {showDraftConfirm && (
         <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, background: "rgba(10,22,44,0.45)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "36px 40px", textAlign: "center", minWidth: 340, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "36px 40px", textAlign: "center", minWidth: 340, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ width: 44, height: 44, background: "#FFF3E0", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 7v5M11 15h.01" stroke="#E65100" strokeWidth="1.8" strokeLinecap="round"/><path d="M9.27 3.26a2 2 0 0 1 3.46 0l7.28 12.6A2 2 0 0 1 18.28 19H3.72a2 2 0 0 1-1.73-3.14l7.28-12.6Z" stroke="#E65100" strokeWidth="1.5"/></svg>
             </div>
@@ -460,8 +460,8 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
               This return will be saved as a draft.<br />You can submit it later.
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <button onClick={() => setShowDraftConfirm(false)} style={{ padding: "9px 24px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 600 }}>Cancel</button>
-              <button onClick={() => { setShowDraftConfirm(false); onSaveDraft?.({ supplier: distributor, originalInvoice, originalInvoiceDate, reason, returnType, items }); }} style={{ padding: "9px 24px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save</button>
+              <button onClick={() => setShowDraftConfirm(false)} style={{ padding: "9px 24px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 600 }}>Cancel</button>
+              <button onClick={() => { setShowDraftConfirm(false); onSaveDraft?.({ supplier: distributor, originalInvoice, originalInvoiceDate, reason, returnType, items }); }} style={{ padding: "9px 24px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save</button>
             </div>
           </div>
         </div>
@@ -543,7 +543,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
 
       {saved && (
         <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, background: "rgba(10,22,44,0.45)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: 60, textAlign: "center", minWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: 60, textAlign: "center", minWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ fontFamily: "Outfit", fontSize: 20, fontWeight: 700, color: "#1A2436", marginBottom: 8 }}>
               Purchase Return {saved === "posted" ? "Submitted Successfully" : "Saved as Draft"}
             </div>

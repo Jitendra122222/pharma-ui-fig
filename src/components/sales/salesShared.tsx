@@ -58,10 +58,10 @@ export function DateRangePicker({
       <button type="button" onClick={() => setOpen(v => !v)}
         style={{
           display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 14px", border: "1px solid #EDF0F5", background: "#fff",
+          padding: "10px 14px", border: "1px solid #EDF0F5", borderRadius: 6, background: "#fff",
           fontSize: 13, fontFamily: "Inter", cursor: "pointer",
-          color: active ? "#2B3A4F" : "#8A94A8", whiteSpace: "nowrap",
-          minHeight: 40,
+          color: active ? "#2B3A4F" : "#8A94A8", whiteSpace: "nowrap" as const,
+          minHeight: 40, boxSizing: "border-box" as const,
         }}>
         <CalendarIcon />
         <span style={{ fontWeight: 500 }}>{label}</span>
@@ -89,18 +89,18 @@ export function DateRangePicker({
               { label: "This year", from: "2026-01-01", to: "2026-12-31" },
             ].map(preset => (
               <button key={preset.label} onClick={() => { onChange(preset.from, preset.to); setOpen(false); }}
-                style={{ padding: "5px 12px", border: "1px solid #EDF0F5", background: "#F8FAFC", fontSize: 11, cursor: "pointer", color: "#4A5875", fontFamily: "Inter", fontWeight: 500 }}>
+                style={{ padding: "5px 12px", border: "1px solid #EDF0F5", borderRadius: 6, background: "#F8FAFC", fontSize: 11, cursor: "pointer", color: "#4A5875", fontFamily: "Inter", fontWeight: 500 }}>
                 {preset.label}
               </button>
             ))}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
             <button onClick={() => onChange("", "")}
-              style={{ padding: "7px 14px", border: "1px solid #EDF0F5", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>
+              style={{ padding: "7px 14px", border: "1px solid #EDF0F5", borderRadius: 6, background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>
               Clear
             </button>
             <button onClick={() => setOpen(false)}
-              style={{ padding: "7px 18px", border: "none", background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+              style={{ padding: "7px 18px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
               Done
             </button>
           </div>
@@ -153,7 +153,7 @@ export function EditableChip({
               style={{
                 width: 80,
                 padding: "3px 6px",
-                border: "1px solid #E8ECF4",
+                borderRadius: 6, border: "1px solid #E8ECF4",
                 fontSize: 13,
                 fontFamily: "JetBrains Mono",
                 fontWeight: 500,
@@ -280,7 +280,7 @@ export function MedicineSearchCell({
 }) {
   if (readOnly) {
     return (
-      <div style={{ padding: "5px 8px", fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1A2436", background: "#F8FAFC", border: "1px solid #E8ECF4", minWidth: 200, whiteSpace: "nowrap" }}>
+      <div style={{ padding: "5px 8px", fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1A2436", background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", minWidth: 200, whiteSpace: "nowrap" }}>
         {value || "—"}
       </div>
     );
@@ -336,12 +336,12 @@ export function MedicineSearchCell({
           onFocus={() => setOpen(true)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); scanCurrent(); } }}
           placeholder="Search medicine, barcode..."
-          style={{ flex: 1, padding: "5px 8px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", minWidth: 170 }}
+          style={{ flex: 1, padding: "5px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", minWidth: 170 }}
         />
       </div>
 
       {open && !batchMed && results.length > 0 && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 280 }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 280 }}>
           {results.map(m => (
             <button key={m.name} onClick={() => { setBatchMed(m); setQuery(m.name); }}
               style={{ width: "100%", textAlign: "left", padding: "8px 12px", border: "none", background: "transparent", cursor: "pointer", borderBottom: "1px solid #F4F6FA", display: "flex", justifyContent: "space-between", alignItems: "center" }}
@@ -358,7 +358,7 @@ export function MedicineSearchCell({
       )}
 
       {batchMed && (
-        <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 680 }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 680 }}>
           <div style={{ padding: "8px 12px", background: "#F0F6FF", borderBottom: "1px solid #E8ECF4", fontSize: 11, fontWeight: 700, color: "#1B6CA8", letterSpacing: "0.06em", textTransform: "uppercase" }}>
             Select Batch — {batchMed.name}
           </div>
@@ -456,7 +456,7 @@ export function LineItemsTable({
               )}
               <td style={{ padding: "4px 6px", width: 36 }}>
                 {!readOnly && (
-                  <button title="Scan" style={{ border: "1px solid #E8ECF4", background: "#FAFBFD", padding: "4px 6px", cursor: "pointer", fontSize: 13, color: "#9CA3AF" }}>⬛</button>
+                  <button title="Scan" style={{ borderRadius: 6, border: "1px solid #E8ECF4", background: "#FAFBFD", padding: "4px 6px", cursor: "pointer", fontSize: 13, color: "#9CA3AF" }}>⬛</button>
                 )}
               </td>
               <td style={{ padding: "4px 6px", minWidth: 220 }}>
@@ -481,7 +481,7 @@ export function LineItemsTable({
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.packs || ""} disabled={readOnly} onChange={e => onChange(item.id, "packs", parseFloat(e.target.value) || 0)}
-                  style={{ width: 52, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 52, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 8px", fontSize: 11, fontFamily: "JetBrains Mono", color: "#9CA3AF", whiteSpace: "nowrap" }}>
                 {item.batch?.mfgDate ?? "—"}
@@ -493,26 +493,26 @@ export function LineItemsTable({
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.qty || ""} disabled={readOnly} onChange={e => onChange(item.id, "qty", parseFloat(e.target.value) || 0)}
-                  style={{ width: 52, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 52, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.free || ""} disabled={readOnly} onChange={e => onChange(item.id, "free", parseFloat(e.target.value) || 0)}
-                  style={{ width: 44, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 44, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 8px", fontSize: 13, fontFamily: "JetBrains Mono", textAlign: "right", color: "#9CA3AF" }}>
                 {item.mrp > 0 ? `₹${item.mrp.toFixed(2)}` : "—"}
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.saleRate || ""} disabled={readOnly} onChange={e => onChange(item.id, "saleRate", parseFloat(e.target.value) || 0)}
-                  style={{ width: 64, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 64, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.disc || ""} disabled={readOnly} onChange={e => onChange(item.id, "disc", parseFloat(e.target.value) || 0)}
-                  style={{ width: 48, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.gst || ""} disabled={readOnly} onChange={e => onChange(item.id, "gst", parseFloat(e.target.value) || 0)}
-                  style={{ width: 48, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#1A2436", whiteSpace: "nowrap" }}>
                 {item.medicineName ? `₹${calcAmount(item).toFixed(2)}` : "—"}
@@ -566,14 +566,14 @@ export function InvoiceRefSearch({
         onChange={e => { setQuery(e.target.value); setOpen(true); if (value) onClear(); }}
         onFocus={() => setOpen(true)}
         placeholder="Search invoice # or patient..."
-        style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: selected ? "#F0F6FF" : "#fff" }}
+        style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: selected ? "#F0F6FF" : "#fff" }}
       />
       {selected && (
         <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "#2E7D32", fontWeight: 600 }}>✓</div>
       )}
 
       {open && results.length > 0 && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 200, boxShadow: "0 6px 20px rgba(0,0,0,0.12)", minWidth: 320, maxHeight: 260, overflowY: "auto" }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 200, boxShadow: "0 6px 20px rgba(0,0,0,0.12)", minWidth: 320, maxHeight: 260, overflowY: "auto" }}>
           {results.map(i => (
             <button key={i.id} onClick={() => { onSelect(i); setQuery(i.id); setOpen(false); }}
               style={{ width: "100%", textAlign: "left", padding: "8px 12px", border: "none", background: "transparent", cursor: "pointer", borderBottom: "1px solid #F4F6FA" }}

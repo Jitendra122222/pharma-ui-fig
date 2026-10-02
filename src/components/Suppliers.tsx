@@ -5,7 +5,7 @@ import { Th } from "./shared/Th";
 import { useTableSort } from "./shared/useTableSort";
 import { usePagination, PaginationFooter } from "./shared/usePagination";
 import { ChevronDown } from "./shared/Icons";
-import { INDIAN_STATES } from "./purchases/purchasesData";
+import { INDIAN_STATES, purchaseOrders, PO_MED_CATALOG, PAYMENT_TERMS_OPTIONS } from "./purchases/purchasesData";
 import {
   Td, TableRow, PrimaryBtn, GhostBtn,
   FilterSearch, FilterDropdown, ClearFiltersButton, NewButton,
@@ -100,6 +100,16 @@ const MOCK_DISTRIBUTORS: DistributorRecord[] = [
   { id: "DIST-005", name: "RespiCare Ltd", code: "RC-005", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "24AABCR7890O5ZU", drugLicense: "GJ/DL/2023/00789", drugLicenseType: "Form 20", city: "Ahmedabad", state: "Gujarat", contactPerson: "Vikram Shah", mobile: "9876543210", paymentTerms: "Cash on Delivery", creditLimit: 0, creditEnabled: false, expiryReturn: true, balance: -6200, email: "vikram@respicare.com", addrLine1: "Opp. Civil Hospital", pin: "380001", gstType: "Unregistered", expiryPolicy: "All Eligible Products", minShelfLife: "3 Months", orderMethod: "Phone", expectedDelivery: "3 Days", deliveryDays: ["Monday","Wednesday","Friday"] },
   { id: "DIST-006", name: "Apex Medicals", code: "AM-006", type: "Stockist", status: "Inactive", preferred: false, gstin: "33AABCA2345P6ZT", drugLicense: "TN/DL/2022/01234", drugLicenseType: "Form 20", city: "Chennai", state: "Tamil Nadu", contactPerson: "Karthik Rajan", mobile: "9791234567", paymentTerms: "Credit 30 Days", creditLimit: 80000, creditEnabled: true, expiryReturn: false, balance: 0, email: "karthik@apexmedicals.com", addrLine1: "23 Anna Salai", pin: "600002", gstType: "Regular", expiryPolicy: "No Return", orderMethod: "Email", expectedDelivery: "2 Days", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"] },
   { id: "DIST-007", name: "HealthFirst Pharma", code: "HF-007", type: "Distributor", status: "Draft", preferred: false, gstin: "", drugLicense: "MH/DL/2025/00001", drugLicenseType: "Form 21", city: "Nashik", state: "Maharashtra", contactPerson: "Deepak Patil", mobile: "9823300001", paymentTerms: "Credit 30 Days", creditLimit: 0, creditEnabled: false, expiryReturn: false, balance: 0 },
+  { id: "DIST-008", name: "MedLife Pharma", code: "ML-008", type: "Stockist", status: "Active", preferred: true, gstin: "27AABCM8765K1ZP", drugLicense: "MH/DL/2024/00912", drugLicenseType: "Form 20", city: "Mumbai", state: "Maharashtra", contactPerson: "Nitin Joshi", mobile: "9820011234", paymentTerms: "Credit 30 Days", creditLimit: 200000, creditEnabled: true, expiryReturn: true, balance: -12400, email: "medlife@pharma.in", addrLine1: "Block 7, Pharma Hub", area: "Andheri", district: "Mumbai City", pin: "400053", gstType: "Regular", pan: "AABCM8765K", defaultDiscount: "9", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "90 Days", returnFreight: "Distributor", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "WhatsApp", expectedDelivery: "Next Day", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"], bankName: "HDFC Bank", contacts: [{ id: 1, name: "Nitin Joshi", designation: "Sales Manager", mobile: "9820011234", email: "nitin@medlifepharma.in", whatsapp: "9820011234", isPrimary: true }] },
+  { id: "DIST-009", name: "Sun Pharma", code: "SP-009", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "24AAACS1234F1ZQ", drugLicense: "GJ/DL/2024/00456", drugLicenseType: "Form 21", city: "Vadodara", state: "Gujarat", contactPerson: "Harish Patel", mobile: "9898765432", paymentTerms: "Credit 21 Days", creditLimit: 500000, creditEnabled: true, expiryReturn: true, balance: -28000, email: "sun@pharma.in", addrLine1: "Sun House, Industrial Estate", pin: "390007", gstType: "Regular", pan: "AAACS1234F", defaultDiscount: "11", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "60 Days", orderMethod: "Portal", expectedDelivery: "2 Days", deliveryDays: ["Monday","Wednesday","Friday"], bankName: "Kotak Mahindra Bank", contacts: [{ id: 1, name: "Harish Patel", designation: "Regional Manager", mobile: "9898765432", email: "harish@sunpharma.in", whatsapp: "9898765432", isPrimary: true }] },
+  { id: "DIST-010", name: "Cipla Ltd", code: "CL-010", type: "Manufacturer Direct", status: "Active", preferred: true, gstin: "27AAACI9876B1ZR", drugLicense: "MH/DL/2024/01200", drugLicenseType: "Form 21B", city: "Mumbai", state: "Maharashtra", contactPerson: "Sneha Rao", mobile: "9833456789", paymentTerms: "Credit 30 Days", creditLimit: 600000, creditEnabled: true, expiryReturn: true, balance: 0, email: "cipla@pharma.in", addrLine1: "Cipla House, Peninsula Business Park", area: "Lower Parel", district: "Mumbai City", pin: "400013", gstType: "Regular", pan: "AAACI9876B", defaultDiscount: "10", defaultScheme: "9+1", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "90 Days", returnFreight: "Distributor", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "Portal", expectedDelivery: "Next Day", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"], bankName: "HDFC Bank", contacts: [{ id: 1, name: "Sneha Rao", designation: "Key Account Manager", mobile: "9833456789", email: "sneha@cipla.in", whatsapp: "9833456789", isPrimary: true }] },
+  { id: "DIST-011", name: "Zydus Cadila", code: "ZC-011", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "24AAACZ4567G1ZS", drugLicense: "GJ/DL/2023/00901", drugLicenseType: "Form 20", city: "Ahmedabad", state: "Gujarat", contactPerson: "Ramesh Bhatt", mobile: "9879012345", paymentTerms: "Credit 30 Days", creditLimit: 400000, creditEnabled: true, expiryReturn: true, balance: -9800, email: "zydus@cadila.in", addrLine1: "Zydus Corporate Park, Satellite", pin: "380015", gstType: "Regular", pan: "AAACZ4567G", defaultDiscount: "8", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", orderMethod: "Email", expectedDelivery: "2 Days", deliveryDays: ["Tuesday","Thursday","Saturday"], bankName: "Axis Bank", contacts: [{ id: 1, name: "Ramesh Bhatt", designation: "Sales Executive", mobile: "9879012345", email: "ramesh@zydus.in", whatsapp: "9879012345", isPrimary: true }] },
+  { id: "DIST-012", name: "Abbott India", code: "AI-012", type: "Distributor", status: "Active", preferred: false, gstin: "27AAACA2345H1ZT", drugLicense: "MH/DL/2024/00678", drugLicenseType: "Form 21", city: "Mumbai", state: "Maharashtra", contactPerson: "Priti Desai", mobile: "9821567890", paymentTerms: "Credit 45 Days", creditLimit: 350000, creditEnabled: true, expiryReturn: true, balance: 0, email: "abbott@india.in", addrLine1: "Abbott India Ltd, Western Express Highway", area: "Goregaon", district: "Mumbai City", pin: "400063", gstType: "Regular", defaultDiscount: "7", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "3 Months", orderMethod: "Portal", expectedDelivery: "2 Days", deliveryDays: ["Monday","Wednesday","Friday"], bankName: "Citibank", contacts: [{ id: 1, name: "Priti Desai", designation: "Account Manager", mobile: "9821567890", email: "priti@abbott.in", whatsapp: "9821567890", isPrimary: true }] },
+  { id: "DIST-013", name: "AstraZeneca", code: "AZ-013", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "07AAACA9012I1ZU", drugLicense: "DL/DL/2024/00890", drugLicenseType: "Form 21B", city: "Delhi", state: "Delhi", contactPerson: "Sanjeev Kumar", mobile: "9811098765", paymentTerms: "Credit 30 Days", creditLimit: 500000, creditEnabled: true, expiryReturn: false, balance: -5400, email: "az@pharma.in", addrLine1: "AstraZeneca India, Elegance Tower", pin: "110019", gstType: "Regular", defaultDiscount: "6", defaultFreight: "Included", expiryPolicy: "No Return", orderMethod: "Email", expectedDelivery: "3 Days", deliveryDays: ["Tuesday","Friday"], bankName: "HSBC Bank", contacts: [{ id: 1, name: "Sanjeev Kumar", designation: "Zonal Manager", mobile: "9811098765", email: "sanjeev@astrazeneca.in", whatsapp: "9811098765", isPrimary: true }] },
+  { id: "DIST-014", name: "GSK Pharma", code: "GK-014", type: "Manufacturer Direct", status: "Active", preferred: true, gstin: "29AAACG6789J1ZV", drugLicense: "KA/DL/2024/00567", drugLicenseType: "Form 20", city: "Bengaluru", state: "Karnataka", contactPerson: "Anand Nair", mobile: "9945112233", paymentTerms: "Credit 30 Days", creditLimit: 400000, creditEnabled: true, expiryReturn: true, balance: 0, email: "gsk@pharma.in", addrLine1: "GSK House, Whitefield", pin: "560066", gstType: "Regular", pan: "AAACG6789J", defaultDiscount: "9", defaultScheme: "9+1", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "90 Days", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "WhatsApp", expectedDelivery: "Next Day", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"], bankName: "Standard Chartered", contacts: [{ id: 1, name: "Anand Nair", designation: "Sales Manager", mobile: "9945112233", email: "anand@gsk.in", whatsapp: "9945112233", isPrimary: true }] },
+  { id: "DIST-015", name: "Lupin Ltd", code: "LL-015", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "27AAACL3456K1ZW", drugLicense: "MH/DL/2023/01100", drugLicenseType: "Form 20", city: "Mumbai", state: "Maharashtra", contactPerson: "Rekha Sharma", mobile: "9820223344", paymentTerms: "Credit 21 Days", creditLimit: 300000, creditEnabled: true, expiryReturn: true, balance: -7200, email: "lupin@pharma.in", addrLine1: "Lupin Research Park, Andheri", pin: "400072", gstType: "Regular", defaultDiscount: "10", defaultFreight: "Extra", expiryPolicy: "Selected Products", minShelfLife: "3 Months", orderMethod: "WhatsApp", expectedDelivery: "Next Day", deliveryDays: ["Monday","Wednesday","Friday"], bankName: "Axis Bank", contacts: [{ id: 1, name: "Rekha Sharma", designation: "Sales Representative", mobile: "9820223344", email: "rekha@lupinpharma.in", whatsapp: "9820223344", isPrimary: true }] },
+  { id: "DIST-016", name: "Novo Nordisk Ltd", code: "NN-016", type: "Manufacturer Direct", status: "Active", preferred: true, gstin: "07AAACN7890L1ZX", drugLicense: "DL/DL/2024/01234", drugLicenseType: "Form 21B", city: "Delhi", state: "Delhi", contactPerson: "Dr. Amit Verma", mobile: "9810345678", paymentTerms: "Credit 30 Days", creditLimit: 800000, creditEnabled: true, expiryReturn: true, balance: 0, email: "novo@nordisk.in", addrLine1: "Novo Nordisk House, DLF Cyber City", pin: "122002", gstType: "Regular", pan: "AAACN7890L", defaultDiscount: "5", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "12 Months", expiryReturnWindow: "180 Days", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "Portal", expectedDelivery: "2 Days", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"], bankName: "Citibank", contacts: [{ id: 1, name: "Dr. Amit Verma", designation: "Medical Affairs Manager", mobile: "9810345678", email: "amit@novonordisk.in", whatsapp: "9810345678", isPrimary: true }] },
+  { id: "DIST-017", name: "Pfizer India", code: "PF-017", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "27AAACP1234M1ZY", drugLicense: "MH/DL/2024/01450", drugLicenseType: "Form 21", city: "Mumbai", state: "Maharashtra", contactPerson: "Sanjay Mehta", mobile: "9820456789", paymentTerms: "Credit 30 Days", creditLimit: 500000, creditEnabled: true, expiryReturn: true, balance: -4600, email: "pfizer@india.in", addrLine1: "Pfizer Centre, Parel", area: "Parel", district: "Mumbai City", pin: "400012", gstType: "Regular", pan: "AAACP1234M", defaultDiscount: "7", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "90 Days", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "Portal", expectedDelivery: "2 Days", deliveryDays: ["Tuesday","Thursday"], bankName: "HDFC Bank", contacts: [{ id: 1, name: "Sanjay Mehta", designation: "Key Account Manager", mobile: "9820456789", email: "sanjay@pfizer.in", whatsapp: "9820456789", isPrimary: true }] },
 ];
 
 // ─── Mock transaction history ─────────────────────────────────────────────────
@@ -173,7 +183,7 @@ function LocalDropdownSelect({ value, onChange, options, placeholder }: {
   return (
     <div style={{ position: "relative" }}>
       <select value={value} onChange={e => onChange(e.target.value)}
-        style={{ width: "100%", padding: "8px 34px 8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", color: "#1A2436", appearance: "none", WebkitAppearance: "none" as const, boxSizing: "border-box" }}>
+        style={{ width: "100%", padding: "8px 34px 8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", color: "#1A2436", appearance: "none", WebkitAppearance: "none" as const, boxSizing: "border-box" }}>
         {placeholder && <option value="">{placeholder}</option>}
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -204,7 +214,7 @@ function FormField({ label, required, children, error, span }: {
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div style={{ display: "flex", border: "1px solid #E8ECF4", overflow: "hidden", width: "fit-content" }}>
+    <div style={{ display: "flex", borderRadius: 6, border: "1px solid #E8ECF4", overflow: "hidden", width: "fit-content" }}>
       {([true, false] as const).map(opt => (
         <button key={String(opt)} onClick={() => onChange(opt)}
           style={{ padding: "6px 16px", fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "Inter", background: value === opt ? "#1B6CA8" : "#fff", color: value === opt ? "#fff" : "#9CA3AF" }}>
@@ -217,7 +227,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
 
 function CardSection({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+    <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
       <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>{title}</div>
         {action}
@@ -312,7 +322,7 @@ function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactiva
       {/* KPI strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12 }}>
         {kpis.map(k => (
-          <div key={k.label} style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "14px 16px" }}>
+          <div key={k.label} style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "14px 16px" }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#0C1B33", fontFamily: "Outfit", lineHeight: 1 }}>{k.value}</div>
             <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 5, fontFamily: "Inter", fontWeight: 600, letterSpacing: "0.04em" }}>{k.label}</div>
           </div>
@@ -320,7 +330,7 @@ function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactiva
       </div>
 
       {/* Table card */}
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         {/* Filter row */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <FilterSearch value={search} onChange={setSearch} placeholder="Search by name, GSTIN, mobile, drug license or city" />
@@ -392,20 +402,20 @@ function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactiva
                   <Td>
                     <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                       <button onClick={e => { e.stopPropagation(); onView(d); }}
-                        style={{ padding: "5px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>
+                        style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>
                         View
                       </button>
                       <button onClick={e => { e.stopPropagation(); onEdit(d); }}
-                        style={{ padding: "5px 12px", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>
+                        style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>
                         Edit
                       </button>
                       <div style={{ position: "relative" }}>
                         <button onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === d.id ? null : d.id); }}
-                          style={{ padding: "4px 7px", border: "1px solid #E8ECF4", background: "#fff", color: "#6B7280", fontSize: 17, cursor: "pointer", lineHeight: 1, fontFamily: "Inter" }}>
+                          style={{ padding: "4px 7px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", color: "#6B7280", fontSize: 17, cursor: "pointer", lineHeight: 1, fontFamily: "Inter" }}>
                           ⋮
                         </button>
                         {openMenuId === d.id && (
-                          <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 2, background: "#fff", border: "1px solid #E8ECF4", zIndex: 50, minWidth: 190, boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
+                          <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 2, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 50, minWidth: 190, boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
                             {ACTION_MENU_ITEMS.map(item => {
                               const deactivateLabel = d.status === "Active" ? "Deactivate" : "Activate";
                               const displayLabel = item === "Deactivate" ? deactivateLabel : item;
@@ -550,7 +560,7 @@ function PurchaseInput({ value, onChange, placeholder, type = "text" }: {
 }) {
   return (
     <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: type === "number" || type === "date" || type === "time" ? "JetBrains Mono" : "Inter", background: "#fff", boxSizing: "border-box" as const, color: "#1A2436" }}
+      style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: type === "number" || type === "date" || type === "time" ? "JetBrains Mono" : "Inter", background: "#fff", boxSizing: "border-box" as const, color: "#1A2436" }}
       onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
       onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
     />
@@ -562,7 +572,7 @@ function PurchaseTextArea({ value, onChange, placeholder, rows = 3 }: {
 }) {
   return (
     <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-      style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const, color: "#1A2436", resize: "vertical" }}
+      style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const, color: "#1A2436", resize: "vertical" }}
       onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
       onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
     />
@@ -754,7 +764,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
             onClick={() => handleSave(true)}
             disabled={draftNameMissing}
             title={draftNameMissing ? "Enter Distributor Name to save as draft" : undefined}
-            style={{ padding: "9px 18px", border: "1px solid #E8ECF4", background: draftNameMissing ? "#F8FAFC" : "#fff", fontSize: 13, cursor: draftNameMissing ? "not-allowed" : "pointer", color: draftNameMissing ? "#C8D6E5" : "#1A2436", fontFamily: "Inter" }}>
+            style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: draftNameMissing ? "#F8FAFC" : "#fff", fontSize: 13, cursor: draftNameMissing ? "not-allowed" : "pointer", color: draftNameMissing ? "#C8D6E5" : "#1A2436", fontFamily: "Inter" }}>
             Save Draft
           </button>
           <PrimaryBtn onClick={() => handleSave(false)}>{isEdit ? "Update Distributor" : "Save Distributor"}</PrimaryBtn>
@@ -771,8 +781,8 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
               <span style={{ fontWeight: 700, color: "#E65100" }}>Possible duplicate — </span>
               "{dupDetect.name}" already exists with the same details.
             </div>
-            <button onClick={() => onViewExisting?.(dupDetect)} style={{ padding: "5px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View Existing</button>
-            <button onClick={() => setIgnoreDuplicate(true)} style={{ padding: "5px 12px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, color: "#6B7280", cursor: "pointer", fontFamily: "Inter" }}>Continue Anyway</button>
+            <button onClick={() => onViewExisting?.(dupDetect)} style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View Existing</button>
+            <button onClick={() => setIgnoreDuplicate(true)} style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, color: "#6B7280", cursor: "pointer", fontFamily: "Inter" }}>Continue Anyway</button>
           </div>
         )}
 
@@ -832,7 +842,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
                   </button>
                 </div>
                 {form.contacts.map((c, idx) => (
-                  <div key={c.id} style={{ border: "1px solid #E8ECF4", padding: "12px 14px", marginBottom: 8, background: c.isPrimary ? "#FAFEFF" : "#FAFBFD" }}>
+                  <div key={c.id} style={{ borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 14px", marginBottom: 8, background: c.isPrimary ? "#FAFEFF" : "#FAFBFD" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: c.isPrimary ? "#1B6CA8" : "#9CA3AF", textTransform: "uppercase" as const, letterSpacing: "0.06em", fontFamily: "Inter" }}>
                         {c.isPrimary ? "★ Primary Contact" : `Contact ${idx + 1}`}
@@ -1030,7 +1040,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
                 {form.medExpiryRules.length === 0 ? (
                   <div style={{ fontSize: 12, color: "#9CA3AF", fontStyle: "italic" as const, fontFamily: "Inter" }}>No medicine-specific rules added.</div>
                 ) : form.medExpiryRules.map(r => (
-                  <div key={r.id} style={{ border: "1px solid #E8ECF4", padding: "10px 12px", marginBottom: 8, background: "#FAFBFD" }}>
+                  <div key={r.id} style={{ borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px", marginBottom: 8, background: "#FAFBFD" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr auto", gap: "8px 12px", alignItems: "end" }}>
                       <FormField label="Medicine"><PurchaseInput value={r.medicine} onChange={v => updateMedRule(r.id, "medicine", v)} placeholder="Medicine name" /></FormField>
                       <FormField label="Min Shelf Life"><LocalDropdownSelect value={r.minShelfLife} onChange={v => updateMedRule(r.id, "minShelfLife", v)} options={["3 Months", "6 Months", "9 Months", "12 Months"]} /></FormField>
@@ -1190,7 +1200,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
                 onClick={() => handleSave(true)}
                 disabled={draftNameMissing}
                 title={draftNameMissing ? "Enter Distributor Name to save as draft" : undefined}
-                style={{ padding: "9px 18px", border: "1px solid #E8ECF4", background: draftNameMissing ? "#F8FAFC" : "#fff", fontSize: 13, cursor: draftNameMissing ? "not-allowed" : "pointer", color: draftNameMissing ? "#C8D6E5" : "#1A2436", fontFamily: "Inter" }}>
+                style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: draftNameMissing ? "#F8FAFC" : "#fff", fontSize: 13, cursor: draftNameMissing ? "not-allowed" : "pointer", color: draftNameMissing ? "#C8D6E5" : "#1A2436", fontFamily: "Inter" }}>
                 Save Draft
               </button>
               <PrimaryBtn onClick={() => handleSave(false)}>{isEdit ? "Update Distributor" : "Save Distributor"}</PrimaryBtn>
@@ -1199,7 +1209,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
 
           {/* RIGHT: Summary panel */}
           <div style={{ width: 260, flexShrink: 0, position: "sticky", top: 0 }}>
-            <div style={{ background: "#fff", border: "1px solid #E8ECF4", marginBottom: 12 }}>
+            <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", marginBottom: 12 }}>
               <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6" }}>
                 <div style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Distributor Setup</div>
               </div>
@@ -1226,7 +1236,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
               </div>
             </div>
 
-            <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+            <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
               <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6" }}>
                 <div style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Setup Checklist</div>
               </div>
@@ -1333,7 +1343,7 @@ function HistoryFilterBar({
           const v = e.target.value;
           setDateRange(v === "All" ? "all" : v.toLowerCase() as DateRange);
         }}
-          style={{ padding: "10px 34px 10px 14px", border: "1px solid #EDF0F5", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", color: "#2B3A4F", minHeight: 40, appearance: "none", WebkitAppearance: "none" as const }}>
+          style={{ padding: "10px 34px 10px 14px", border: "1px solid #EDF0F5", borderRadius: 6, fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", cursor: "pointer", color: "#2B3A4F", minHeight: 40, appearance: "none", WebkitAppearance: "none" as const }}>
           {PERIOD_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
         <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", display: "inline-flex" }}>
@@ -1352,7 +1362,7 @@ function HistoryFilterBar({
 
 function MiniKPI({ label, value, color, sub }: { label: string; value: string; color: string; sub?: string }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "11px 14px" }}>
+    <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "11px 14px" }}>
       <div style={{ fontSize: 15, fontWeight: 800, color, fontFamily: "Outfit", lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: 10, color: "#9CA3AF", fontFamily: "Inter", marginTop: 2 }}>{sub}</div>}
       <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 4, fontFamily: "Inter", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const }}>{label}</div>
@@ -1365,7 +1375,7 @@ function MiniKPI({ label, value, color, sub }: { label: string; value: string; c
 function RecordModal({ title, refNo, onClose, children }: { title: string; refNo: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", width: 680, maxHeight: "88vh", display: "flex", flexDirection: "column", border: "1px solid #E8ECF4", boxShadow: "0 8px 40px rgba(0,0,0,0.14)" }}>
+      <div style={{ background: "#fff", width: 680, maxHeight: "88vh", display: "flex", flexDirection: "column", borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 40px rgba(0,0,0,0.14)" }}>
         {/* Header */}
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div>
@@ -1379,7 +1389,7 @@ function RecordModal({ title, refNo, onClose, children }: { title: string; refNo
         </div>
         <div style={{ overflowY: "auto", padding: "20px" }}>{children}</div>
         <div style={{ padding: "12px 20px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
-          <button onClick={onClose} style={{ padding: "8px 20px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Close</button>
+          <button onClick={onClose} style={{ padding: "8px 20px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Close</button>
         </div>
       </div>
     </div>
@@ -1406,7 +1416,7 @@ function DetailRow({ label, value, mono }: { label: string; value: string; mono?
 
 function DetailCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid #E8ECF4", marginBottom: 12 }}>
+    <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", marginBottom: 12 }}>
       <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
         <div style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>{title}</div>
       </div>
@@ -1415,12 +1425,293 @@ function DetailCard({ title, children }: { title: string; children: React.ReactN
   );
 }
 
-function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchases, initialTab }: {
+// ─── Place Order Modal ────────────────────────────────────────────────────────
+
+type PoStep = "choose" | "existing" | "new";
+
+function PlaceOrderModal({ distributor, onClose, onDone }: {
+  distributor: DistributorRecord;
+  onClose: () => void;
+  onDone: (msg: string) => void;
+}) {
+  const [step, setStep] = useState<PoStep>("choose");
+  const [selectedPoId, setSelectedPoId] = useState<string | null>(null);
+  const [medSearch, setMedSearch] = useState("");
+  const [medOpen, setMedOpen] = useState(false);
+  const [qty, setQty] = useState("1");
+  const [rate, setRate] = useState("");
+  const [delivery, setDelivery] = useState("");
+  const [payTerms, setPayTerms] = useState(distributor.paymentTerms ?? "Credit 30 Days");
+
+  const openPOs = purchaseOrders
+    .filter(o => o.supplier === distributor.name && o.status !== "Completed")
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const medOptions = PO_MED_CATALOG.filter(m =>
+    !medSearch.trim() || m.name.toLowerCase().includes(medSearch.toLowerCase())
+  );
+  const selectedMed = PO_MED_CATALOG.find(m => m.name === medSearch.trim());
+
+  function pickMed(name: string) {
+    setMedSearch(name);
+    setMedOpen(false);
+    const m = PO_MED_CATALOG.find(c => c.name === name);
+    if (m) setRate(m.cost.toFixed(2));
+  }
+
+  const fieldStyle: React.CSSProperties = {
+    width: "100%", padding: "8px 11px", borderRadius: 6, border: "1.5px solid #E8ECF4",
+    fontSize: 13, fontFamily: "Inter", color: "#0C1B33", outline: "none", boxSizing: "border-box",
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.07em",
+    textTransform: "uppercase", fontFamily: "Inter", marginBottom: 4, display: "block",
+  };
+
+  // ── Step widths ──
+  const cardWidth = step === "choose" ? 490 : step === "existing" ? 560 : 520;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#fff", width: cardWidth, maxHeight: "88vh", display: "flex", flexDirection: "column", borderRadius: 10, border: "1px solid #E8ECF4", boxShadow: "0 8px 40px rgba(0,0,0,0.16)" }}>
+
+        {/* ── Header ── */}
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          {step !== "choose" && (
+            <button onClick={() => { setStep("choose"); setSelectedPoId(null); setMedSearch(""); setRate(""); setDelivery(""); }}
+              style={{ border: "none", background: "transparent", cursor: "pointer", color: "#6B7280", fontSize: 18, lineHeight: 1, padding: "0 4px 0 0", flexShrink: 0 }}>‹</button>
+          )}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>
+              {step === "choose" ? "Add to Purchase Order" : step === "existing" ? "Select Purchase Order" : "New Purchase Order"}
+            </div>
+            <div style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter", marginTop: 2 }}>{distributor.name}</div>
+          </div>
+          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22, lineHeight: 1, padding: "0 2px", flexShrink: 0 }}>×</button>
+        </div>
+
+        {/* ── Body ── */}
+        <div style={{ overflowY: "auto", padding: 20, flex: 1 }}>
+
+          {/* Step 1 — choose mode */}
+          {step === "choose" && (
+            <div style={{ display: "flex", gap: 12 }}>
+              {[
+                {
+                  icon: (
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                      <rect x="5" y="4" width="14" height="18" rx="2" stroke="#1B6CA8" strokeWidth="1.6"/>
+                      <path d="M9 9h6M9 13h6M9 17h4" stroke="#1B6CA8" strokeWidth="1.4" strokeLinecap="round"/>
+                      <circle cx="20" cy="19" r="5" fill="#E8F5E9" stroke="#2E7D32" strokeWidth="1.4"/>
+                      <path d="M18 19l1.5 1.5L22 17" stroke="#2E7D32" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ),
+                  title: "Add to Existing PO",
+                  desc: "Append a medicine to an open order",
+                  action: () => setStep("existing"),
+                },
+                {
+                  icon: (
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                      <rect x="5" y="4" width="14" height="18" rx="2" stroke="#1B6CA8" strokeWidth="1.6"/>
+                      <path d="M12 10v6M9 13h6" stroke="#1B6CA8" strokeWidth="1.6" strokeLinecap="round"/>
+                    </svg>
+                  ),
+                  title: "Create New PO",
+                  desc: "Start a fresh purchase order",
+                  action: () => setStep("new"),
+                },
+              ].map(opt => (
+                <button key={opt.title} onClick={opt.action}
+                  style={{ flex: 1, border: "1.5px solid #DDE3EC", borderRadius: 8, background: "#fff", cursor: "pointer", padding: "20px 16px", textAlign: "left", display: "flex", flexDirection: "column", gap: 10, transition: "background 0.12s" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#F0F3F7")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
+                  {opt.icon}
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0C1B33", fontFamily: "Inter", marginBottom: 4 }}>{opt.title}</div>
+                    <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter", lineHeight: 1.5 }}>{opt.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Step 2a — existing PO list */}
+          {step === "existing" && (
+            <div>
+              {openPOs.length === 0 ? (
+                <div style={{ padding: "32px 0", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>
+                  No open purchase orders for this distributor.
+                </div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 0 }}>
+                  <thead>
+                    <tr style={{ background: "#F8FAFC" }}>
+                      {["PO Number", "Date", "Items", "Value", "Status"].map(h => (
+                        <th key={h} style={{ padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.07em", textTransform: "uppercase", fontFamily: "Inter", textAlign: h === "Value" ? "right" : "left", borderBottom: "1px solid #EEF1F6" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {openPOs.map(po => {
+                      const isSelected = selectedPoId === po.id;
+                      return (
+                        <tr key={po.id}
+                          onClick={() => setSelectedPoId(isSelected ? null : po.id)}
+                          style={{ cursor: "pointer", background: isSelected ? "#EFF6FF" : "#fff", borderLeft: isSelected ? "3px solid #1B6CA8" : "3px solid transparent", borderBottom: "1px solid #F4F6FA" }}
+                          onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "#F7F9FC"; }}
+                          onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = "#fff"; }}>
+                          <td style={{ padding: "10px 10px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1B6CA8", fontWeight: 600 }}>{po.id}</td>
+                          <td style={{ padding: "10px 10px", fontSize: 12, fontFamily: "Inter", color: "#1A2436" }}>{po.date}</td>
+                          <td style={{ padding: "10px 10px", fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{po.items} items</td>
+                          <td style={{ padding: "10px 10px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", fontWeight: 700, textAlign: "right" }}>₹{po.orderValue.toLocaleString("en-IN")}</td>
+                          <td style={{ padding: "10px 10px" }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "Inter", padding: "2px 8px", borderRadius: 4,
+                              background: po.status === "Approved" ? "#EFF6FF" : po.status === "Partially Received" ? "#FFF3E0" : po.status === "Pending Approval" ? "#FFF8E1" : "#F5F5F5",
+                              color: po.status === "Approved" ? "#1B6CA8" : po.status === "Partially Received" ? "#E65100" : po.status === "Pending Approval" ? "#E65100" : "#6B7280",
+                            }}>{po.status}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+
+              {/* Add product section */}
+              {selectedPoId && (
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #EEF1F6" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1A2436", fontFamily: "Inter", marginBottom: 12 }}>Add Product to {selectedPoId}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 10, alignItems: "end" }}>
+                    <div>
+                      <label style={labelStyle}>Medicine</label>
+                      <div style={{ position: "relative" }}>
+                        <input value={medSearch} onChange={e => { setMedSearch(e.target.value); setMedOpen(true); setRate(""); }}
+                          onFocus={() => setMedOpen(true)}
+                          placeholder="Search medicine…"
+                          style={fieldStyle} />
+                        {medOpen && medOptions.length > 0 && (
+                          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.10)", zIndex: 300, maxHeight: 180, overflowY: "auto" }}>
+                            {medOptions.map(m => (
+                              <div key={m.name} onMouseDown={() => pickMed(m.name)}
+                                style={{ padding: "8px 12px", fontSize: 12, fontFamily: "Inter", color: "#0C1B33", cursor: "pointer", borderBottom: "1px solid #F4F6FA" }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "#F0F3F7")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                                <div style={{ fontWeight: 500 }}>{m.name}</div>
+                                <div style={{ fontSize: 11, color: "#9CA3AF" }}>{m.pack} · ₹{m.cost.toFixed(2)}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ width: 72 }}>
+                      <label style={labelStyle}>Qty</label>
+                      <input type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} style={{ ...fieldStyle, width: 72 }} />
+                    </div>
+                    <div style={{ width: 90 }}>
+                      <label style={labelStyle}>Rate (₹)</label>
+                      <input type="number" value={rate} onChange={e => setRate(e.target.value)} placeholder="0.00" style={{ ...fieldStyle, width: 90 }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 2b — new PO form */}
+          {step === "new" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={labelStyle}>Distributor</label>
+                <input value={distributor.name} readOnly style={{ ...fieldStyle, background: "#F8FAFC", color: "#9CA3AF" }} />
+              </div>
+              <div>
+                <label style={labelStyle}>Medicine</label>
+                <div style={{ position: "relative" }}>
+                  <input value={medSearch} onChange={e => { setMedSearch(e.target.value); setMedOpen(true); setRate(""); }}
+                    onFocus={() => setMedOpen(true)}
+                    placeholder="Search medicine…"
+                    style={fieldStyle} />
+                  {medOpen && medOptions.length > 0 && (
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.10)", zIndex: 300, maxHeight: 180, overflowY: "auto" }}>
+                      {medOptions.map(m => (
+                        <div key={m.name} onMouseDown={() => pickMed(m.name)}
+                          style={{ padding: "8px 12px", fontSize: 12, fontFamily: "Inter", color: "#0C1B33", cursor: "pointer", borderBottom: "1px solid #F4F6FA" }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "#F0F3F7")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                          <div style={{ fontWeight: 500 }}>{m.name}</div>
+                          <div style={{ fontSize: 11, color: "#9CA3AF" }}>{m.pack} · ₹{m.cost.toFixed(2)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Qty</label>
+                  <input type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Purchase Rate (₹)</label>
+                  <input type="number" value={rate} onChange={e => setRate(e.target.value)} placeholder="0.00" style={fieldStyle} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Expected Delivery</label>
+                  <input type="date" value={delivery} onChange={e => setDelivery(e.target.value)} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Payment Terms</label>
+                  <select value={payTerms} onChange={e => setPayTerms(e.target.value)} style={{ ...fieldStyle, appearance: "none" as const }}>
+                    {PAYMENT_TERMS_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Footer ── */}
+        {step !== "choose" && (
+          <div style={{ padding: "12px 20px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end", gap: 8, flexShrink: 0 }}>
+            <GhostBtn onClick={onClose}>Cancel</GhostBtn>
+            {step === "existing" && (
+              <PrimaryBtn
+                disabled={!selectedPoId || !selectedMed || !qty || Number(qty) < 1}
+                onClick={() => {
+                  if (selectedPoId && selectedMed && qty) onDone(`${selectedMed.name} added to ${selectedPoId}`);
+                }}>
+                Add to PO
+              </PrimaryBtn>
+            )}
+            {step === "new" && (
+              <PrimaryBtn
+                disabled={!selectedMed || !qty || Number(qty) < 1 || !delivery}
+                onClick={() => {
+                  if (selectedMed && qty && delivery) onDone(`New PO created for ${distributor.name}`);
+                }}>
+                Create PO
+              </PrimaryBtn>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Distributor Detail Page ──────────────────────────────────────────────────
+
+function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchases, initialTab, showToast }: {
   distributor: DistributorRecord;
   onBack: () => void;
   onEdit: () => void;
   onNavigatePurchases?: (link: PurchasesDeepLink) => void;
   initialTab?: DetailTab;
+  showToast?: (message: string, type: "success" | "error") => void;
 }) {
   const [tab, setTab] = useState<DetailTab>(initialTab ?? "overview");
 
@@ -1449,7 +1740,6 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
     | { kind: "return"; data: typeof MOCK_RETURNS[0] }
     | { kind: "payment"; data: typeof MOCK_PAYMENTS[0] };
   const [modal, setModal] = useState<ModalRecord | null>(null);
-
   const tabs: { id: DetailTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     { id: "commercial", label: "Commercial Terms" },
@@ -1614,7 +1904,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
             { label: "Total Payments", value: `₹${totalPayments.toLocaleString("en-IN")}`, color: "#1B6CA8" },
             { label: "Last PO", value: lastPO?.date ?? "—", color: "#6B7280" },
           ].map(k => (
-            <div key={k.label} style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "12px 16px" }}>
+            <div key={k.label} style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 16px" }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: k.color, fontFamily: "Outfit", lineHeight: 1 }}>{k.value}</div>
               <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 5, fontFamily: "Inter", fontWeight: 600 }}>{k.label}</div>
             </div>
@@ -1677,7 +1967,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
 
             {/* Right quick panel */}
             <div style={{ width: 260, flexShrink: 0 }}>
-              <div style={{ background: "#fff", border: "1px solid #E8ECF4", marginBottom: 12 }}>
+              <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", marginBottom: 12 }}>
                 <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6" }}>
                   <div style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Quick Info</div>
                 </div>
@@ -1700,7 +1990,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
               </div>
 
               {distributor.deliveryDays && distributor.deliveryDays.length > 0 && (
-                <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+                <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                   <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6" }}>
                     <div style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Delivery Days</div>
                   </div>
@@ -1764,7 +2054,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
           const fOrdTotal = filteredOrders.reduce((s, p) => s + p.amount, 0);
           const rowStyle = { borderBottom: "1px solid #F4F6FA", cursor: "pointer" as const };
           return (
-            <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+            <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
               <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Purchase Orders</div>
@@ -1798,7 +2088,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                         </td>
                         <td style={{ padding: "11px 12px" }}>
                           <button onClick={() => onNavigatePurchases ? onNavigatePurchases({ tab: "orders", id: po.poNo }) : setModal({ kind: "order", data: po })}
-                            style={{ padding: "4px 10px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View</button>
+                            style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View</button>
                         </td>
                       </tr>
                     ))}
@@ -1823,7 +2113,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
           const rowStyle = { borderBottom: "1px solid #F4F6FA", cursor: "pointer" as const };
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+              <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Purchase Invoices</div>
@@ -1871,7 +2161,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                               <td style={{ padding: "10px 12px" }}><Pill label={inv.status} color={sColor} bg={sBg} /></td>
                               <td style={{ padding: "10px 12px" }}>
                                 <button onClick={() => onNavigatePurchases ? onNavigatePurchases({ tab: "invoices", id: inv.invNo }) : setModal({ kind: "invoice", data: inv })}
-                                  style={{ padding: "4px 10px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View</button>
+                                  style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View</button>
                               </td>
                             </tr>
                           );
@@ -1903,7 +2193,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
           const rowStyle = { borderBottom: "1px solid #F4F6FA", cursor: "pointer" as const };
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+              <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6" }}>
                   <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Purchase Return History</div>
                   <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2, fontFamily: "Inter" }}>Items returned to {distributor.name}</div>
@@ -1938,7 +2228,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                             <td style={{ padding: "10px 12px" }}><Pill label={ret.status} color={sColor} bg={sBg} /></td>
                             <td style={{ padding: "10px 12px" }}>
                               <button onClick={() => onNavigatePurchases ? onNavigatePurchases({ tab: "returns", id: ret.retNo }) : setModal({ kind: "return", data: ret })}
-                                style={{ padding: "4px 10px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View</button>
+                                style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View</button>
                             </td>
                           </tr>
                         );
@@ -1973,7 +2263,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                   <div style={{ fontSize: 20, fontWeight: 800, color: "#C62828", fontFamily: "Outfit" }}>₹{totalUnpaid.toLocaleString("en-IN")}</div>
                 </div>
               )}
-              <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+              <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Payment History</div>
@@ -1989,7 +2279,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                   extra={
                     <div style={{ position: "relative" }}>
                       <select value={payMethod} onChange={e => setPayMethod(e.target.value)}
-                        style={{ padding: "6px 28px 6px 10px", border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "Inter", outline: "none", background: "#fff", appearance: "none", WebkitAppearance: "none" as const, color: payMethod === "All" ? "#9CA3AF" : "#1A2436", cursor: "pointer" }}>
+                        style={{ padding: "6px 28px 6px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "Inter", outline: "none", background: "#fff", appearance: "none", WebkitAppearance: "none" as const, color: payMethod === "All" ? "#9CA3AF" : "#1A2436", cursor: "pointer" }}>
                         {["All", ...payMethods].map(m => <option key={m} value={m}>{m === "All" ? "All Methods" : m}</option>)}
                       </select>
                       <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", fontSize: 10, color: "#9CA3AF" }}>▼</span>
@@ -2021,7 +2311,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                             <td style={{ padding: "10px 12px" }}><Pill label={pay.status} color={sColor} bg={sBg} /></td>
                             <td style={{ padding: "10px 12px" }}>
                               <button onClick={() => onNavigatePurchases ? onNavigatePurchases({ tab: "payments", id: pay.payNo }) : setModal({ kind: "payment", data: pay })}
-                                style={{ padding: "4px 10px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View</button>
+                                style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>View</button>
                             </td>
                           </tr>
                         );
@@ -2038,7 +2328,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
               </div>
 
               {/* Ledger balance summary */}
-              <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+              <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
                   <div style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Account Balance Summary</div>
                 </div>
@@ -2065,7 +2355,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
 
         {/* ── Audit History tab ── */}
         {tab === "audit" && (
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
             <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
               <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Audit History</div>
               <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2, fontFamily: "Inter" }}>All changes and actions recorded for this distributor</div>
@@ -2094,13 +2384,24 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
 
 // ─── Root export ──────────────────────────────────────────────────────────────
 
-export default function Suppliers({ onNavigatePurchases }: { onNavigatePurchases?: (link: PurchasesDeepLink) => void } = {}) {
+export default function Suppliers({ onNavigatePurchases, editDistributor, onEditDistributorConsumed }: {
+  onNavigatePurchases?: (link: PurchasesDeepLink) => void;
+  editDistributor?: string | null;
+  onEditDistributorConsumed?: () => void;
+} = {}) {
   const [view, setView] = useState<ScreenView>("list");
   const [distributors, setDistributors] = useState<DistributorRecord[]>(MOCK_DISTRIBUTORS);
   const [selected, setSelected] = useState<DistributorRecord | null>(null);
   const [selectedTab, setSelectedTab] = useState<DetailTab>("overview");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!editDistributor) return;
+    const d = distributors.find(x => x.name === editDistributor);
+    if (d) handleEdit(d);
+    onEditDistributorConsumed?.();
+  }, [editDistributor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function showToast(message: string, type: "success" | "error") {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -2211,6 +2512,7 @@ export default function Suppliers({ onNavigatePurchases }: { onNavigatePurchases
           onEdit={() => handleEdit(selected)}
           onNavigatePurchases={onNavigatePurchases}
           initialTab={selectedTab}
+          showToast={showToast}
         />
       )}
     </div>

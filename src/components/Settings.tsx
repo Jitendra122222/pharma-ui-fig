@@ -63,7 +63,7 @@ export default function Settings() {
 
       <div className="grid gap-5" style={{ gridTemplateColumns: "200px 1fr" }}>
         {/* Side nav */}
-        <div style={{ background: "#fff", border: "1px solid #DDE3EC", padding: "8px 0", height: "fit-content" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "8px 0", height: "fit-content" }}>
           {sections.map((s) => (
             <button
               key={s}
@@ -83,7 +83,7 @@ export default function Settings() {
         </div>
 
         {/* Content */}
-        <div style={{ background: "#fff", border: "1px solid #DDE3EC", padding: 24 }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: 24 }}>
           {activeSection === "General" && (
             <div className="flex flex-col gap-6">
               <div>
@@ -101,7 +101,7 @@ export default function Settings() {
                       <label style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>{f.label}</label>
                       <input
                         defaultValue={f.value}
-                        style={{ width: "100%", padding: "9px 12px", border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }}
                       />
                     </div>
                   ))}
@@ -120,7 +120,7 @@ export default function Settings() {
                       <label style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>{f.label}</label>
                       <input
                         defaultValue={f.value}
-                        style={{ width: "100%", padding: "9px 12px", border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }}
                       />
                     </div>
                   ))}
@@ -177,7 +177,7 @@ export default function Settings() {
                 </tbody>
               </table>
               <div className="mt-4">
-                <button style={{ padding: "8px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff" }}>+ Invite User</button>
+                <button style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff" }}>+ Invite User</button>
               </div>
             </div>
           )}
@@ -226,7 +226,7 @@ export default function Settings() {
                   <input
                     value={printer.printerName}
                     onChange={(e) => updatePrinter({ printerName: e.target.value })}
-                    style={{ width: "100%", padding: "9px 12px", border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", maxWidth: 380 }}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", maxWidth: 380 }}
                   />
                 </div>
 
@@ -249,7 +249,7 @@ export default function Settings() {
                 </div>
 
                 {/* Status summary */}
-                <div style={{ padding: "12px 16px", border: "1px solid #DDE3EC", background: "#fff", marginBottom: 20 }}>
+                <div style={{ padding: "12px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", marginBottom: 20 }}>
                   <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Current Printer Status</div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", background: printer.printerType === "Laser" ? "#EFF6FF" : printer.printerType === "DOT" ? "#F0FDF4" : "#FFF7ED", color: printer.printerType === "Laser" ? "#1B6CA8" : printer.printerType === "DOT" ? "#15803D" : "#C2410C", letterSpacing: "0.05em", textTransform: "uppercase" }}>
@@ -270,7 +270,7 @@ export default function Settings() {
                   <button
                     onClick={handleTestConnection}
                     disabled={testStatus === "testing"}
-                    style={{ padding: "8px 18px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: testStatus === "testing" ? "not-allowed" : "pointer", color: "#0C1B33", fontFamily: "Inter" }}
+                    style={{ padding: "8px 18px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: testStatus === "testing" ? "not-allowed" : "pointer", color: "#0C1B33", fontFamily: "Inter" }}
                   >
                     {testStatus === "testing" ? "Testing…" : "Test Connection"}
                   </button>
@@ -281,7 +281,7 @@ export default function Settings() {
 
               {/* Save bar */}
               <div className="flex justify-end mt-2 gap-3" style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
-                <button style={{ padding: "9px 20px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Discard</button>
+                <button style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Discard</button>
                 <button
                   onClick={handlePrinterSave}
                   style={{ padding: "9px 24px", border: "none", background: printerSaved ? "#2E7D32" : "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontWeight: 600, transition: "background 0.2s" }}
@@ -301,7 +301,7 @@ export default function Settings() {
 
           {activeSection === "General" && (
             <div className="flex justify-end mt-6 gap-3" style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
-              <button style={{ padding: "9px 20px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Discard</button>
+              <button style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Discard</button>
               <button
                 onClick={handleSave}
                 style={{ padding: "9px 24px", border: "none", background: saved ? "#2E7D32" : "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontWeight: 600, transition: "background 0.2s" }}

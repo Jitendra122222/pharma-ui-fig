@@ -22,7 +22,7 @@ export default function Sales() {
         <h1 style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#1A2436", margin: 0, letterSpacing: "-0.02em" }}>Sales</h1>
       </div>
 
-      <div style={{ display: "flex", background: "#fff", border: "1px solid #E8ECF4", flexShrink: 0 }}>
+      <div style={{ display: "flex", background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", flexShrink: 0 }}>
         {TABS.map((t, i) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             style={{

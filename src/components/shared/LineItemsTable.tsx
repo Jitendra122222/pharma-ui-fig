@@ -33,7 +33,7 @@ function MedicineSearchCell({
 }) {
   if (readOnly) {
     return (
-      <div style={{ padding: "5px 8px", fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1A2436", background: "#F8FAFC", border: "1px solid #E8ECF4", minWidth: 200, whiteSpace: "nowrap" }}>
+      <div style={{ padding: "5px 8px", fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1A2436", background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", minWidth: 200, whiteSpace: "nowrap" }}>
         {value || "—"}
       </div>
     );
@@ -89,12 +89,12 @@ function MedicineSearchCell({
           onFocus={() => setOpen(true)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); scanCurrent(); } }}
           placeholder="Search medicine, barcode..."
-          style={{ flex: 1, padding: "5px 8px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", minWidth: 170 }}
+          style={{ flex: 1, padding: "5px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", minWidth: 170 }}
         />
       </div>
 
       {open && !batchMed && results.length > 0 && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 280 }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 280 }}>
           {results.map(m => (
             <button key={m.name} onClick={() => { setBatchMed(m); setQuery(m.name); }}
               style={{ width: "100%", textAlign: "left", padding: "8px 12px", border: "none", background: "transparent", cursor: "pointer", borderBottom: "1px solid #F4F6FA", display: "flex", justifyContent: "space-between", alignItems: "center" }}
@@ -111,7 +111,7 @@ function MedicineSearchCell({
       )}
 
       {batchMed && (
-        <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 520 }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 520 }}>
           <div style={{ padding: "8px 12px", background: "#F0F6FF", borderBottom: "1px solid #E8ECF4", fontSize: 11, fontWeight: 700, color: "#1B6CA8", letterSpacing: "0.06em", textTransform: "uppercase" }}>
             Select Batch — {batchMed.name}
           </div>
@@ -210,7 +210,7 @@ export function LineItemsTable({
                 )}
                 <td style={{ padding: "4px 6px", width: 36 }}>
                   {!readOnly && (
-                    <button title="Scan" style={{ border: "1px solid #E8ECF4", background: "#FAFBFD", padding: "4px 6px", cursor: "pointer", fontSize: 13, color: "#9CA3AF" }}>⬛</button>
+                    <button title="Scan" style={{ borderRadius: 6, border: "1px solid #E8ECF4", background: "#FAFBFD", padding: "4px 6px", cursor: "pointer", fontSize: 13, color: "#9CA3AF" }}>⬛</button>
                   )}
                 </td>
                 <td style={{ padding: "4px 6px", minWidth: 220 }}>
@@ -237,7 +237,7 @@ export function LineItemsTable({
                       value={item.batch?.id ?? ""}
                       placeholder="Batch #"
                       onChange={e => onChange(item.id, "batch", { ...(item.batch ?? { id: "", qty: 0, packs: 0, mfgDate: "", expDate: "", mrp: item.mrp, saleRate: item.saleRate }), id: e.target.value })}
-                      style={{ width: 90, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#1B6CA8" }}
+                      style={{ width: 90, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#1B6CA8" }}
                     />
                   ) : (
                     <div style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: item.batch ? "#1B6CA8" : "#C8CDD8", whiteSpace: "nowrap" }}>
@@ -247,7 +247,7 @@ export function LineItemsTable({
                 </td>
                 <td style={{ padding: "4px 6px" }}>
                   <input type="number" value={item.packs || ""} disabled={readOnly} onChange={e => onChange(item.id, "packs", parseFloat(e.target.value) || 0)}
-                    style={{ width: 52, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                    style={{ width: 52, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
                 </td>
                 {/* Mfg Date */}
                 <td style={{ padding: "4px 6px" }}>
@@ -256,7 +256,7 @@ export function LineItemsTable({
                       type="date"
                       value={item.batch?.mfgDate ?? ""}
                       onChange={e => onChange(item.id, "batch", { ...(item.batch ?? { id: "", qty: 0, packs: 0, mfgDate: "", expDate: "", mrp: item.mrp, saleRate: item.saleRate }), mfgDate: e.target.value })}
-                      style={{ width: 130, padding: "4px 6px", border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#6B7280" }}
+                      style={{ width: 130, padding: "4px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#6B7280" }}
                     />
                   ) : (
                     <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#9CA3AF", whiteSpace: "nowrap" }}>{item.batch?.mfgDate ?? "—"}</span>
@@ -269,7 +269,7 @@ export function LineItemsTable({
                       type="date"
                       value={item.batch?.expDate ?? ""}
                       onChange={e => onChange(item.id, "batch", { ...(item.batch ?? { id: "", qty: 0, packs: 0, mfgDate: "", expDate: "", mrp: item.mrp, saleRate: item.saleRate }), expDate: e.target.value })}
-                      style={{ width: 130, padding: "4px 6px", border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#6B7280" }}
+                      style={{ width: 130, padding: "4px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#6B7280" }}
                     />
                   ) : (
                     <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: item.batch && new Date(item.batch.expDate) < new Date("2025-12-31") ? "#E65100" : "#9CA3AF", whiteSpace: "nowrap", fontWeight: item.batch && new Date(item.batch.expDate) < new Date("2025-12-31") ? 700 : 400 }}>
@@ -279,26 +279,26 @@ export function LineItemsTable({
                 </td>
                 <td style={{ padding: "4px 6px" }}>
                   <input type="number" value={item.qty || ""} disabled={readOnly} onChange={e => onChange(item.id, "qty", parseFloat(e.target.value) || 0)}
-                    style={{ width: 52, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                    style={{ width: 52, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
                 </td>
                 <td style={{ padding: "4px 6px" }}>
                   <input type="number" value={item.free || ""} disabled={readOnly} onChange={e => onChange(item.id, "free", parseFloat(e.target.value) || 0)}
-                    style={{ width: 44, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                    style={{ width: 44, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
                 </td>
                 <td style={{ padding: "4px 8px", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", color: "#9CA3AF" }}>
                   {item.mrp > 0 ? `₹${item.mrp.toFixed(2)}` : "—"}
                 </td>
                 <td style={{ padding: "4px 6px" }}>
                   <input type="number" value={item.saleRate || ""} disabled={readOnly} onChange={e => onChange(item.id, "saleRate", parseFloat(e.target.value) || 0)}
-                    style={{ width: 64, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                    style={{ width: 64, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
                 </td>
                 <td style={{ padding: "4px 6px" }}>
                   <input type="number" value={item.disc || ""} disabled={readOnly} onChange={e => onChange(item.id, "disc", parseFloat(e.target.value) || 0)}
-                    style={{ width: 48, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                    style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
                 </td>
                 <td style={{ padding: "4px 6px" }}>
                   <input type="number" value={item.gst || ""} disabled={readOnly} onChange={e => onChange(item.id, "gst", parseFloat(e.target.value) || 0)}
-                    style={{ width: 48, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                    style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
                 </td>
                 <td style={{ padding: "4px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#1A2436", whiteSpace: "nowrap" }}>
                   {item.medicineName ? `₹${calcAmount(item).toFixed(2)}` : "—"}

@@ -24,7 +24,7 @@ export default function AccountsOverview() {
       </div>
 
       {/* Chart of accounts */}
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Chart of Accounts</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>{["Code", "Account Name", "Type", "Debit Total", "Credit Total", "Balance"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>

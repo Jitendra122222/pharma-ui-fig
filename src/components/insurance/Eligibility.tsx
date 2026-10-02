@@ -5,7 +5,7 @@ export default function Eligibility() {
   const [checked, setChecked] = useState(false);
   return (
     <div className="flex flex-col gap-5">
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: 22 }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: 22 }}>
         <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436", marginBottom: 16 }}>Patient Eligibility Check</div>
         <div className="grid grid-cols-3 gap-4">
           {[
@@ -19,17 +19,17 @@ export default function Eligibility() {
             <div key={f.label}>
               <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>{f.label}</label>
               {f.type === "select" ? (
-                <select style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}>
+                <select style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const }}>
                   {f.opts.map((o: string) => <option key={o}>{o}</option>)}
                 </select>
               ) : (
-                <input type={f.type} defaultValue={f.val} placeholder={f.ph} style={{ width: "100%", padding: "9px 12px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
+                <input type={f.type} defaultValue={f.val} placeholder={f.ph} style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
               )}
             </div>
           ))}
         </div>
         <div className="flex justify-end mt-4">
-          <button onClick={() => setChecked(true)} style={{ padding: "9px 24px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Check Eligibility</button>
+          <button onClick={() => setChecked(true)} style={{ padding: "9px 24px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Check Eligibility</button>
         </div>
       </div>
 

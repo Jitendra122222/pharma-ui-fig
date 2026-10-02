@@ -40,10 +40,10 @@ const SIZE: Record<ButtonSize, React.CSSProperties> = {
 
 const VARIANT: Record<ButtonVariant, React.CSSProperties> = {
   primary:        { background: "#1B6CA8", color: "#fff",    border: "none" },
-  ghost:          { background: "#fff",    color: "#1A2436", border: "1px solid #E8ECF4" },
-  outline:        { background: "#EFF6FF", color: "#1B6CA8", border: "1px solid #1B6CA8" },
+  ghost:          { background: "#fff",    color: "#1A2436", borderRadius: 6, border: "1px solid #E8ECF4" },
+  outline:        { background: "#EFF6FF", color: "#1B6CA8", borderRadius: 6, border: "1px solid #1B6CA8" },
   danger:         { background: "#C62828", color: "#fff",    border: "none" },
-  "ghost-danger": { background: "#fff",    color: "#C62828", border: "1px solid #E8ECF4" },
+  "ghost-danger": { background: "#fff",    color: "#C62828", borderRadius: 6, border: "1px solid #E8ECF4" },
   icon:           { background: "transparent", color: "#9CA3AF", border: "none", padding: "4px", fontWeight: 400 },
 };
 

@@ -44,7 +44,7 @@ function EditableChip({ label, value, onChange, editable, prefix, allowNegative 
             <span style={{ fontFamily: "JetBrains Mono", fontSize: 13, color: "#6B7280" }}>{prefix ?? ""}₹</span>
             <input type="text" value={text} onChange={e => setText(e.target.value)} onBlur={commit} onKeyDown={e => e.key === "Enter" && commit()}
               placeholder="0.00"
-              style={{ width: 72, padding: "2px 4px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", textAlign: "right" }} />
+              style={{ width: 72, padding: "2px 4px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", textAlign: "right" }} />
           </div>
         ) : (
           <div style={{ fontFamily: "JetBrains Mono", fontSize: 13, color: "#6B7280" }}>{prefix ?? ""}₹{Math.abs(value).toFixed(2)}</div>
@@ -181,7 +181,7 @@ function ImportMenu({ onImport }: { onImport: (file: AttachedFile) => void }) {
         Import
       </button>
       {open && (
-        <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 60, boxShadow: "0 6px 20px rgba(0,0,0,0.12)", minWidth: 220 }}>
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 60, boxShadow: "0 6px 20px rgba(0,0,0,0.12)", minWidth: 220 }}>
           {options.map(o => (
             <button key={o.kind} onClick={() => pick(o.kind)}
               style={{ width: "100%", textAlign: "left", padding: "10px 14px", border: "none", background: "transparent", cursor: "pointer", borderBottom: "1px solid #F4F6FA", fontFamily: "Inter" }}
@@ -214,7 +214,7 @@ function EmailFetchModal({ onClose, onImport }: { onClose: () => void; onImport:
         <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 10 }}>
           {MOCK_EMAILS.length} recent emails with CSV attachments from your distributors. Click any row to attach the CSV to this invoice.
         </div>
-        <div style={{ border: "1px solid #E8ECF4" }}>
+        <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
           {MOCK_EMAILS.map((email, i) => (
             <button key={email.id} onClick={() => pick(email)}
               style={{ width: "100%", textAlign: "left", padding: "12px 14px", border: "none", borderBottom: i < MOCK_EMAILS.length - 1 ? "1px solid #F4F6FA" : "none", background: "transparent", cursor: "pointer", fontFamily: "Inter" }}
@@ -283,7 +283,7 @@ function ImportWizard({ file, distributorKnown, onCancel, onConfirm }: {
             Match your distributor&apos;s headers to the existing purchase invoice fields before anything enters inventory.
           </div>
           <button onClick={onCancel}
-            style={{ position: "absolute", top: 20, right: 20, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", width: 32, height: 32, borderRadius: "50%", fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            style={{ position: "absolute", top: 20, right: 20, borderRadius: "50%", border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", width: 32, height: 32, fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
 
         <MultiStepper
@@ -362,21 +362,21 @@ function ImportWizard({ file, distributorKnown, onCancel, onConfirm }: {
                 </div>
               )}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 20 }}>
-                <div style={{ padding: "14px 16px", border: "1px solid #E8ECF4", background: "#FAFBFD" }}>
+                <div style={{ padding: "14px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#FAFBFD" }}>
                   <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Columns Mapped</div>
                   <div style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#2E7D32", marginTop: 4 }}>{mappedCount}</div>
                 </div>
-                <div style={{ padding: "14px 16px", border: "1px solid #E8ECF4", background: "#FAFBFD" }}>
+                <div style={{ padding: "14px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#FAFBFD" }}>
                   <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Columns Ignored</div>
                   <div style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#6B7280", marginTop: 4 }}>{ignoredCount}</div>
                 </div>
-                <div style={{ padding: "14px 16px", border: "1px solid #E8ECF4", background: "#FAFBFD" }}>
+                <div style={{ padding: "14px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#FAFBFD" }}>
                   <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Source</div>
                   <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#0C1B33", marginTop: 4 }}>{file.source === "email" ? file.sender ?? "Email" : "Local upload"}</div>
                 </div>
               </div>
               <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Mapping Summary</div>
-              <div style={{ border: "1px solid #E8ECF4" }}>
+              <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 {headers.map((h, i) => {
                   const mapped = mapping[h];
                   const isMapped = mapped !== "ignore";
@@ -512,7 +512,7 @@ function PurchaseInvoiceList({ onNew, onView, invoices }: { onNew: () => void; o
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
         <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6" }}>
           <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Purchase Invoices</div>
         </div>
@@ -752,13 +752,13 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {initialData && viewMode && (
             <>
-              <button onClick={() => setViewMode(false)} style={{ padding: "7px 20px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Edit</button>
+              <button onClick={() => setViewMode(false)} style={{ padding: "7px 20px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Edit</button>
             </>
           )}
           {initialData && !viewMode && (
             <>
-              <button onClick={() => setViewMode(true)} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-              <button onClick={() => setSaved("posted")} style={{ padding: "7px 20px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save Changes</button>
+              <button onClick={() => setViewMode(true)} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+              <button onClick={() => setSaved("posted")} style={{ padding: "7px 20px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save Changes</button>
             </>
           )}
           {!initialData && (
@@ -818,7 +818,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Distributor</div>
             <div style={{ display: "flex", gap: 6 }}>
               {viewMode ? (
-                <div style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{supplier || "—"}</div>
+                <div style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{supplier || "—"}</div>
               ) : (
                 <DistributorSearch
                   selected={supplier}
@@ -829,7 +829,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
               )}
               {supplier && !viewMode && (
                 <button onClick={() => setShowDetails(true)}
-                  style={{ padding: "8px 12px", border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 11, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, whiteSpace: "nowrap" }}>
                   Details
                 </button>
               )}
@@ -839,46 +839,46 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
           <div style={{ flex: "0 0 160px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Invoice #</div>
             {viewMode ? (
-              <div style={{ padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", background: "#FAFBFD", color: "#1A2436" }}>{invoiceNo}</div>
+              <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", background: "#FAFBFD", color: "#1A2436" }}>{invoiceNo}</div>
             ) : (
               <input value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box", background: "#fff" }} />
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box", background: "#fff" }} />
             )}
           </div>
 
           <div style={{ flex: "0 0 140px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Invoice Date</div>
             {viewMode ? (
-              <div style={{ padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{formatDMY(invoiceDate)}</div>
+              <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{formatDMY(invoiceDate)}</div>
             ) : (
               <input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: "#fff" }} />
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: "#fff" }} />
             )}
           </div>
 
           <div style={{ flex: "0 0 140px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Due Date</div>
             {viewMode ? (
-              <div style={{ padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{formatDMY(dueDate)}</div>
+              <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{formatDMY(dueDate)}</div>
             ) : (
               <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: "#fff" }} />
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: "#fff" }} />
             )}
           </div>
 
           <div style={{ flex: "0 0 140px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>PO Reference</div>
             {viewMode ? (
-              <div style={{ padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", background: "#FAFBFD", color: "#1A2436" }}>{poRef || "—"}</div>
+              <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", background: "#FAFBFD", color: "#1A2436" }}>{poRef || "—"}</div>
             ) : (
               <input value={poRef} onChange={e => setPoRef(e.target.value)} placeholder="Optional"
-                style={{ width: "100%", padding: "8px 10px", border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box", background: "#fff" }} />
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box", background: "#fff" }} />
             )}
           </div>
 
           <div>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Batch Allocation</div>
-            <div style={{ display: "flex", border: "1px solid #E8ECF4", overflow: "hidden" }} title="Preferred dispense order for these batches when they later leave inventory">
+            <div style={{ display: "flex", borderRadius: 6, border: "1px solid #E8ECF4", overflow: "hidden" }} title="Preferred dispense order for these batches when they later leave inventory">
               {(["FEFO", "LEFO"] as const).map(opt => (
                 <button key={opt} onClick={() => !viewMode && setAlloc(opt)}
                   style={{ padding: "7px 14px", fontSize: 12, fontWeight: 700, border: "none", cursor: viewMode ? "default" : "pointer", fontFamily: "Inter", background: alloc === opt ? "#1B6CA8" : "#fff", color: alloc === opt ? "#fff" : "#9CA3AF", letterSpacing: "0.04em" }}>
@@ -891,7 +891,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
       </div>
 
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", margin: "10px 20px 0" }}>
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Line Items</span>
@@ -936,7 +936,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                   Upload Invoice File
                 </button>
                 <button onClick={() => setShowManual(true)}
-                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 18px", border: "1px solid #DDE3EC", background: "#fff", color: "#1B6CA8", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 18px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", color: "#1B6CA8", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Add Items Manually
                 </button>
@@ -944,7 +944,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
 
               {centralOpen && (
                 <div style={{ position: "fixed", inset: 0, zIndex: 350, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,22,44,0.3)" }} onClick={() => setCentralOpen(false)}>
-                  <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "16px 20px", width: 280, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", borderRadius: 6 }} onClick={e => e.stopPropagation()}>
+                  <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "16px 20px", width: 280, boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }} onClick={e => e.stopPropagation()}>
                     <h4 style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#0C1B33", margin: "0 0 12px 0" }}>Choose Invoice Type</h4>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {[
@@ -989,7 +989,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
 
       <div style={{ margin: "8px 20px 0", flexShrink: 0 }}>
         <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Add notes, delivery instructions, or distributor remarks..."
-          style={{ width: "100%", padding: "8px 12px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", resize: "none", background: "#fff", boxSizing: "border-box" as const }} />
+          style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", resize: "none", background: "#fff", boxSizing: "border-box" as const }} />
       </div>
 
       <div style={{ margin: "0 20px 0", flexShrink: 0 }}>
@@ -1080,7 +1080,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
 
       {saved && !showBarcodeSelect && (
         <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, background: "rgba(10,22,44,0.45)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: 60, textAlign: "center", minWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: 60, textAlign: "center", minWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ fontFamily: "Outfit", fontSize: 20, fontWeight: 700, color: "#1A2436", marginBottom: 8 }}>
               Purchase Invoice {saved === "posted" ? "Posted Successfully" : "Saved as Draft"}
             </div>
@@ -1145,7 +1145,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
 
         return (
           <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, background: "rgba(10,22,44,0.45)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 32px" }}>
-            <div style={{ background: "#fff", border: "1px solid #E8ECF4", boxShadow: "0 12px 40px rgba(0,0,0,0.22)", display: "flex", flexDirection: "column", width: "100%", maxWidth: 1080, maxHeight: "100%", overflow: "hidden" }}>
+            <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 12px 40px rgba(0,0,0,0.22)", display: "flex", flexDirection: "column", width: "100%", maxWidth: 1080, maxHeight: "100%", overflow: "hidden" }}>
 
               {/* Header */}
               <div style={{ padding: "18px 24px", borderBottom: "1px solid #E8ECF4", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
@@ -1258,7 +1258,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                                 const v = Math.max(1, parseInt(e.target.value) || 1);
                                 setBarcodePrintQty(prev => ({ ...prev, [item.id]: v }));
                               }}
-                              style={{ width: 72, padding: "4px 8px", border: "1px solid #E8ECF4", fontSize: 13, textAlign: "right", fontFamily: "JetBrains Mono", outline: "none", background: isSelected ? "#fff" : "#F5F5F5" }}
+                              style={{ width: 72, padding: "4px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, textAlign: "right", fontFamily: "JetBrains Mono", outline: "none", background: isSelected ? "#fff" : "#F5F5F5" }}
                             />
                           </td>
                           <td style={{ padding: "10px 12px", textAlign: "right", fontFamily: "JetBrains Mono", color: "#1A2436" }}>₹{item.mrp.toFixed(2)}</td>
@@ -1297,7 +1297,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
 
       {printing && (
         <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, background: "rgba(10,22,44,0.5)", backdropFilter: "blur(4px)", zIndex: 210, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: "48px 56px", textAlign: "center", minWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "48px 56px", textAlign: "center", minWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ marginBottom: 20, display: "flex", justifyContent: "center" }}>
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 6 2 18 2 18 9" />

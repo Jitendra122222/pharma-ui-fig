@@ -52,8 +52,27 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [purchasesDeepLink, setPurchasesDeepLink] = useState<PurchasesDeepLink | null>(null);
+  const [suppliersEditDist, setSuppliersEditDist] = useState<string | null>(null);
   const pendingDeepLink = useRef<PurchasesDeepLink | null>(null);
   const pendingModule = useRef<Module | null>(null);
+  const pendingEditDist = useRef<string | null>(null);
+
+  function navigateToEditDistributor(name: string) {
+    pendingEditDist.current = name;
+    pendingModule.current = "suppliers";
+    setExiting(false);
+    setLoading(true);
+    setTimeout(() => {
+      setExiting(true);
+      setTimeout(() => {
+        setModule("suppliers");
+        setSuppliersEditDist(pendingEditDist.current);
+        setLoading(false);
+        setExiting(false);
+        pendingEditDist.current = null;
+      }, 300);
+    }, 1100);
+  }
 
   function navigatePurchases(link: PurchasesDeepLink) {
     pendingDeepLink.current = link;
@@ -128,7 +147,7 @@ export default function App() {
           <div className="flex items-center gap-5">
             <div style={{ position: "relative" }}>
               <input type="text" placeholder="Quick search..."
-                style={{ width: 210, padding: "6px 10px 6px 30px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#FAFBFD" }}
+                style={{ width: 210, padding: "6px 10px 6px 30px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#FAFBFD" }}
               />
               <span style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "#C8CDD8" }}>⌕</span>
             </div>
@@ -150,7 +169,7 @@ export default function App() {
               </div>
               <button
                 onClick={() => setUser(null)}
-                style={{ border: "1px solid #E8ECF4", background: "#fff", borderRadius: 4, padding: "4px 10px", fontSize: 11, color: "#6B7280", fontFamily: "Inter", cursor: "pointer", marginLeft: 4 }}
+                style={{ border: "1px solid #E8ECF4", borderRadius: 4, background: "#fff", padding: "4px 10px", fontSize: 11, color: "#6B7280", fontFamily: "Inter", cursor: "pointer", marginLeft: 4 }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#FFF0F0"; (e.currentTarget as HTMLButtonElement).style.color = "#C62828"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff"; (e.currentTarget as HTMLButtonElement).style.color = "#6B7280"; }}
               >
@@ -163,7 +182,7 @@ export default function App() {
         {/* Main */}
         <main style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", minHeight: 0 }}>
           {module === "dashboard" && <Dashboard />}
-          {module === "inventory" && <Inventory />}
+          {module === "inventory" && <Inventory onEditDistributor={navigateToEditDistributor} />}
           {module === "stock" && <StockManagement />}
           {module === "shortbook" && <ShortBook />}
           {module === "expiry" && <ExpiryManagement />}
@@ -171,7 +190,7 @@ export default function App() {
           {module === "prescriptions" && <Prescriptions />}
           {module === "patients" && <Patients />}
           {module === "purchases" && <Purchases deepLink={purchasesDeepLink} onDeepLinkConsumed={() => setPurchasesDeepLink(null)} />}
-          {module === "suppliers" && <Suppliers onNavigatePurchases={navigatePurchases} />}
+          {module === "suppliers" && <Suppliers onNavigatePurchases={navigatePurchases} editDistributor={suppliersEditDist} onEditDistributorConsumed={() => setSuppliersEditDist(null)} />}
           {module === "accounts" && <Accounts />}
           {module === "insurance" && <Insurance />}
           {module === "reports" && <Reports />}

@@ -99,7 +99,7 @@ function QRPlaceholder({ sessionId }: { sessionId: string }) {
   const v = sessionId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const SIZE = 168;
   return (
-    <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ display: "block", border: "1px solid #E8ECF4" }}>
+    <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ display: "block", borderRadius: 6, border: "1px solid #E8ECF4" }}>
       <rect width={SIZE} height={SIZE} fill="#fff"/>
       {/* Top-left finder */}
       {[[0,0,56,56],[8,8,40,40],[16,16,24,24]].map(([x,y,w,h],i) => (
@@ -622,7 +622,7 @@ export default function PurchaseVerifyFlow({
         <button onClick={() => setStep("method-select")} style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: "#6B7280", fontFamily: "Inter" }}>← Back</button>
         <div style={{ display: "flex", gap: 8 }}>
           {!mobileConnected && !mobileConnecting && (
-            <button onClick={() => setMobileConnecting(true)} style={{ padding: "7px 16px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>
+            <button onClick={() => setMobileConnecting(true)} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>
               Simulate Connection
             </button>
           )}
@@ -667,7 +667,7 @@ export default function PurchaseVerifyFlow({
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: 6, fontFamily: "Inter" }}>Reason <span style={{ color: "#C62828" }}>*</span></div>
           <select value={skipReason} onChange={e => setSkipReason(e.target.value)}
-            style={{ width: "100%", padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", background: "#fff" }}>
+            style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", background: "#fff" }}>
             <option value="">— Select Reason —</option>
             {SKIP_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
@@ -678,11 +678,11 @@ export default function PurchaseVerifyFlow({
           <textarea value={skipComment} onChange={e => setSkipComment(e.target.value)}
             placeholder="Optional additional notes..."
             rows={2}
-            style={{ width: "100%", padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", resize: "vertical", boxSizing: "border-box" as const }}/>
+            style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", resize: "vertical", boxSizing: "border-box" as const }}/>
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button onClick={() => setStep("decision")} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+          <button onClick={() => setStep("decision")} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
           <button
             disabled={!skipReason}
             onClick={onPost}
@@ -728,7 +728,7 @@ export default function PurchaseVerifyFlow({
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: 6, fontFamily: "Inter" }}>Reason <span style={{ color: "#C62828" }}>*</span></div>
           <select value={skipReason} onChange={e => setSkipReason(e.target.value)}
-            style={{ width: "100%", padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", background: "#fff" }}>
+            style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", background: "#fff" }}>
             <option value="">— Select Reason —</option>
             {SKIP_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
@@ -739,11 +739,11 @@ export default function PurchaseVerifyFlow({
           <textarea value={skipComment} onChange={e => setSkipComment(e.target.value)}
             placeholder="Optional notes..."
             rows={2}
-            style={{ width: "100%", padding: "8px 12px", border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", resize: "vertical", boxSizing: "border-box" as const }}/>
+            style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", resize: "vertical", boxSizing: "border-box" as const }}/>
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button onClick={() => setStep("decision")} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+          <button onClick={() => setStep("decision")} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
           <button
             disabled={!skipReason}
             onClick={onPost}
@@ -871,7 +871,7 @@ export default function PurchaseVerifyFlow({
                 <div key={c.label} style={{ padding: "5px 14px", background: c.bg, border: `1px solid ${c.border}`, fontSize: 12, fontWeight: 600, color: c.color, fontFamily: "Inter" }}>{c.label}</div>
               ))}
             </div>
-            <div style={{ border: "1px solid #E8ECF4", overflow: "auto" }}>
+            <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", overflow: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}>
                 <thead>
                   <tr style={{ background: "#F8FAFC" }}>
@@ -923,7 +923,7 @@ export default function PurchaseVerifyFlow({
                               onChange={e => setPoEditVal(e.target.value)}
                               onBlur={() => savePoEdit(item.id, field, poEditVal)}
                               onKeyDown={e => { if (e.key === "Enter") savePoEdit(item.id, field, poEditVal); if (e.key === "Escape") setPoEditing(null); }}
-                              style={{ width: 66, fontSize: 11, padding: "2px 4px", border: "1px solid #1B6CA8", outline: "none", fontFamily: "JetBrains Mono", textAlign: align }}
+                              style={{ width: 66, fontSize: 11, padding: "2px 4px", borderRadius: 6, border: "1px solid #1B6CA8", outline: "none", fontFamily: "JetBrains Mono", textAlign: align }}
                             />
                           ) : (
                             <div
@@ -1138,8 +1138,8 @@ export default function PurchaseVerifyFlow({
                     onChange={e => setManualEntry(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleScan(manualEntry)}
                     placeholder="Type medicine name or batch, press Enter"
-                    style={{ flex: 1, padding: "7px 12px", border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none" }}/>
-                  <button onClick={() => handleScan(manualEntry)} style={{ padding: "7px 14px", border: "none", background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>Add</button>
+                    style={{ flex: 1, padding: "7px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none" }}/>
+                  <button onClick={() => handleScan(manualEntry)} style={{ padding: "7px 14px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>Add</button>
                 </div>
               ) : (
                 <>
@@ -1155,8 +1155,8 @@ export default function PurchaseVerifyFlow({
                       onChange={e => setScanInput(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && handleScan(scanInput)}
                       placeholder="Scan or type barcode..."
-                      style={{ width: 200, padding: "6px 10px", border: "1px solid #DDE3EC", fontSize: 12, fontFamily: "Inter", outline: "none" }}/>
-                    <button onClick={() => handleScan(scanInput)} style={{ padding: "6px 12px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "Inter", color: "#1A2436" }}>Scan</button>
+                      style={{ width: 200, padding: "6px 10px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 12, fontFamily: "Inter", outline: "none" }}/>
+                    <button onClick={() => handleScan(scanInput)} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "Inter", color: "#1A2436" }}>Scan</button>
                   </div>
                 </>
               )}
@@ -1263,14 +1263,14 @@ export default function PurchaseVerifyFlow({
                             {item.status === "short" && (
                               <>
                                 <button onClick={() => setPhysItems(prev => prev.map(i => i.id === item.id ? { ...i, resolution: "short-book" } : i))} style={{ padding: "6px 12px", border: "1px solid #FFCC80", background: "#FFF3E0", fontSize: 12, cursor: "pointer", color: "#E65100", fontFamily: "Inter", fontWeight: 600 }}>Short Book</button>
-                                <button onClick={() => setPhysItems(prev => prev.map(i => i.id === item.id ? { ...i, resolution: "accept" } : i))} style={{ padding: "6px 12px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Accept</button>
-                                <button onClick={() => setPhysItems(prev => prev.map(i => i.id === item.id ? { ...i, resolution: "supplier-followup" } : i))} style={{ padding: "6px 12px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Supplier Follow-up</button>
+                                <button onClick={() => setPhysItems(prev => prev.map(i => i.id === item.id ? { ...i, resolution: "accept" } : i))} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Accept</button>
+                                <button onClick={() => setPhysItems(prev => prev.map(i => i.id === item.id ? { ...i, resolution: "supplier-followup" } : i))} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Supplier Follow-up</button>
                               </>
                             )}
                             {item.status === "excess" && (
                               <>
                                 <button onClick={() => setPhysItems(prev => prev.map(i => i.id === item.id ? { ...i, resolution: "return-excess" } : i))} style={{ padding: "6px 12px", border: "1px solid #BFDBFE", background: "#EFF6FF", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}>Return Excess</button>
-                                <button onClick={() => setPhysItems(prev => prev.map(i => i.id === item.id ? { ...i, resolution: "accept" } : i))} style={{ padding: "6px 12px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Accept</button>
+                                <button onClick={() => setPhysItems(prev => prev.map(i => i.id === item.id ? { ...i, resolution: "accept" } : i))} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Accept</button>
                               </>
                             )}
                           </div>
@@ -1314,7 +1314,7 @@ export default function PurchaseVerifyFlow({
               </div>
             </div>
 
-            <div style={{ border: "1px solid #E8ECF4", padding: "16px 20px", marginBottom: 20 }}>
+            <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", padding: "16px 20px", marginBottom: 20 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
                   { label: "Products",  value: String(totalItems) },
@@ -1346,7 +1346,7 @@ export default function PurchaseVerifyFlow({
       {/* Workspace footer */}
       <div style={{ borderTop: "1px solid #E8ECF4", padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, background: "#FAFBFD" }}>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+          <button onClick={onClose} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
           {wStep > 0 && (
             <button onClick={() => {
               const prev = wStep - 1;
@@ -1357,7 +1357,7 @@ export default function PurchaseVerifyFlow({
                 setScannerActive(false);
               }
               setWStep(prev);
-            }} style={{ padding: "7px 16px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>← Back</button>
+            }} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>← Back</button>
           )}
         </div>
         {!isFinalStep ? (
@@ -1413,17 +1413,17 @@ export default function PurchaseVerifyFlow({
               {exception.status === "short" && (
                 <>
                   <button onClick={() => resolveException("short-book")} style={{ padding: "10px 14px", border: "1px solid #FFCC80", background: "#FFF3E0", fontSize: 13, cursor: "pointer", color: "#E65100", fontFamily: "Inter", fontWeight: 600, textAlign: "left" as const }}>Add to Short Book</button>
-                  <button onClick={() => resolveException("accept")} style={{ padding: "10px 14px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", textAlign: "left" as const }}>Accept Shortage</button>
-                  <button onClick={() => resolveException("supplier-followup")} style={{ padding: "10px 14px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", textAlign: "left" as const }}>Supplier Follow-up</button>
+                  <button onClick={() => resolveException("accept")} style={{ padding: "10px 14px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", textAlign: "left" as const }}>Accept Shortage</button>
+                  <button onClick={() => resolveException("supplier-followup")} style={{ padding: "10px 14px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", textAlign: "left" as const }}>Supplier Follow-up</button>
                 </>
               )}
               {exception.status === "excess" && (
                 <>
                   <button onClick={() => resolveException("return-excess")} style={{ padding: "10px 14px", border: "1px solid #BFDBFE", background: "#EFF6FF", fontSize: 13, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600, textAlign: "left" as const }}>Return Excess</button>
-                  <button onClick={() => resolveException("accept")} style={{ padding: "10px 14px", border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", textAlign: "left" as const }}>Accept Excess</button>
+                  <button onClick={() => resolveException("accept")} style={{ padding: "10px 14px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", textAlign: "left" as const }}>Accept Excess</button>
                 </>
               )}
-              <button onClick={() => setException(null)} style={{ padding: "10px 14px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#6B7280", fontFamily: "Inter", textAlign: "left" as const }}>Cancel</button>
+              <button onClick={() => setException(null)} style={{ padding: "10px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#6B7280", fontFamily: "Inter", textAlign: "left" as const }}>Cancel</button>
             </div>
           </div>
         </div>

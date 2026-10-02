@@ -22,10 +22,10 @@ export default function StaffDirectory() {
       </div>
 
       <div className="grid gap-4" style={{ gridTemplateColumns: selected ? "1fr 340px" : "1fr" }}>
-        <div style={{ background: "#fff", border: "1px solid #E8ECF4" }}>
+        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
           <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between" }}>
             <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Employees</div>
-            <button style={{ padding: "7px 16px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>+ Add Employee</button>
+            <button style={{ padding: "7px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>+ Add Employee</button>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
@@ -63,7 +63,7 @@ export default function StaffDirectory() {
         </div>
 
         {selected && (
-          <div style={{ background: "#fff", border: "1px solid #E8ECF4", padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>{selected.name}</div>
@@ -88,8 +88,8 @@ export default function StaffDirectory() {
               ))}
             </div>
             <div className="flex gap-2">
-              <button style={{ flex: 1, padding: "9px", border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436" }}>Edit</button>
-              <button style={{ flex: 1, padding: "9px", border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontWeight: 600 }}>Payslip</button>
+              <button style={{ flex: 1, padding: "9px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436" }}>Edit</button>
+              <button style={{ flex: 1, padding: "9px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontWeight: 600 }}>Payslip</button>
             </div>
           </div>
         )}

@@ -45,6 +45,7 @@ export function PaginationFooter({
       disabled={disabled}
       style={{
         padding: "4px 10px",
+        borderRadius: 6,
         border: "1px solid #E8ECF4",
         background: "#fff",
         cursor: disabled ? "default" : "pointer",
@@ -77,7 +78,7 @@ export function PaginationFooter({
           <select
             value={pageSize}
             onChange={e => onPageSizeChange(Number(e.target.value))}
-            style={{ padding: "3px 6px", border: "1px solid #E8ECF4", fontSize: 12, background: "#fff", fontFamily: "Inter" }}
+            style={{ padding: "3px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, background: "#fff", fontFamily: "Inter" }}
           >
             {[5, 10, 25, 50].map(n => <option key={n} value={n}>{n}</option>)}
           </select>

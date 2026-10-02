@@ -17,7 +17,7 @@ function InlineMedicineCell({
 }) {
   if (readOnly) {
     return (
-      <div style={{ padding: "5px 8px", fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1A2436", background: "#F8FAFC", border: "1px solid #E8ECF4", minWidth: 200, whiteSpace: "nowrap" }}>
+      <div style={{ padding: "5px 8px", fontSize: 12, fontFamily: "Inter", fontWeight: 600, color: "#1A2436", background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", minWidth: 200, whiteSpace: "nowrap" }}>
         {value || "—"}
       </div>
     );
@@ -44,10 +44,10 @@ function InlineMedicineCell({
         onChange={e => { setQuery(e.target.value); setOpen(true); setBatchMed(null); }}
         onFocus={() => setOpen(true)}
         placeholder="Search medicine..."
-        style={{ width: "100%", padding: "5px 8px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" }}
+        style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" }}
       />
       {open && !batchMed && results.length > 0 && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 260 }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 260 }}>
           {results.map(m => (
             <button key={m.name} onClick={() => { setBatchMed(m); setQuery(m.name); }}
               style={{ width: "100%", textAlign: "left", padding: "8px 12px", border: "none", background: "transparent", cursor: "pointer", borderBottom: "1px solid #F4F6FA" }}>
@@ -58,7 +58,7 @@ function InlineMedicineCell({
         </div>
       )}
       {batchMed && (
-        <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 480 }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 480 }}>
           <div style={{ padding: "8px 12px", background: "#F0F6FF", borderBottom: "1px solid #E8ECF4", fontSize: 11, fontWeight: 700, color: "#1B6CA8", letterSpacing: "0.06em", textTransform: "uppercase" }}>
             Select Batch — {batchMed.name}
           </div>
@@ -139,26 +139,26 @@ export function ReturnItemsTable({
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.packs || ""} disabled={readOnly} onChange={e => onChange(item.id, "packs", parseFloat(e.target.value) || 0)}
-                  style={{ width: 52, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 52, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.qty || ""} disabled={readOnly} onChange={e => onChange(item.id, "qty", parseFloat(e.target.value) || 0)}
-                  style={{ width: 60, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", fontWeight: 600, color: readOnly ? "#6B7280" : "#C62828", background: readOnly ? "#F8FAFC" : "#fff" }} />
+                  style={{ width: 60, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", fontWeight: 600, color: readOnly ? "#6B7280" : "#C62828", background: readOnly ? "#F8FAFC" : "#fff" }} />
               </td>
               <td style={{ padding: "4px 8px", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", color: "#9CA3AF" }}>
                 {item.mrp > 0 ? `₹${item.mrp.toFixed(2)}` : "—"}
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.saleRate || ""} disabled={readOnly} onChange={e => onChange(item.id, "saleRate", parseFloat(e.target.value) || 0)}
-                  style={{ width: 64, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 64, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.disc || ""} disabled={readOnly} onChange={e => onChange(item.id, "disc", parseFloat(e.target.value) || 0)}
-                  style={{ width: 48, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 6px" }}>
                 <input type="number" value={item.gst || ""} disabled={readOnly} onChange={e => onChange(item.id, "gst", parseFloat(e.target.value) || 0)}
-                  style={{ width: 48, padding: "5px 6px", border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+                  style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#C62828", whiteSpace: "nowrap" }}>
                 {item.medicineName ? `-₹${calcAmount(item).toFixed(2)}` : "—"}
