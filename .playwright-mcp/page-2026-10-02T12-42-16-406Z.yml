@@ -1,0 +1,463 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e480]:
+    - complementary [ref=f2e481]:
+      - generic [ref=f2e482]:
+        - generic [ref=f2e483]:
+          - generic [ref=f2e484]: Rx
+          - generic [ref=f2e485]:
+            - generic [ref=f2e486]: PharmERP
+            - generic [ref=f2e487]: City Central Pharmacy
+        - button "Collapse sidebar" [ref=f2e488] [cursor=pointer]: «
+      - navigation [ref=f2e489]:
+        - generic [ref=f2e490]:
+          - generic [ref=f2e491]: Core Operations
+          - button "Dashboard" [ref=f2e492] [cursor=pointer]
+          - button "Sales 2" [ref=f2e497] [cursor=pointer]:
+            - generic [ref=f2e501]: Sales
+            - generic [ref=f2e502]: "2"
+          - button "Prescriptions 2" [ref=f2e503] [cursor=pointer]:
+            - generic [ref=f2e507]: Prescriptions
+            - generic [ref=f2e508]: "2"
+          - button "Patients" [ref=f2e509] [cursor=pointer]
+        - generic [ref=f2e514]:
+          - generic [ref=f2e515]: Inventory & Stock
+          - button "Inventory 3" [ref=f2e516] [cursor=pointer]:
+            - generic [ref=f2e520]: Inventory
+            - generic [ref=f2e521]: "3"
+          - button "Stock Management" [ref=f2e522] [cursor=pointer]
+          - button "Short Book 8" [ref=f2e528] [cursor=pointer]:
+            - generic [ref=f2e532]: Short Book
+            - generic [ref=f2e533]: "8"
+          - button "Expiry Management 12" [ref=f2e534] [cursor=pointer]:
+            - generic [ref=f2e539]: Expiry Management
+            - generic [ref=f2e540]: "12"
+        - generic [ref=f2e541]:
+          - generic [ref=f2e542]: Purchasing
+          - button "Purchasing" [ref=f2e543] [cursor=pointer]
+          - button "Distributors" [ref=f2e550] [cursor=pointer]
+        - generic [ref=f2e556]:
+          - generic [ref=f2e557]: Finance
+          - button "Accounts" [ref=f2e558] [cursor=pointer]
+          - button "Insurance & Claims" [ref=f2e564] [cursor=pointer]
+        - generic [ref=f2e569]:
+          - generic [ref=f2e570]: Analytics
+          - button "Reports" [ref=f2e571] [cursor=pointer]
+        - generic [ref=f2e576]:
+          - generic [ref=f2e577]: Administration
+          - button "HR & Payroll" [ref=f2e578] [cursor=pointer]
+          - button "Settings" [ref=f2e583] [cursor=pointer]
+      - generic [ref=f2e589]:
+        - generic [ref=f2e590]: JD
+        - generic [ref=f2e591]:
+          - generic [ref=f2e592]: Jane Doe
+          - generic [ref=f2e593]: Head Pharmacist
+    - generic [ref=f2e594]:
+      - banner [ref=f2e595]:
+        - generic [ref=f2e596]:
+          - generic [ref=f2e597]: PharmERP
+          - generic [ref=f2e598]: ›
+          - generic [ref=f2e599]: Stock Management
+        - generic [ref=f2e600]:
+          - generic [ref=f2e601]:
+            - textbox "Quick search..." [ref=f2e602]
+            - generic [ref=f2e603]: ⌕
+          - generic [ref=f2e604] [cursor=pointer]:
+            - text: 🔔
+            - generic [ref=f2e605]: "5"
+          - generic [ref=f2e606]: 28 Jul 2025
+          - generic [ref=f2e608]:
+            - generic [ref=f2e609]: RK
+            - generic [ref=f2e611]:
+              - generic [ref=f2e612]: Rajesh Kumar
+              - generic [ref=f2e613]: Pharmacist
+            - button "Logout" [ref=f2e614] [cursor=pointer]
+      - main [ref=f2e615]:
+        - generic [ref=f2e616]:
+          - generic [ref=f2e617]:
+            - generic [ref=f2e618]:
+              - heading "Stock Management" [level=1] [ref=f2e619]
+              - generic [ref=f2e620]: Monitor near-expiry items and manage quarantine
+            - button "Export" [ref=f2e621] [cursor=pointer]
+          - generic [ref=f2e622]:
+            - button "Stock Overview" [ref=f2e623] [cursor=pointer]
+            - button "Locations" [ref=f2e624] [cursor=pointer]
+            - button "Adjustments" [ref=f2e625] [cursor=pointer]
+            - button "Batch Tracking" [ref=f2e626] [cursor=pointer]
+            - button "Expiry Management" [ref=f2e627] [cursor=pointer]
+            - button "Stock Transfer" [ref=f2e628] [cursor=pointer]
+            - button "Investigation" [ref=f2e629] [cursor=pointer]
+            - button "Narcotic Register" [ref=f2e630] [cursor=pointer]
+            - button "Drug Recall" [ref=f2e631] [cursor=pointer]
+          - generic [ref=f2e1553]:
+            - generic [ref=f2e1554]:
+              - generic [ref=f2e1555]:
+                - generic [ref=f2e1556]: Expired — Write-off Required
+                - generic [ref=f2e1557]: ₹1545
+                - generic [ref=f2e1558]: 8 SKUs
+              - generic [ref=f2e1559]:
+                - generic [ref=f2e1560]: Critical Risk (≤ 30 days)
+                - generic [ref=f2e1561]: ₹0
+                - generic [ref=f2e1562]: 0 SKUs
+              - generic [ref=f2e1563]:
+                - generic [ref=f2e1564]: Warning Zone (≤ 90 days)
+                - generic [ref=f2e1565]: ₹84
+                - generic [ref=f2e1566]: 1 SKUs
+              - generic [ref=f2e1567]:
+                - generic [ref=f2e1568]: Total Capital at Risk
+                - generic [ref=f2e1569]: ₹1628
+                - generic [ref=f2e1570]: Combined exposure
+            - generic [ref=f2e1571]:
+              - generic [ref=f2e1572]:
+                - button "Expiry Alerts 9" [ref=f2e1573] [cursor=pointer]:
+                  - text: Expiry Alerts
+                  - generic [ref=f2e1574]: "9"
+                - button "Quarantine 2" [ref=f2e1575] [cursor=pointer]:
+                  - text: Quarantine
+                  - generic [ref=f2e1576]: "2"
+                - button "Audit Log 1" [ref=f2e1577] [cursor=pointer]:
+                  - text: Audit Log
+                  - generic [ref=f2e1578]: "1"
+              - generic [ref=f2e1579]:
+                - textbox "Search by drug or category..." [ref=f2e1584]
+                - button "Alert Thresholds" [active] [ref=f2e1586] [cursor=pointer]
+              - table [ref=f2e1591]:
+                - rowgroup [ref=f2e1592]:
+                  - row [ref=f2e1593]:
+                    - columnheader "Drug" [ref=f2e1594] [cursor=pointer]
+                    - columnheader "Category" [ref=f2e1601] [cursor=pointer]
+                    - columnheader "Location" [ref=f2e1608] [cursor=pointer]
+                    - columnheader "Stock" [ref=f2e1615] [cursor=pointer]
+                    - columnheader "Expiry Date" [ref=f2e1622] [cursor=pointer]
+                    - columnheader "Days Left" [ref=f2e1629] [cursor=pointer]
+                    - columnheader "Action Needed" [ref=f2e1636]
+                    - columnheader "Velocity / Forecast" [ref=f2e1638]
+                    - columnheader "Supplier" [ref=f2e1640]
+                    - columnheader "Return Status" [ref=f2e1642]
+                    - columnheader "Actions" [ref=f2e1644]
+                - rowgroup [ref=f2e1646]:
+                  - row [ref=f2e1647]:
+                    - cell "Insulin Glargine" [ref=f2e1648]
+                    - cell "Hormones" [ref=f2e1649]
+                    - cell "COLD-01" [ref=f2e1650]
+                    - cell "45" [ref=f2e1651]
+                    - cell "2025-10-15" [ref=f2e1652]
+                    - cell "EXPIRED" [ref=f2e1653]
+                    - cell "Dispose immediately" [ref=f2e1654]
+                    - cell "1.1 units/day 45 units expire unsold" [ref=f2e1655]:
+                      - generic [ref=f2e1656]:
+                        - generic [ref=f2e1657]: 1.1 units/day
+                        - generic [ref=f2e1658]: 45 units expire unsold
+                    - cell "BioPharm AG" [ref=f2e1659]
+                    - cell "Non-returnable" [ref=f2e1660]
+                    - cell "Write-off In Quarantine" [ref=f2e1661]:
+                      - generic [ref=f2e1662]:
+                        - button "Write-off" [ref=f2e1663] [cursor=pointer]
+                        - generic [ref=f2e1664]: In Quarantine
+                  - row [ref=f2e1665]:
+                    - cell "Ciprofloxacin 500mg" [ref=f2e1666]
+                    - cell "Antibiotics" [ref=f2e1667]
+                    - cell "A1-02" [ref=f2e1668]
+                    - cell "12" [ref=f2e1669]
+                    - cell "2025-11-20" [ref=f2e1670]
+                    - cell "EXPIRED" [ref=f2e1671]
+                    - cell "Dispose immediately" [ref=f2e1672]
+                    - cell "0.8 units/day 12 units expire unsold" [ref=f2e1673]:
+                      - generic [ref=f2e1674]:
+                        - generic [ref=f2e1675]: 0.8 units/day
+                        - generic [ref=f2e1676]: 12 units expire unsold
+                    - cell "PharmaCo Inc" [ref=f2e1677]
+                    - cell "Window Closed" [ref=f2e1678]
+                    - cell "Write-off In Quarantine" [ref=f2e1679]:
+                      - generic [ref=f2e1680]:
+                        - button "Write-off" [ref=f2e1681] [cursor=pointer]
+                        - generic [ref=f2e1682]: In Quarantine
+                  - row [ref=f2e1683]:
+                    - cell "Metformin 1000mg" [ref=f2e1684]
+                    - cell "Antidiabetics" [ref=f2e1685]
+                    - cell "B3-05" [ref=f2e1686]
+                    - cell "18" [ref=f2e1687]
+                    - cell "2025-12-31" [ref=f2e1688]
+                    - cell "EXPIRED" [ref=f2e1689]
+                    - cell "Dispose immediately" [ref=f2e1690]
+                    - cell "3.1 units/day 18 units expire unsold" [ref=f2e1691]:
+                      - generic [ref=f2e1692]:
+                        - generic [ref=f2e1693]: 3.1 units/day
+                        - generic [ref=f2e1694]: 18 units expire unsold
+                    - cell "GenPharm Ltd" [ref=f2e1695]
+                    - cell "Window Closed" [ref=f2e1696]
+                    - cell [ref=f2e1697]:
+                      - generic [ref=f2e1698]:
+                        - button "Write-off" [ref=f2e1699] [cursor=pointer]
+                        - button "Quarantine" [ref=f2e1700] [cursor=pointer]
+                  - row [ref=f2e1701]:
+                    - cell "Lisinopril 10mg" [ref=f2e1702]
+                    - cell "Antihypertensives" [ref=f2e1703]
+                    - cell "B2-01" [ref=f2e1704]
+                    - cell "0" [ref=f2e1705]
+                    - cell "2026-03-20" [ref=f2e1706]
+                    - cell "EXPIRED" [ref=f2e1707]
+                    - cell "Dispose immediately" [ref=f2e1708]
+                    - cell "2.3 units/day" [ref=f2e1709]
+                    - cell "PharmaCo Inc" [ref=f2e1712]
+                    - cell "Window Closed" [ref=f2e1713]
+                    - cell [ref=f2e1714]:
+                      - generic [ref=f2e1715]:
+                        - button "Write-off" [ref=f2e1716] [cursor=pointer]
+                        - button "Quarantine" [ref=f2e1717] [cursor=pointer]
+                  - row [ref=f2e1718]:
+                    - cell "Warfarin 5mg" [ref=f2e1719]
+                    - cell "Anticoagulants" [ref=f2e1720]
+                    - cell "B4-02" [ref=f2e1721]
+                    - cell "6" [ref=f2e1722]
+                    - cell "2026-04-01" [ref=f2e1723]
+                    - cell "EXPIRED" [ref=f2e1724]
+                    - cell "Dispose immediately" [ref=f2e1725]
+                    - cell "0.5 units/day 6 units expire unsold" [ref=f2e1726]:
+                      - generic [ref=f2e1727]:
+                        - generic [ref=f2e1728]: 0.5 units/day
+                        - generic [ref=f2e1729]: 6 units expire unsold
+                    - cell "PharmaCo Inc" [ref=f2e1730]
+                    - cell "Non-returnable" [ref=f2e1731]
+                    - cell [ref=f2e1732]:
+                      - generic [ref=f2e1733]:
+                        - button "Write-off" [ref=f2e1734] [cursor=pointer]
+                        - button "Quarantine" [ref=f2e1735] [cursor=pointer]
+                  - row [ref=f2e1736]:
+                    - cell "Salbutamol Inhaler" [ref=f2e1737]
+                    - cell "Bronchodilators" [ref=f2e1738]
+                    - cell "D1-01" [ref=f2e1739]
+                    - cell "28" [ref=f2e1740]
+                    - cell "2026-06-30" [ref=f2e1741]
+                    - cell "EXPIRED" [ref=f2e1742]
+                    - cell "Dispose immediately" [ref=f2e1743]
+                    - cell "0.9 units/day 28 units expire unsold" [ref=f2e1744]:
+                      - generic [ref=f2e1745]:
+                        - generic [ref=f2e1746]: 0.9 units/day
+                        - generic [ref=f2e1747]: 28 units expire unsold
+                    - cell "RespiCare Ltd" [ref=f2e1748]
+                    - cell "Window Closed" [ref=f2e1749]
+                    - cell [ref=f2e1750]:
+                      - generic [ref=f2e1751]:
+                        - button "Write-off" [ref=f2e1752] [cursor=pointer]
+                        - button "Quarantine" [ref=f2e1753] [cursor=pointer]
+                  - row [ref=f2e1754]:
+                    - cell "Amoxicillin 500mg" [ref=f2e1755]
+                    - cell "Antibiotics" [ref=f2e1756]
+                    - cell "A1-02" [ref=f2e1757]
+                    - cell "240" [ref=f2e1758]
+                    - cell "2026-08-15" [ref=f2e1759]
+                    - cell "EXPIRED" [ref=f2e1760]
+                    - cell "Dispose immediately" [ref=f2e1761]
+                    - cell "1.8 units/day 240 units expire unsold" [ref=f2e1762]:
+                      - generic [ref=f2e1763]:
+                        - generic [ref=f2e1764]: 1.8 units/day
+                        - generic [ref=f2e1765]: 240 units expire unsold
+                    - cell "MedLine Pharma" [ref=f2e1766]
+                    - cell "Window Closed" [ref=f2e1767]
+                    - cell [ref=f2e1768]:
+                      - generic [ref=f2e1769]:
+                        - button "Write-off" [ref=f2e1770] [cursor=pointer]
+                        - button "Quarantine" [ref=f2e1771] [cursor=pointer]
+                  - row [ref=f2e1772]:
+                    - cell "Omeprazole 20mg" [ref=f2e1773]
+                    - cell "Antacids" [ref=f2e1774]
+                    - cell "A3-01" [ref=f2e1775]
+                    - cell "145" [ref=f2e1776]
+                    - cell "2026-09-05" [ref=f2e1777]
+                    - cell "EXPIRED" [ref=f2e1778]
+                    - cell "Dispose immediately" [ref=f2e1779]
+                    - cell "4.7 units/day 145 units expire unsold" [ref=f2e1780]:
+                      - generic [ref=f2e1781]:
+                        - generic [ref=f2e1782]: 4.7 units/day
+                        - generic [ref=f2e1783]: 145 units expire unsold
+                    - cell "BioPharm AG" [ref=f2e1784]
+                    - cell "Eligible" [ref=f2e1785]
+                    - cell [ref=f2e1786]:
+                      - generic [ref=f2e1787]:
+                        - button "Return" [ref=f2e1788] [cursor=pointer]
+                        - button "Write-off" [ref=f2e1789] [cursor=pointer]
+                        - button "Quarantine" [ref=f2e1790] [cursor=pointer]
+                  - row [ref=f2e1791]:
+                    - cell "Amlodipine 5mg" [ref=f2e1792]
+                    - cell "Antihypertensives" [ref=f2e1793]
+                    - cell "B2-03" [ref=f2e1794]
+                    - cell "380" [ref=f2e1795]
+                    - cell "2026-11-30" [ref=f2e1796]
+                    - cell "58d" [ref=f2e1797]
+                    - cell "Monitor & prioritise sales" [ref=f2e1798]
+                    - cell "6.4 units/day 9 units expire unsold" [ref=f2e1799]:
+                      - generic [ref=f2e1800]:
+                        - generic [ref=f2e1801]: 6.4 units/day
+                        - generic [ref=f2e1804]: 9 units expire unsold
+                    - cell "MedLine Pharma" [ref=f2e1805]
+                    - cell "Eligible" [ref=f2e1806]
+                    - cell [ref=f2e1807]:
+                      - button "Return" [ref=f2e1809] [cursor=pointer]
+                  - row [ref=f2e1810]:
+                    - cell "Atorvastatin 20mg" [ref=f2e1811]
+                    - cell "Statins" [ref=f2e1812]
+                    - cell "C1-04" [ref=f2e1813]
+                    - cell "312" [ref=f2e1814]
+                    - cell "2027-01-10" [ref=f2e1815]
+                    - cell "99d" [ref=f2e1816]
+                    - cell "No action required" [ref=f2e1817]
+                    - cell "5.2 units/day On track to sell out" [ref=f2e1818]:
+                      - generic [ref=f2e1819]:
+                        - generic [ref=f2e1820]: 5.2 units/day
+                        - generic [ref=f2e1823]: On track to sell out
+                    - cell "MedLine Pharma" [ref=f2e1824]
+                    - cell "Eligible" [ref=f2e1825]
+                    - cell [ref=f2e1826]:
+                      - button "Return" [ref=f2e1828] [cursor=pointer]
+              - generic [ref=f2e1829]:
+                - generic [ref=f2e1830]: Showing 1–10 of 12
+                - generic [ref=f2e1831]:
+                  - generic [ref=f2e1832]:
+                    - generic [ref=f2e1833]: "Rows per page:"
+                    - combobox [ref=f2e1834]:
+                      - option "5"
+                      - option "10" [selected]
+                      - option "25"
+                      - option "50"
+                  - generic [ref=f2e1835]:
+                    - button "«" [disabled] [ref=f2e1836]
+                    - button "‹" [disabled] [ref=f2e1837]
+                    - generic [ref=f2e1838]: 1 / 2
+                    - button "›" [ref=f2e1839] [cursor=pointer]
+                    - button "»" [ref=f2e1840] [cursor=pointer]
+            - generic [ref=f2e1842]:
+              - generic [ref=f2e1843]:
+                - generic [ref=f2e1844]:
+                  - generic [ref=f2e1845]: Alert Threshold Configuration
+                  - generic [ref=f2e1846]: Set warning / critical / urgent day limits per drug category
+                - button "×" [ref=f2e1847] [cursor=pointer]
+              - generic [ref=f2e1849]:
+                - text: Days remaining before expiry.
+                - strong [ref=f2e1850]: Warning
+                - text: = amber,
+                - strong [ref=f2e1851]: Critical
+                - text: = orange,
+                - strong [ref=f2e1852]: Urgent
+                - text: = red.
+              - generic [ref=f2e1853]:
+                - generic [ref=f2e1854]:
+                  - generic [ref=f2e1855]: Category
+                  - generic [ref=f2e1856]: Warning
+                  - generic [ref=f2e1857]: Critical
+                  - generic [ref=f2e1858]: Urgent
+                - generic [ref=f2e1859]:
+                  - generic [ref=f2e1860]: Antibiotics
+                  - generic [ref=f2e1861]:
+                    - spinbutton [ref=f2e1862]: "90"
+                    - generic [ref=f2e1863]: d
+                  - generic [ref=f2e1864]:
+                    - spinbutton [ref=f2e1865]: "30"
+                    - generic [ref=f2e1866]: d
+                  - generic [ref=f2e1867]:
+                    - spinbutton [ref=f2e1868]: "7"
+                    - generic [ref=f2e1869]: d
+                - generic [ref=f2e1870]:
+                  - generic [ref=f2e1871]: Antidiabetics
+                  - generic [ref=f2e1872]:
+                    - spinbutton [ref=f2e1873]: "90"
+                    - generic [ref=f2e1874]: d
+                  - generic [ref=f2e1875]:
+                    - spinbutton [ref=f2e1876]: "30"
+                    - generic [ref=f2e1877]: d
+                  - generic [ref=f2e1878]:
+                    - spinbutton [ref=f2e1879]: "7"
+                    - generic [ref=f2e1880]: d
+                - generic [ref=f2e1881]:
+                  - generic [ref=f2e1882]: Antihypertensives
+                  - generic [ref=f2e1883]:
+                    - spinbutton [ref=f2e1884]: "90"
+                    - generic [ref=f2e1885]: d
+                  - generic [ref=f2e1886]:
+                    - spinbutton [ref=f2e1887]: "30"
+                    - generic [ref=f2e1888]: d
+                  - generic [ref=f2e1889]:
+                    - spinbutton [ref=f2e1890]: "7"
+                    - generic [ref=f2e1891]: d
+                - generic [ref=f2e1892]:
+                  - generic [ref=f2e1893]: Hormones
+                  - generic [ref=f2e1894]:
+                    - spinbutton [ref=f2e1895]: "60"
+                    - generic [ref=f2e1896]: d
+                  - generic [ref=f2e1897]:
+                    - spinbutton [ref=f2e1898]: "30"
+                    - generic [ref=f2e1899]: d
+                  - generic [ref=f2e1900]:
+                    - spinbutton [ref=f2e1901]: "7"
+                    - generic [ref=f2e1902]: d
+                - generic [ref=f2e1903]:
+                  - generic [ref=f2e1904]: Anticoagulants
+                  - generic [ref=f2e1905]:
+                    - spinbutton [ref=f2e1906]: "90"
+                    - generic [ref=f2e1907]: d
+                  - generic [ref=f2e1908]:
+                    - spinbutton [ref=f2e1909]: "30"
+                    - generic [ref=f2e1910]: d
+                  - generic [ref=f2e1911]:
+                    - spinbutton [ref=f2e1912]: "7"
+                    - generic [ref=f2e1913]: d
+                - generic [ref=f2e1914]:
+                  - generic [ref=f2e1915]: Antacids
+                  - generic [ref=f2e1916]:
+                    - spinbutton [ref=f2e1917]: "90"
+                    - generic [ref=f2e1918]: d
+                  - generic [ref=f2e1919]:
+                    - spinbutton [ref=f2e1920]: "30"
+                    - generic [ref=f2e1921]: d
+                  - generic [ref=f2e1922]:
+                    - spinbutton [ref=f2e1923]: "7"
+                    - generic [ref=f2e1924]: d
+                - generic [ref=f2e1925]:
+                  - generic [ref=f2e1926]: Bronchodilators
+                  - generic [ref=f2e1927]:
+                    - spinbutton [ref=f2e1928]: "90"
+                    - generic [ref=f2e1929]: d
+                  - generic [ref=f2e1930]:
+                    - spinbutton [ref=f2e1931]: "30"
+                    - generic [ref=f2e1932]: d
+                  - generic [ref=f2e1933]:
+                    - spinbutton [ref=f2e1934]: "7"
+                    - generic [ref=f2e1935]: d
+                - generic [ref=f2e1936]:
+                  - generic [ref=f2e1937]: Analgesics
+                  - generic [ref=f2e1938]:
+                    - spinbutton [ref=f2e1939]: "90"
+                    - generic [ref=f2e1940]: d
+                  - generic [ref=f2e1941]:
+                    - spinbutton [ref=f2e1942]: "30"
+                    - generic [ref=f2e1943]: d
+                  - generic [ref=f2e1944]:
+                    - spinbutton [ref=f2e1945]: "7"
+                    - generic [ref=f2e1946]: d
+                - generic [ref=f2e1947]:
+                  - generic [ref=f2e1948]: Statins
+                  - generic [ref=f2e1949]:
+                    - spinbutton [ref=f2e1950]: "90"
+                    - generic [ref=f2e1951]: d
+                  - generic [ref=f2e1952]:
+                    - spinbutton [ref=f2e1953]: "30"
+                    - generic [ref=f2e1954]: d
+                  - generic [ref=f2e1955]:
+                    - spinbutton [ref=f2e1956]: "7"
+                    - generic [ref=f2e1957]: d
+                - generic [ref=f2e1958]:
+                  - generic [ref=f2e1959]: Antidepressants
+                  - generic [ref=f2e1960]:
+                    - spinbutton [ref=f2e1961]: "90"
+                    - generic [ref=f2e1962]: d
+                  - generic [ref=f2e1963]:
+                    - spinbutton [ref=f2e1964]: "30"
+                    - generic [ref=f2e1965]: d
+                  - generic [ref=f2e1966]:
+                    - spinbutton [ref=f2e1967]: "7"
+                    - generic [ref=f2e1968]: d
+                - generic [ref=f2e1969]:
+                  - button "Reset to defaults" [ref=f2e1970] [cursor=pointer]
+                  - generic [ref=f2e1971]:
+                    - button "Cancel" [ref=f2e1972] [cursor=pointer]
+                    - button "Save Thresholds" [ref=f2e1973] [cursor=pointer]
+  - generic [aria-hidden] [ref=f2e475]: ₹0k

@@ -11,6 +11,7 @@ import {
   FilterSearch, FilterDropdown, ClearFiltersButton, NewButton,
   BackConfirmDialog, EmptyTableRow,
 } from "./purchases/purchasesShared";
+import { SP } from "../styles/suppliers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -315,22 +316,22 @@ function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactiva
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Page header */}
       <div>
-        <div style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 800, color: "#0C1B33", lineHeight: 1.2 }}>Distributor Master</div>
-        <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 4, fontFamily: "Inter" }}>Manage distributors, commercial terms, contacts, compliance and purchasing preferences.</div>
+        <div style={SP.pageTitle}>Distributor Master</div>
+        <div style={SP.pageSubtitle}>Manage distributors, commercial terms, contacts, compliance and purchasing preferences.</div>
       </div>
 
       {/* KPI strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12 }}>
         {kpis.map(k => (
-          <div key={k.label} style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "14px 16px" }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#0C1B33", fontFamily: "Outfit", lineHeight: 1 }}>{k.value}</div>
-            <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 5, fontFamily: "Inter", fontWeight: 600, letterSpacing: "0.04em" }}>{k.label}</div>
+          <div key={k.label} style={SP.kpiCard}>
+            <div style={SP.kpiValue}>{k.value}</div>
+            <div style={SP.kpiLabel}>{k.label}</div>
           </div>
         ))}
       </div>
 
       {/* Table card */}
-      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
+      <div style={SP.tableCard}>
         {/* Filter row */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <FilterSearch value={search} onChange={setSearch} placeholder="Search by name, GSTIN, mobile, drug license or city" />
@@ -364,15 +365,15 @@ function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactiva
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
                       {d.preferred && <span style={{ color: "#F59E0B", fontSize: 13, flexShrink: 0, marginTop: 1 }}>★</span>}
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>{d.name}</div>
-                        <div style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#1B6CA8", marginTop: 2 }}>{d.code}</div>
-                        <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1, fontFamily: "Inter" }}>{d.type}</div>
+                        <div style={SP.distName}>{d.name}</div>
+                        <div style={SP.distCode}>{d.code}</div>
+                        <div style={SP.distType}>{d.type}</div>
                       </div>
                     </div>
                   </Td>
                   <Td>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2436", fontFamily: "Inter" }}>{d.contactPerson}</div>
-                    <div style={{ fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280", marginTop: 2 }}>{d.mobile}</div>
+                    <div style={SP.contactName}>{d.contactPerson}</div>
+                    <div style={SP.contactMobile}>{d.mobile}</div>
                   </Td>
                   <Td mono color={d.gstin ? "#1A2436" : "#9CA3AF"}>{d.gstin || "—"}</Td>
                   <Td>
@@ -380,8 +381,8 @@ function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactiva
                     <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1, fontFamily: "Inter" }}>{d.drugLicenseType}</div>
                   </Td>
                   <Td>
-                    <div style={{ fontSize: 13, color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>{d.city}</div>
-                    <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1, fontFamily: "Inter" }}>{d.state}</div>
+                    <div style={SP.locationCity}>{d.city}</div>
+                    <div style={SP.locationState}>{d.state}</div>
                   </Td>
                   <Td>
                     <div style={{ fontSize: 13, color: "#1A2436", fontFamily: "Inter" }}>{d.paymentTerms}</div>
@@ -401,21 +402,18 @@ function DistributorMasterList({ distributors, onAdd, onView, onEdit, onDeactiva
                   <Td><Pill status={d.status} /></Td>
                   <Td>
                     <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                      <button onClick={e => { e.stopPropagation(); onView(d); }}
-                        style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>
+                      <button onClick={e => { e.stopPropagation(); onView(d); }} style={SP.btnView}>
                         View
                       </button>
-                      <button onClick={e => { e.stopPropagation(); onEdit(d); }}
-                        style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter" }}>
+                      <button onClick={e => { e.stopPropagation(); onEdit(d); }} style={SP.btnEdit}>
                         Edit
                       </button>
                       <div style={{ position: "relative" }}>
-                        <button onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === d.id ? null : d.id); }}
-                          style={{ padding: "4px 7px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", color: "#6B7280", fontSize: 17, cursor: "pointer", lineHeight: 1, fontFamily: "Inter" }}>
+                        <button onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === d.id ? null : d.id); }} style={SP.btnMenu}>
                           ⋮
                         </button>
                         {openMenuId === d.id && (
-                          <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 2, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 50, minWidth: 190, boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
+                          <div style={SP.contextMenu}>
                             {ACTION_MENU_ITEMS.map(item => {
                               const deactivateLabel = d.status === "Active" ? "Deactivate" : "Activate";
                               const displayLabel = item === "Deactivate" ? deactivateLabel : item;
@@ -733,7 +731,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
   const primaryContact = form.contacts[0];
 
   return (
-    <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, zIndex: 50, background: "#F0F3F7", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={SP.overlay}>
       {showBackConfirm && (
         <BackConfirmDialog
           message={draftNameMissing ? "You have unsaved changes. Discard and go back?" : "Save this distributor as a draft before going back?"}
@@ -748,7 +746,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
       )}
 
       {/* Header */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #E8ECF4", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={SP.overlayHeader}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={handleBack}
             style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28 }}>
@@ -772,7 +770,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+      <div style={SP.overlayBody}>
 
         {dupDetect && !ignoreDuplicate && (
           <div style={{ padding: "10px 16px", background: "#FFF3E0", border: "1px solid #FFCC80", marginBottom: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -848,7 +846,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
                         {c.isPrimary ? "★ Primary Contact" : `Contact ${idx + 1}`}
                       </span>
                       {!c.isPrimary && (
-                        <button onClick={() => removeContact(c.id)} style={{ border: "none", background: "transparent", color: "#C62828", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
+                        <button onClick={() => removeContact(c.id)} style={{ border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#C62828" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
                       )}
                     </div>
                     <Grid3>
@@ -1047,7 +1045,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
                       <FormField label="Return Allowed"><LocalDropdownSelect value={r.returnAllowed} onChange={v => updateMedRule(r.id, "returnAllowed", v)} options={["Yes", "No"]} /></FormField>
                       <FormField label="Return Window"><LocalDropdownSelect value={r.returnWindow} onChange={v => updateMedRule(r.id, "returnWindow", v)} options={["30 Days", "60 Days", "90 Days"]} /></FormField>
                       <FormField label="Resolution"><LocalDropdownSelect value={r.resolution} onChange={v => updateMedRule(r.id, "resolution", v)} options={["Credit Note", "Replacement"]} /></FormField>
-                      <button onClick={() => removeMedRule(r.id)} style={{ border: "none", background: "transparent", color: "#C62828", cursor: "pointer", fontSize: 18, marginBottom: 2 }}>×</button>
+                      <button onClick={() => removeMedRule(r.id)} style={{ border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", marginBottom: 2 }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#C62828" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
                     </div>
                   </div>
                 ))}
@@ -1384,7 +1382,7 @@ function RecordModal({ title, refNo, onClose, children }: { title: string; refNo
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter" }}>View Only</span>
-            <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22, lineHeight: 1, padding: "0 4px" }}>×</button>
+            <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "0 4px", display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
           </div>
         </div>
         <div style={{ overflowY: "auto", padding: "20px" }}>{children}</div>
@@ -1487,7 +1485,7 @@ function PlaceOrderModal({ distributor, onClose, onDone }: {
             </div>
             <div style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter", marginTop: 2 }}>{distributor.name}</div>
           </div>
-          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22, lineHeight: 1, padding: "0 2px", flexShrink: 0 }}>×</button>
+          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "0 2px", flexShrink: 0, display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
         </div>
 
         {/* ── Body ── */}
@@ -1797,7 +1795,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
   const lastPO = allPOs[0];
 
   return (
-    <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, zIndex: 50, background: "#F0F3F7", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={SP.overlay}>
 
       {/* ── Detail modals ── */}
       {modal?.kind === "order" && (
@@ -1862,7 +1860,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
       )}
 
       {/* Header */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #E8ECF4", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={SP.overlayHeader}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={onBack}
             style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", width: 28, height: 28 }}>
@@ -1890,7 +1888,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+      <div style={SP.overlayBody}>
 
         {/* KPI strip */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 16 }}>
@@ -2463,7 +2461,7 @@ export default function Suppliers({ onNavigatePurchases, editDistributor, onEdit
                 </svg>
               )}
               <span style={{ flex: 1, fontSize: 13, fontFamily: "Inter", fontWeight: 600, color: "#fff", lineHeight: 1.4 }}>{toast.message}</span>
-              <button onClick={() => setToast(null)} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.75)", cursor: "pointer", fontSize: 19, lineHeight: 1, padding: "0 0 0 8px", flexShrink: 0 }}>×</button>
+              <button onClick={() => setToast(null)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: "0 0 0 8px", flexShrink: 0, display: "flex", alignItems: "center" }}><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
             </div>
             <div style={{ height: 3, background: "rgba(255,255,255,0.25)", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: 0, left: 0, height: "100%", background: "rgba(255,255,255,0.6)", animation: "toast-progress 2s linear forwards" }} />
