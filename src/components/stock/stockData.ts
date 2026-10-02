@@ -1,13 +1,12 @@
 import { drugs } from "../../data/mockData";
 
-export type SubTab = "overview" | "adjustments" | "batches" | "expiry" | "transfer" | "investigation" | "locations" | "narcotic" | "recall";
+export type SubTab = "overview" | "adjustments" | "batches" | "transfer" | "investigation" | "locations" | "narcotic" | "recall";
 
 export const TABS: { id: SubTab; label: string; sub: string }[] = [
   { id: "overview",      label: "Stock Overview",    sub: "Current stock levels" },
   { id: "locations",     label: "Locations",          sub: "Bin layout & stock placement" },
   { id: "adjustments",   label: "Adjustments",        sub: "Write-offs & corrections" },
   { id: "batches",       label: "Batch Tracking",     sub: "Lot & batch tracking" },
-  { id: "expiry",        label: "Expiry Management",  sub: "Near-expiry alerts" },
   { id: "transfer",      label: "Stock Transfer",     sub: "Inter-branch transfers" },
   { id: "investigation", label: "Investigation",      sub: "Stock difference investigation" },
   { id: "narcotic",      label: "Narcotic Register",  sub: "Schedule H1 running balance" },

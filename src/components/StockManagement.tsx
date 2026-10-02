@@ -6,7 +6,6 @@ import type { ShortBookItem } from "./ShortBook";
 import StockOverview from "./stock/StockOverview";
 import Adjustments from "./stock/Adjustments";
 import BatchTracking from "./stock/BatchTracking";
-import StockExpiry from "./stock/StockExpiry";
 import StockTransfer from "./stock/StockTransfer";
 import StockInvestigation from "./stock/StockInvestigation";
 import StockLocations from "./stock/StockLocations";
@@ -18,7 +17,6 @@ const TAB_SUBTITLE: Record<SubTab, string> = {
   locations: "Bin layout, fill levels, and stock placement",
   adjustments: "Record and approve stock write-offs, damages, and count corrections",
   batches: "Track lot and batch numbers, expiry dates, and quantities",
-  expiry: "Monitor near-expiry items and manage quarantine",
   transfer: "Manage inter-location stock movements and chain of custody",
   investigation: "Investigate and resolve stock count discrepancies",
   narcotic: "Schedule H1 controlled substance running balance register",
@@ -65,7 +63,6 @@ export default function StockManagement({ storageType, onNavigate, onAddToShortB
         {tab === "overview" && <StockOverview onNavigate={onNavigate} onAddToShortBook={onAddToShortBook} />}
         {tab === "locations" && <StockLocations storageType={storageType} />}
         {tab === "batches" && <BatchTracking />}
-        {tab === "expiry" && <StockExpiry />}
         {tab === "transfer" && <StockTransfer />}
         {tab === "investigation" && <StockInvestigation />}
         {tab === "narcotic" && <NarcoticRegister />}
