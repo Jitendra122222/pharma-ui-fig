@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { DatePicker } from "./DatePicker";
 import { Th } from "./Th";
-import type { Alloc, Batch, LineItem, Medicine } from "./types";
+import type { Alloc, Batch, LineItem, Product } from "./types";
+import { isNearExpiry } from "../../constants/purchaseLOV";
 
 export function calcAmount(item: LineItem) {
   const base = item.qty * item.saleRate;
@@ -10,7 +12,7 @@ export function calcAmount(item: LineItem) {
 }
 
 export function newEmptyRow(id: number): LineItem {
-  return { id, barcode: "", medicineName: "", batch: null, packs: 1, qty: 1, free: 0, mrp: 0, saleRate: 0, disc: 0, gst: 5 };
+  return { id, barcode: "", productName: "", batch: null, packs: 1, qty: 1, free: 0, mrp: 0, saleRate: 0, disc: 0, gst: 5 };
 }
 
 export function pickBatch(batches: Batch[], alloc: Alloc): Batch | null {
@@ -22,14 +24,14 @@ export function pickBatch(batches: Batch[], alloc: Alloc): Batch | null {
   )[0];
 }
 
-function MedicineSearchCell({
+function ProductSearchCell({
   value, onSelect, alloc = "FEFO", readOnly = false, medicines,
 }: {
   value: string;
-  onSelect: (med: Medicine, batch: Batch) => void;
+  onSelect: (med: Product, batch: Batch) => void;
   alloc?: Alloc;
   readOnly?: boolean;
-  medicines: Medicine[];
+  medicines: Product[];
 }) {
   if (readOnly) {
     return (
@@ -40,7 +42,7 @@ function MedicineSearchCell({
   }
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
-  const [batchMed, setBatchMed] = useState<Medicine | null>(null);
+  const [batchMed, setBatchMed] = useState<Product | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -88,7 +90,7 @@ function MedicineSearchCell({
           onChange={e => { setQuery(e.target.value); setOpen(true); setBatchMed(null); }}
           onFocus={() => setOpen(true)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); scanCurrent(); } }}
-          placeholder="Search medicine, barcode..."
+          placeholder="Search product, barcode..."
           style={{ flex: 1, padding: "5px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", minWidth: 170 }}
         />
       </div>
@@ -125,7 +127,7 @@ function MedicineSearchCell({
             </thead>
             <tbody>
               {[...batchMed.batches].sort((a, b) => alloc === "FEFO" ? a.expDate.localeCompare(b.expDate) : b.expDate.localeCompare(a.expDate)).map(b => {
-                const nearExpiry = new Date(b.expDate) < new Date("2025-12-31");
+                const nearExpiry = isNearExpiry(b.expDate);
                 return (
                   <tr key={b.id} onClick={() => { onSelect(batchMed, b); setOpen(false); setBatchMed(null); }}
                     style={{ cursor: "pointer", borderBottom: "1px solid #F4F6FA", background: nearExpiry ? "#FFFBEB" : "transparent" }}
@@ -162,11 +164,11 @@ export function LineItemsTable({
   onCheckAll?: () => void;
   alloc?: Alloc;
   readOnly?: boolean;
-  medicines: Medicine[];
+  medicines: Product[];
   rateLabel?: string;
   editableBatch?: boolean;
 }) {
-  const allChecked = items.length > 0 && items.filter(i => i.medicineName).every(i => checked?.[i.id]);
+  const allChecked = items.length > 0 && items.filter(i => i.productName).every(i => checked?.[i.id]);
 
   return (
     <div style={{ overflowX: "auto", overflowY: "auto", flex: 1 }}>
@@ -180,7 +182,7 @@ export function LineItemsTable({
               </th>
             )}
             <Th>Barcode</Th>
-            <Th>Medicine Name</Th>
+            <Th>Product Name</Th>
             <Th>Batch</Th>
             <Th>Packs</Th>
             <Th>Mfg Date</Th>
@@ -202,7 +204,7 @@ export function LineItemsTable({
               <tr key={item.id} style={{ borderBottom: "1px solid #F4F6FA", background: showCheckbox && checked?.[item.id] ? "#F0F6FF" : "transparent" }}>
                 {showCheckbox && (
                   <td style={{ padding: "6px 10px" }}>
-                    {item.medicineName && (
+                    {item.productName && (
                       <input type="checkbox" checked={!!checked?.[item.id]} onChange={() => onCheck?.(item.id)}
                         style={{ width: 14, height: 14, accentColor: "#1B6CA8", cursor: "pointer" }} />
                     )}
@@ -214,13 +216,13 @@ export function LineItemsTable({
                   )}
                 </td>
                 <td style={{ padding: "4px 6px", minWidth: 220 }}>
-                  <MedicineSearchCell
-                    value={item.medicineName}
+                  <ProductSearchCell
+                    value={item.productName}
                     alloc={alloc}
                     readOnly={readOnly}
                     medicines={medicines}
                     onSelect={(med, batch) => {
-                      onChange(item.id, "medicineName", med.name);
+                      onChange(item.id, "productName", med.name);
                       onChange(item.id, "barcode", med.barcode);
                       onChange(item.id, "batch", batch);
                       onChange(item.id, "mrp", batch.mrp);
@@ -252,11 +254,11 @@ export function LineItemsTable({
                 {/* Mfg Date */}
                 <td style={{ padding: "4px 6px" }}>
                   {editBatch ? (
-                    <input
-                      type="date"
+                    <DatePicker
                       value={item.batch?.mfgDate ?? ""}
-                      onChange={e => onChange(item.id, "batch", { ...(item.batch ?? { id: "", qty: 0, packs: 0, mfgDate: "", expDate: "", mrp: item.mrp, saleRate: item.saleRate }), mfgDate: e.target.value })}
-                      style={{ width: 130, padding: "4px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#6B7280" }}
+                      onChange={v => onChange(item.id, "batch", { ...(item.batch ?? { id: "", qty: 0, packs: 0, mfgDate: "", expDate: "", mrp: item.mrp, saleRate: item.saleRate }), mfgDate: v })}
+                      style={{ width: 130 }}
+                      inputStyle={{ padding: "4px 6px", fontSize: 11 }}
                     />
                   ) : (
                     <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#9CA3AF", whiteSpace: "nowrap" }}>{item.batch?.mfgDate ?? "—"}</span>
@@ -265,14 +267,14 @@ export function LineItemsTable({
                 {/* Exp Date */}
                 <td style={{ padding: "4px 6px" }}>
                   {editBatch ? (
-                    <input
-                      type="date"
+                    <DatePicker
                       value={item.batch?.expDate ?? ""}
-                      onChange={e => onChange(item.id, "batch", { ...(item.batch ?? { id: "", qty: 0, packs: 0, mfgDate: "", expDate: "", mrp: item.mrp, saleRate: item.saleRate }), expDate: e.target.value })}
-                      style={{ width: 130, padding: "4px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#6B7280" }}
+                      onChange={v => onChange(item.id, "batch", { ...(item.batch ?? { id: "", qty: 0, packs: 0, mfgDate: "", expDate: "", mrp: item.mrp, saleRate: item.saleRate }), expDate: v })}
+                      style={{ width: 130 }}
+                      inputStyle={{ padding: "4px 6px", fontSize: 11 }}
                     />
                   ) : (
-                    <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: item.batch && new Date(item.batch.expDate) < new Date("2025-12-31") ? "#E65100" : "#9CA3AF", whiteSpace: "nowrap", fontWeight: item.batch && new Date(item.batch.expDate) < new Date("2025-12-31") ? 700 : 400 }}>
+                    <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: item.batch && isNearExpiry(item.batch.expDate) ? "#E65100" : "#9CA3AF", whiteSpace: "nowrap", fontWeight: item.batch && isNearExpiry(item.batch.expDate) ? 700 : 400 }}>
                       {item.batch?.expDate ?? "—"}
                     </span>
                   )}
@@ -301,10 +303,10 @@ export function LineItemsTable({
                     style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
                 </td>
                 <td style={{ padding: "4px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#1A2436", whiteSpace: "nowrap" }}>
-                  {item.medicineName ? `₹${calcAmount(item).toFixed(2)}` : "—"}
+                  {item.productName ? `₹${calcAmount(item).toFixed(2)}` : "—"}
                 </td>
                 <td style={{ padding: "4px 8px" }}>
-                  {item.medicineName && !readOnly && (
+                  {item.productName && !readOnly && (
                     <button onClick={() => onDelete(item.id)} title="Remove" style={{ border: "none", background: "transparent", cursor: "pointer", color: "#C62828", fontSize: 16, padding: "2px 4px" }}>×</button>
                   )}
                 </td>

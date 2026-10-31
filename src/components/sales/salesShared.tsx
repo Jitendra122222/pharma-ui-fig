@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Th } from "../shared/Th";
+import { DatePicker } from "../shared/DatePicker";
 import {
-  type Alloc, type LineItem,
-  MEDICINES, salesInvoices,
+  type Alloc, type LineItem, type Batch,
+  PRODUCTS, salesInvoices,
   formatDMY, calcAmount, pickBatch,
 } from "./salesData";
-import { drugs as stockDrugs } from "../../data/mockData";
+import { products as stockProducts } from "../../data/mockData";
+import { fetchProducts } from "../../lib/inventoryApi";
+import { fetchFefo } from "../../lib/stockApi";
+
+type SalesProduct = { name: string; barcode: string; batches: Batch[] };
 
 // ─── Calendar / chevron icons ─────────────────────────────────────────────────
 
@@ -69,17 +74,15 @@ export function DateRangePicker({
         <span style={{ marginLeft: 6, display: "inline-flex" }}><ChevronDown /></span>
       </button>
       {open && (
-        <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: "#fff", border: "1px solid #EDF0F5", zIndex: 200, boxShadow: "0 10px 32px rgba(15, 30, 60, 0.10)", padding: 16, minWidth: 340 }}>
+        <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: "#fff", border: "1px solid #EDF0F5", borderRadius: 12, zIndex: 200, boxShadow: "0 10px 32px rgba(15, 30, 60, 0.10)", padding: 16, minWidth: 340 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <div style={{ fontSize: 10, color: "#8A94A8", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>From</div>
-              <input type="date" value={from} onChange={e => onChange(e.target.value, to)}
-                style={{ width: "100%", padding: "9px 12px", border: "1px solid #EDF0F5", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }} />
+              <DatePicker value={from} onChange={v => onChange(v, to)} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: "#8A94A8", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>To</div>
-              <input type="date" value={to} onChange={e => onChange(from, e.target.value)}
-                style={{ width: "100%", padding: "9px 12px", border: "1px solid #EDF0F5", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }} />
+              <DatePicker value={to} onChange={v => onChange(from, v)} />
             </div>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14, paddingTop: 12, borderTop: "1px solid #F1F3F8" }}>
@@ -191,9 +194,9 @@ export function InvoiceSummaryFooter({
   adjustment?: number;
   onAdjustmentChange?: (v: number) => void;
 }) {
-  const subtotal = items.reduce((s, i) => s + (i.medicineName ? i.qty * i.saleRate : 0), 0);
-  const discount = items.reduce((s, i) => s + (i.medicineName ? i.qty * i.saleRate * (i.disc / 100) : 0), 0);
-  const tax = items.reduce((s, i) => s + (i.medicineName ? (i.qty * i.saleRate - i.qty * i.saleRate * (i.disc / 100)) * (i.gst / 100) : 0), 0);
+  const subtotal = items.reduce((s, i) => s + (i.productName ? i.qty * i.saleRate : 0), 0);
+  const discount = items.reduce((s, i) => s + (i.productName ? i.qty * i.saleRate * (i.disc / 100) : 0), 0);
+  const tax = items.reduce((s, i) => s + (i.productName ? (i.qty * i.saleRate - i.qty * i.saleRate * (i.disc / 100)) * (i.gst / 100) : 0), 0);
   const roundOff = 0;
   const total = subtotal - discount - cashDiscount + tax + roundOff + adjustment;
   const balance = total - paid;
@@ -269,15 +272,16 @@ export function InvoiceSummaryFooter({
   );
 }
 
-// ─── Medicine search cell ─────────────────────────────────────────────────────
+// ─── Product search cell ──────────────────────────────────────────────────────
 
-export function MedicineSearchCell({
-  value, onSelect, alloc = "FEFO", readOnly = false,
+export function ProductSearchCell({
+  value, onSelect, alloc = "FEFO", readOnly = false, medicines = PRODUCTS,
 }: {
   value: string;
-  onSelect: (med: typeof MEDICINES[0], batch: ReturnType<typeof pickBatch> & object) => void;
+  onSelect: (med: SalesProduct, batch: ReturnType<typeof pickBatch> & object) => void;
   alloc?: Alloc;
   readOnly?: boolean;
+  medicines?: SalesProduct[];
 }) {
   if (readOnly) {
     return (
@@ -288,12 +292,13 @@ export function MedicineSearchCell({
   }
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
-  const [batchMed, setBatchMed] = useState<typeof MEDICINES[0] | null>(null);
+  const [batchMed, setBatchMed] = useState<SalesProduct | null>(null);
+  const [liveBatches, setLiveBatches] = useState<Batch[] | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const results = query.length > 0
-    ? MEDICINES.filter(m => m.name.toLowerCase().includes(query.toLowerCase()) || m.barcode.includes(query))
+    ? medicines.filter(m => m.name.toLowerCase().includes(query.toLowerCase()) || m.barcode.includes(query))
     : [];
 
   useEffect(() => {
@@ -302,10 +307,24 @@ export function MedicineSearchCell({
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
+  useEffect(() => {
+    if (!batchMed) { setLiveBatches(null); return; }
+    if (batchMed.batches.length > 0) { setLiveBatches(null); return; }
+    fetchFefo(batchMed.barcode).then((d: any[]) => setLiveBatches(
+      d.map((b: any) => ({
+        id: b.id, qty: b.qtyCurrent,
+        packs: Math.max(1, Math.floor(b.qtyCurrent / 10)),
+        mfgDate: b.received ?? "", expDate: b.expiry ?? "",
+        mrp: b.mrp ?? 0, saleRate: b.saleRate ?? 0,
+        ptr: b.purchaseRate ?? 0, distributor: b.supplier ?? "",
+      }))
+    )).catch(() => setLiveBatches([]));
+  }, [batchMed]);
+
   const scanCurrent = () => {
     const q = query.trim();
     if (!q) return;
-    const exact = MEDICINES.find(m => m.barcode === q);
+    const exact = medicines.find(m => m.barcode === q);
     if (exact) {
       const batch = pickBatch(exact.batches, alloc);
       if (batch) {
@@ -336,7 +355,7 @@ export function MedicineSearchCell({
           onChange={e => { setQuery(e.target.value); setOpen(true); setBatchMed(null); }}
           onFocus={() => setOpen(true)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); scanCurrent(); } }}
-          placeholder="Search medicine, barcode..."
+          placeholder="Search product, barcode..."
           style={{ flex: 1, padding: "5px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", minWidth: 170 }}
         />
       </div>
@@ -344,7 +363,7 @@ export function MedicineSearchCell({
       {open && !batchMed && results.length > 0 && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", zIndex: 100, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", minWidth: 280 }}>
           {results.map(m => {
-            const sd = stockDrugs.find(d => d.name === m.name);
+            const sd = stockProducts.find(d => d.name === m.name);
             const isOut = sd?.status === "Out of Stock";
             const isLow = sd?.status === "Low Stock";
             return (
@@ -387,7 +406,10 @@ export function MedicineSearchCell({
               </tr>
             </thead>
             <tbody>
-              {[...batchMed.batches].sort((a, b) => alloc === "FEFO" ? a.expDate.localeCompare(b.expDate) : b.expDate.localeCompare(a.expDate)).map((b, bIdx) => {
+              {liveBatches === null && batchMed.batches.length === 0 ? (
+                <tr><td colSpan={8} style={{ padding: "12px", textAlign: "center", fontSize: 12, color: "#9CA3AF" }}>Loading batches…</td></tr>
+              ) : (
+              [...(liveBatches ?? batchMed.batches)].sort((a, b) => alloc === "FEFO" ? a.expDate.localeCompare(b.expDate) : b.expDate.localeCompare(a.expDate)).map((b, bIdx) => {
                 const daysToExp = Math.round((new Date(b.expDate).getTime() - Date.now()) / 86400000);
                 const nearExpiry = daysToExp > 0 && daysToExp < 90;
                 const margin = ((b.saleRate - b.ptr) / b.saleRate * 100);
@@ -411,7 +433,8 @@ export function MedicineSearchCell({
                     <td style={{ padding: "7px 12px", fontSize: 12, fontFamily: "Inter", color: "#6B7280", whiteSpace: "nowrap" }}>{b.distributor}</td>
                   </tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>
@@ -436,7 +459,15 @@ export function LineItemsTable({
   readOnly?: boolean;
   stickySearch?: boolean;
 }) {
-  const allChecked = items.length > 0 && items.filter(i => i.medicineName).every(i => checked?.[i.id]);
+  const [liveProducts, setLiveProducts] = useState<SalesProduct[]>(PRODUCTS);
+
+  useEffect(() => {
+    fetchProducts().then(d => setLiveProducts(
+      d.items.map((p: any) => ({ name: p.name, barcode: p.id, batches: [] }))
+    )).catch(() => {});
+  }, []);
+
+  const allChecked = items.length > 0 && items.filter(i => i.productName).every(i => checked?.[i.id]);
 
   return (
     <div style={{ overflowX: "auto", overflowY: "auto", flex: 1 }}>
@@ -450,7 +481,7 @@ export function LineItemsTable({
               </th>
             )}
             <Th>Barcode</Th>
-            <Th>Medicine Name</Th>
+            <Th>Product Name</Th>
             <Th>Batch</Th>
             <Th>Packs</Th>
             <Th>Mfg Date</Th>
@@ -470,7 +501,7 @@ export function LineItemsTable({
             <tr key={item.id} style={{ borderBottom: "1px solid #F4F6FA", background: showCheckbox && checked?.[item.id] ? "#F0F6FF" : (stickySearch && idx === 0 ? "#F8FAFC" : "transparent"), ...(stickySearch && idx === 0 ? { position: "sticky", top: 35, zIndex: 1 } : {}) }}>
               {showCheckbox && (
                 <td style={{ padding: "6px 10px" }}>
-                  {item.medicineName && (
+                  {item.productName && (
                     <input type="checkbox" checked={!!checked?.[item.id]} onChange={() => onCheck?.(item.id)}
                       style={{ width: 14, height: 14, accentColor: "#1B6CA8", cursor: "pointer" }} />
                   )}
@@ -482,12 +513,13 @@ export function LineItemsTable({
                 )}
               </td>
               <td style={{ padding: "4px 6px", minWidth: 220 }}>
-                <MedicineSearchCell
-                  value={item.medicineName}
+                <ProductSearchCell
+                  value={item.productName}
                   alloc={alloc}
                   readOnly={readOnly}
+                  medicines={liveProducts}
                   onSelect={(med, batch) => {
-                    onChange(item.id, "medicineName", med.name);
+                    onChange(item.id, "productName", med.name);
                     onChange(item.id, "barcode", med.barcode);
                     onChange(item.id, "batch", batch);
                     onChange(item.id, "mrp", batch.mrp);
@@ -537,10 +569,10 @@ export function LineItemsTable({
                   style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#1A2436", whiteSpace: "nowrap" }}>
-                {item.medicineName ? `₹${calcAmount(item).toFixed(2)}` : "—"}
+                {item.productName ? `₹${calcAmount(item).toFixed(2)}` : "—"}
               </td>
               <td style={{ padding: "4px 8px" }}>
-                {item.medicineName && !readOnly && (
+                {item.productName && !readOnly && (
                   <button onClick={() => onDelete(item.id)} title="Remove" style={{ border: "none", background: "transparent", cursor: "pointer", color: "#C62828", fontSize: 16, padding: "2px 4px" }}>×</button>
                 )}
               </td>

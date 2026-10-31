@@ -1,9 +1,33 @@
 ﻿import { useState, useEffect, useRef, Fragment } from "react";
+import { DatePicker } from "./shared/DatePicker";
 import { createPortal } from "react-dom";
 import { S } from "../styles/common";
 import { IV } from "../styles/inventory";
 import { AreaChart, Area, BarChart, Bar, Cell, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { drugs } from "../data/mockData";
+import { products } from "../data/mockData";
+import {
+  fetchProducts, fetchMyProduct, createProduct, updateMySettings, formToSettingsPayload, formToPayload,
+  detailToForm, uploadProductImage, deleteProductImage, publishDraft, bulkSetAvailability,
+} from "../lib/inventoryApi";
+import type { ProductForm, ApiImage } from "../lib/inventoryApi";
+import { apiFetch } from "../lib/api";
+import { useMasters, names } from "../lib/mastersApi";
+import {
+  fetchStockSummary, fetchProductBatches, fetchMyProductDetail, setBatchStatus, EMPTY_STOCK,
+} from "../lib/stockApi";
+import type { StockSummary, ProductBatch } from "../lib/stockApi";
+import type { ApiMyProduct } from "../lib/inventoryApi";
+import { AdjustStockDialog, TransferStockDialog, BatchStatusDialog, PlaceOrderDialog } from "./inventory/StockModals";
+import {
+  fetchProductDistributors, fetchMovements, fetchDemand, fetchPurchaseHistory, fetchSaleHistory, fetchProductAudit,
+  eventCode, MOVEMENT_FILTERS,
+} from "../lib/stockApi";
+import type { Movement, PurchaseRow, SaleRow } from "../lib/stockApi";
+import { periodBounds, useDebounced } from "../lib/useTabData";
+import { updateMyDistributorSettings } from "../lib/supplierApi";
+import { useTabData } from "../lib/useTabData";
+import type { BatchView } from "./inventory/StockModals";
+import type { MasterItem } from "../lib/mastersApi";
 import { purchaseOrders, PAYMENT_TERMS_OPTIONS } from "./purchases/purchasesData";
 import { usePagination, PaginationFooter } from "./shared/usePagination";
 import { Th } from "./shared/Th";
@@ -15,24 +39,7 @@ import MultiStepper from "./shared/MultiStepper";
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
-interface AddMedForm {
-  genericName: string; brandName: string; strength: string; dosageForm: string;
-  route: string; packUnit: string; manufacturer: string; therapeuticCategory: string;
-  saltComposition: string; therapeuticClass: string;
-  hsnCode: string; barcode: string; prescriptionStatus: string; gstRate: string;
-  storageCondition: string; tempRange: string; storageZone: string; mfgProductCode: string;
-  distributorRef: string; regulatoryNotes: string;
-  prescriptionRequired: boolean; looseSell: boolean;
-  controlledDrug: boolean; narcotic: boolean; coldChain: boolean; specialHandling: boolean;
-  mrp: string; sellingPrice: string; openingStock: string; reorderThreshold: string;
-  minimumStock: string; stockLocation: string; location: string; baseUnit: string; purchaseUnit: string;
-  saleUnit: string; unitConversion: string; wholesalePrice: string; margin: string;
-  discountLimit: string; maximumStock: string; reorderQty: string; leadTime: string;
-  batchTracking: boolean; expiryTracking: boolean; fefoDispensing: boolean;
-  therapeuticIndications: string; contraindications: string; dosageInstructions: string;
-  sideEffects: string; patientLabelText: string; reviewNotes: string;
-  productStatus: string; effectiveFrom: string;
-}
+type AddMedForm = ProductForm;
 
 const emptyMedForm = (): AddMedForm => ({
   genericName: "", brandName: "", strength: "", dosageForm: "Tablet",
@@ -53,18 +60,7 @@ const emptyMedForm = (): AddMedForm => ({
   productStatus: "Active", effectiveFrom: TODAY,
 });
 
-const DOSAGE_FORMS = ["Tablet", "Capsule", "Syrup", "Injection", "Cream", "Ointment", "Drops", "Inhaler", "Patch", "Powder", "Suppository", "Sachet", "Diaper"];
-const LOOSE_SELL_FORMS = new Set(["Tablet", "Capsule", "Sachet", "Diaper", "Injection"]);
-const ROUTES = ["Oral", "IV", "IM", "SC", "Topical", "Inhaled", "Sublingual", "Rectal", "Ocular", "Nasal"];
-const PRESCRIPTION_STATUSES = ["OTC", "Prescription", "Schedule H", "Schedule H1", "Schedule X", "Schedule G"];
-const PRODUCT_STATUSES = ["Active", "Inactive", "Discontinued", "Under Review"];
-const MANUFACTURER_TYPES = ["Pharmaceutical", "Biotechnology", "Generic", "OTC", "Ayurvedic", "Veterinary", "Contract Manufacturing"];
 
-const KNOWN_MANUFACTURERS_SEED = [
-  "GSK", "Cipla", "Sun Pharma", "Dr. Reddy's", "Lupin", "Alkem", "Torrent Pharma",
-  "Abbott India", "Pfizer India", "Novartis India", "Zydus Cadila", "Mankind Pharma",
-  "Intas Pharma", "Glenmark", "Aurobindo", "Wockhardt", "Emcure", "Micro Labs",
-];
 
 const KNOWN_COMPOSITIONS_SEED = [
   "Paracetamol 500 mg", "Paracetamol 650 mg", "Amoxicillin 250 mg", "Amoxicillin 500 mg",
@@ -260,17 +256,26 @@ function CheckCircleIcon() {
 // ─── Stepper ───────────────────────────────────────────────────────────────────
 
 function MedStepper({ current }: { current: number }) {
-  return <MultiStepper steps={["Medicine", "Compliance", "Operations", "Review"]} current={current} />;
+  return <MultiStepper steps={["Product", "Compliance", "Operations", "Review"]} current={current} />;
 }
 
 // ─── Manufacturer combobox ─────────────────────────────────────────────────────
 
 interface ManufacturerEntry { name: string; code: string; type: string; address: string; city: string; }
 
-function AddManufacturerModal({ initialName, onClose, onSaved }: { initialName: string; onClose: () => void; onSaved: (name: string) => void }) {
+function AddManufacturerModal({ initialName, types, onClose, onSaved }: { initialName: string; types: string[]; onClose: () => void; onSaved: (entry: ManufacturerEntry) => Promise<void> }) {
   const [mfg, setMfg] = useState<ManufacturerEntry>({ name: initialName, code: "", type: "Pharmaceutical", address: "", city: "" });
   const upd = <K extends keyof ManufacturerEntry>(k: K, v: ManufacturerEntry[K]) => setMfg(prev => ({ ...prev, [k]: v }));
-  const canSave = mfg.name.trim().length > 0;
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const canSave = mfg.name.trim().length > 0 && !busy;
+  async function save() {
+    if (!canSave) return;
+    setBusy(true); setErr("");
+    try { await onSaved({ ...mfg, name: mfg.name.trim() }); onClose(); }
+    catch (e) { setErr(e instanceof Error ? e.message.replace(/^API \d+:\s*/, "").replace(/^\{"detail":"(.*)"\}$/, "$1") : "Could not add the manufacturer"); }
+    finally { setBusy(false); }
+  }
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ background: "#fff", width: 520, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(10,22,44,0.18)" }}>
@@ -285,16 +290,17 @@ function AddManufacturerModal({ initialName, onClose, onSaved }: { initialName: 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>
             <DrawerField label="Manufacturer name" required><TextInput value={mfg.name} onChange={e => upd("name", e.target.value)} placeholder="e.g. GSK" /></DrawerField>
             <DrawerField label="Manufacturer code"><TextInput value={mfg.code} onChange={e => upd("code", e.target.value)} placeholder="e.g. MFG-001" /></DrawerField>
-            <DrawerField label="Manufacturer type" required><DropdownSelect value={mfg.type} onChange={v => upd("type", v)} options={MANUFACTURER_TYPES} /></DrawerField>
+            <DrawerField label="Manufacturer type" required><DropdownSelect value={mfg.type} onChange={v => upd("type", v)} options={types} /></DrawerField>
             <DrawerField label="City" required><TextInput value={mfg.city} onChange={e => upd("city", e.target.value)} placeholder="e.g. Mumbai" /></DrawerField>
             <DrawerField label="Address" gridSpan={2}><TextInput value={mfg.address} onChange={e => upd("address", e.target.value)} placeholder="Street, building, area" /></DrawerField>
           </div>
         </div>
         <div style={{ padding: "14px 22px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end", gap: 10 }}>
           <GhostBtn onClick={onClose}>Cancel</GhostBtn>
-          <button onClick={() => { if (canSave) { onSaved(mfg.name.trim()); onClose(); } }} disabled={!canSave}
+          {err && <span style={{ marginRight: "auto", color: "#B91C1C", fontSize: 12, alignSelf: "center" }}>{err}</span>}
+          <button onClick={save} disabled={!canSave}
             style={{ padding: "9px 20px", border: "none", background: canSave ? "#1B6CA8" : "#C8CDD8", fontSize: 13, cursor: canSave ? "pointer" : "not-allowed", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
-            Save manufacturer
+            {busy ? "Saving…" : "Save manufacturer"}
           </button>
         </div>
       </div>
@@ -302,10 +308,43 @@ function AddManufacturerModal({ initialName, onClose, onSaved }: { initialName: 
   );
 }
 
-function ManufacturerField({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+/** Text box with suggestions from a master list. A name that is not in the list is created on save. */
+function MasterCombo({ value, onChange, options, placeholder, noun, disabled }: {
+  value: string; onChange: (v: string) => void; options: string[]; placeholder: string; noun: string; disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handle(e: MouseEvent) { if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false); }
+    if (!disabled) document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [disabled]);
+  if (disabled) return <TextInput value={value} onChange={() => {}} placeholder={placeholder} disabled />;
+  const q = value.trim().toLowerCase();
+  const matches = (q ? options.filter(o => o.toLowerCase().includes(q)) : options).slice(0, 50);
+  const isNew = q.length > 0 && !options.some(o => o.toLowerCase() === q);
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <TextInput value={value} onChange={e => { onChange(e.target.value); setOpen(true); }} placeholder={placeholder} />
+      {isNew && <div style={{ fontSize: 11, color: "#1B6CA8", marginTop: 4 }}>New {noun}: &ldquo;{value.trim()}&rdquo; will be added when you save.</div>}
+      {open && matches.length > 0 && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", borderTop: "none", zIndex: 20, maxHeight: 220, overflowY: "auto", boxShadow: "0 4px 12px rgba(10,22,44,0.10)" }}>
+          {matches.map(o => (
+            <button key={o} onClick={() => { onChange(o); setOpen(false); }}
+              style={{ width: "100%", textAlign: "left", padding: "9px 12px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: "#1A2436", fontFamily: "Inter", borderBottom: "1px solid #F4F6FA" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#F0F6FF")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>{o}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ManufacturerField({ value, onChange, options, types, onCreate, disabled }: { value: string; onChange: (v: string) => void; options: string[]; types: string[]; onCreate: (entry: ManufacturerEntry) => Promise<void>; disabled?: boolean }) {
   const [open, setOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [knownList, setKnownList] = useState(KNOWN_MANUFACTURERS_SEED);
+  const knownList = options;
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -353,8 +392,8 @@ function ManufacturerField({ value, onChange, disabled }: { value: string; onCha
         )}
       </div>
       {showAddModal && (
-        <AddManufacturerModal initialName={value.trim()} onClose={() => setShowAddModal(false)}
-          onSaved={name => { setKnownList(prev => [...prev, name]); onChange(name); }} />
+        <AddManufacturerModal initialName={value.trim()} types={types} onClose={() => setShowAddModal(false)}
+          onSaved={async entry => { await onCreate(entry); onChange(entry.name); }} />
       )}
     </>
   );
@@ -462,7 +501,7 @@ function CompositionField({ value, onChange, disabled }: { value: string; onChan
   );
 }
 
-// ─── Stable form-layout helpers (must live outside CreateMedicinePage so React
+// ─── Stable form-layout helpers (must live outside CreateProductPage so React
 //     never sees a new component type on re-render, which would remount children) ──
 
 function FL({ children, req }: { children: React.ReactNode; req?: boolean }) {
@@ -488,42 +527,49 @@ function SectionCard({ icon, title, subtitle, children }: { icon: React.ReactNod
   );
 }
 
-// ─── Create Medicine Page ──────────────────────────────────────────────────────
+// ─── Create Product Page ───────────────────────────────────────────────────────
 
-function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSaved, onVerificationSent }: {
+function CreateProductPage({ onBack, mode = "create", drug, onSaved, onDraftSaved, isSuperAdmin = false }: {
   onBack: () => void;
   mode?: "create" | "view" | "edit";
-  drug?: (typeof drugs)[0];
-  onSaved?: (ok: boolean) => void;
-  onDraftSaved?: (ok: boolean) => void;
-  onVerificationSent?: (ok: boolean) => void;
+  drug?: { id: string | number; name: string };
+  /** Called once the server has answered. `ok` false carries the server's message. */
+  onSaved?: (ok: boolean, message?: string) => void;
+  onDraftSaved?: (ok: boolean, message?: string) => void;
+  isSuperAdmin?: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const isView = mode === "view" && !isEditing;
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
 
-  const [form, setForm] = useState<AddMedForm>(() => {
-    if (drug) {
-      return {
-        ...emptyMedForm(),
-        genericName: drug.name,
-        therapeuticCategory: drug.category,
-        location: drug.location,
-        stockLocation: drug.location,
-        openingStock: drug.stock.toString(),
-        minimumStock: drug.minStock.toString(),
-        sellingPrice: drug.price.toFixed(2),
-        mrp: drug.price.toFixed(2),
-        wholesalePrice: drug.cost.toFixed(2),
-        effectiveFrom: drug.expiry,
-        distributorRef: drug.supplier,
-        productStatus: drug.status === "Out of Stock" ? "Inactive" : "Active",
-        baseUnit: drug.unit,
-      };
-    }
-    return emptyMedForm();
-  });
+  const [form, setForm] = useState<AddMedForm>(emptyMedForm);
+  const { masters, status: mastersStatus, error: mastersError, add: addMaster } = useMasters();
+  const productId = drug ? String(drug.id) : null;
+  const [loadError, setLoadError] = useState("");
+  const [loading, setLoading] = useState(!!productId);
+  const [isDraftRecord, setIsDraftRecord] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [savedImages, setSavedImages] = useState<ApiImage[]>([]);
+  const [globallyAvailable, setGloballyAvailable] = useState(true);
+
+  useEffect(() => {
+    if (!productId) return;
+    let live = true;
+    setLoading(true);
+    fetchMyProduct(productId)
+      .then(d => {
+        if (!live) return;
+        setForm(detailToForm(d, emptyMedForm()));
+        setIsDraftRecord(!!d.pharmacy_settings?.is_draft);
+        setSavedImages(d.images);
+        setGloballyAvailable(d.product.is_globally_available);
+      })
+      .catch((e: unknown) => { if (live) setLoadError(e instanceof Error ? e.message.replace(/^API \d+:\s*/, "") : "Could not load this product"); })
+      .finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
+  }, [productId]);
+
   const [productImages, setProductImages] = useState<Array<{ file: File; url: string }>>([]);
   const [imgDragging, setImgDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -539,9 +585,77 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
       return prev.filter((_, i) => i !== idx);
     });
   }
+  async function removeSavedImage(img: ApiImage) {
+    if (!productId) return;
+    try {
+      await deleteProductImage(productId, img.id);
+      setSavedImages(prev => prev.filter(i => i.id !== img.id));
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message.replace(/^API \d+:\s*/, "") : "Could not remove the image");
+    }
+  }
+
+  function apiMessage(e: unknown): string {
+    const raw = e instanceof Error ? e.message : "";
+    const m = /"detail"\s*:\s*"([^"]+)"/.exec(raw);
+    if (m) return m[1];
+    const arr = /"msg"\s*:\s*"([^"]+)"/.exec(raw);
+    if (arr) return arr[1].replace(/^Value error, /, "");
+    return raw.replace(/^API \d+:\s*/, "") || "Something went wrong. Please try again.";
+  }
+
+  /** Upload the images picked in this session to S3 once the product exists. Returns how many failed. */
+  async function uploadPending(id: string): Promise<number> {
+    let failed = 0;
+    for (const img of productImages) {
+      try { await uploadProductImage(id, img.file); } catch { failed++; }
+    }
+    return failed;
+  }
+
+  async function save(asDraft: boolean) {
+    if (saving || isView) return;
+    setSaving(true);
+    setFormError("");
+    try {
+      let id = productId;
+      if (!id) {
+        const created = await createProduct(form, { isDraft: asDraft });
+        id = created.product.id;
+      } else if (isDraftRecord) {
+        // an unpublished draft: re-save it, or publish it with every required field checked by the server
+        const res = await apiFetch(`/api/v1/products/${id}/draft`, { method: "PUT", body: JSON.stringify({ ...formToPayload(form, { isDraft: asDraft }) }) });
+        void res;
+      } else {
+        await updateMySettings(id, formToSettingsPayload(form));
+      }
+      const failed = await uploadPending(id);
+      const note = failed ? ` (${failed} image${failed > 1 ? "s" : ""} could not be uploaded)` : "";
+      if (asDraft) onDraftSaved?.(true, "Draft saved successfully" + note);
+      else onSaved?.(true, (productId ? "Product updated successfully" : "Product added successfully") + note);
+      onBack();
+    } catch (e) {
+      const msg = apiMessage(e);
+      setFormError(msg);
+      if (asDraft) onDraftSaved?.(false, msg); else onSaved?.(false, msg);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const upd = <K extends keyof AddMedForm>(key: K, value: AddMedForm[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
+
+  // A new product starts in this pharmacy's default storage location.
+  useEffect(() => {
+    if (productId || mastersStatus !== "ready") return;
+    const def = masters.storage_locations.find(l => l.is_default) ?? masters.storage_locations[0];
+    if (def) setForm(prev => (prev.stockLocation === "Main store" ? { ...prev, stockLocation: def.name } : prev));
+  }, [productId, mastersStatus, masters.storage_locations]);
+
+  const looseSellAllowed = !!masters.dosage_forms.find(f => f.name === form.dosageForm)?.loose_sell_allowed;
+  const selectedLocation: MasterItem | undefined = masters.storage_locations.find(l => l.name.toLowerCase() === form.stockLocation.trim().toLowerCase());
+  const binOptions = names(selectedLocation ? masters.storage_bins.filter(b => b.location_id === selectedLocation.id) : []);
 
   const saveDisabled = !form.genericName.trim();
 
@@ -565,7 +679,7 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
           <span style={{ fontSize: 12, color: "#9CA3AF" }}>Inventory</span>
           <span style={{ fontSize: 12, color: "#C8CDD8" }}>{"›"}</span>
           <span style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>
-            {mode === "view" ? "View Medicine" : mode === "edit" ? "Edit Medicine" : "Create New Medicine"}
+            {mode === "view" ? "View Product" : mode === "edit" ? "Edit Product" : "Create New Product"}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -578,16 +692,16 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
           <GhostBtn onClick={() => isView ? onBack() : setShowLeaveDialog(true)}>Cancel</GhostBtn>
           {!isView && (
             <button
-              onClick={() => { onDraftSaved?.(true); onBack(); }}
-              style={{ padding: "9px 22px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#F8FAFC", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 600, minHeight: 40, boxSizing: "border-box" as const }}>
+              onClick={() => save(true)} disabled={saving || !form.genericName.trim() || !form.brandName.trim()}
+              style={{ padding: "9px 22px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#F8FAFC", fontSize: 13, cursor: saving ? "wait" : "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 600, minHeight: 40, boxSizing: "border-box" as const, opacity: !form.genericName.trim() || !form.brandName.trim() ? 0.5 : 1 }}>
               Save Draft
             </button>
           )}
           <button
-            onClick={() => { if (!saveDisabled && !isView) { setShowVerifyDialog(true); } }}
-            disabled={saveDisabled || isView}
-            style={{ padding: "9px 22px", borderRadius: 6, border: "none", background: saveDisabled || isView ? "#C8CDD8" : "#1B6CA8", fontSize: 13, cursor: saveDisabled || isView ? "not-allowed" : "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, minHeight: 40, boxSizing: "border-box" as const }}>
-            {mode === "create" ? "Save Medicine" : "Save Changes"}
+            onClick={() => { if (!saveDisabled && !isView) save(false); }}
+            disabled={saveDisabled || isView || saving}
+            style={{ padding: "9px 22px", borderRadius: 6, border: "none", background: saveDisabled || isView || saving ? "#C8CDD8" : "#1B6CA8", fontSize: 13, cursor: saveDisabled || isView ? "not-allowed" : saving ? "wait" : "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600, minHeight: 40, boxSizing: "border-box" as const }}>
+            {saving ? "Saving…" : mode === "create" || isDraftRecord ? "Save Product" : "Save Changes"}
           </button>
         </div>
       </div>
@@ -598,7 +712,7 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
           <div onClick={() => setShowLeaveDialog(false)} style={{ position: "fixed", inset: 0, background: "rgba(100,116,139,0.65)", zIndex: 200 }} />
           <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 201, background: "#fff", borderRadius: 16, padding: "28px 28px 24px", width: 340, boxShadow: "0 8px 32px rgba(10,22,44,0.18)", textAlign: "center" }}>
             <div style={{ fontFamily: "Inter", fontSize: 16, fontWeight: 700, color: "#0C1B33", marginBottom: 10 }}>Save before leaving?</div>
-            <div style={{ fontSize: 13, color: "#6B7280", fontFamily: "Inter", lineHeight: 1.6, marginBottom: 24 }}>Save this medicine as a draft before going back?</div>
+            <div style={{ fontSize: 13, color: "#6B7280", fontFamily: "Inter", lineHeight: 1.6, marginBottom: 24 }}>Save this product as a draft before going back?</div>
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 onClick={() => setShowLeaveDialog(false)}
@@ -606,7 +720,7 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
                 Cancel
               </button>
               <button
-                onClick={() => { setShowLeaveDialog(false); onDraftSaved?.(true); onBack(); }}
+                onClick={() => { setShowLeaveDialog(false); save(true); }}
                 style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
                 Save
               </button>
@@ -620,42 +734,29 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
         </>
       )}
 
-      {/* Global availability confirmation dialog */}
-      {showVerifyDialog && (
-        <>
-          <div onClick={() => setShowVerifyDialog(false)} style={{ position: "fixed", inset: 0, background: "rgba(100,116,139,0.65)", zIndex: 200 }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 201, background: "#fff", borderRadius: 16, padding: "32px 28px 24px", width: 380, boxShadow: "0 8px 32px rgba(10,22,44,0.18)", textAlign: "center" as const }}>
-            <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33", marginBottom: 10 }}>
-              Do you want to add this medicine as Globally available?
-            </div>
-            <div style={{ fontSize: 13, color: "#6B7280", fontFamily: "Inter", lineHeight: 1.65, marginBottom: 24 }}>
-              Selecting Yes will make this medicine visible across all pharmacy accounts.
-            </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => { setShowVerifyDialog(false); onSaved?.(true); onBack(); }}
-                style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#F0F3F7")}
-                onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
-                No
-              </button>
-              <button
-                onClick={() => { setShowVerifyDialog(false); onVerificationSent?.(true); onBack(); }}
-                style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "none", background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#155A8A")}
-                onMouseLeave={e => (e.currentTarget.style.background = "#1B6CA8")}>
-                Yes
-              </button>
-            </div>
-          </div>
-        </>
+      {mastersStatus === "error" && (
+        <div style={{ padding: "10px 32px", fontSize: 13, fontFamily: "Inter", background: "#FEF2F2", color: "#B91C1C", borderBottom: "1px solid #E8ECF4" }}>
+          Could not load the dropdown lists: {mastersError}. Reload the page to try again.
+        </div>
+      )}
+      {/* Loading / error banner */}
+      {(loading || loadError || formError) && (
+        <div style={{ padding: "10px 32px", fontSize: 13, fontFamily: "Inter", background: loadError || formError ? "#FEF2F2" : "#EFF6FF", color: loadError || formError ? "#B91C1C" : "#1B6CA8", borderBottom: "1px solid #E8ECF4" }}>
+          {loading ? "Loading product…" : loadError || formError}
+        </div>
       )}
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px 48px" }}>
 
-        {/* 1 — Medicine Identity */}
-        <SectionCard icon={<StepChip><PillIcon /></StepChip>} title="Medicine Identity" subtitle="Use the approved catalog name, strength, and pack information.">
+        {isSuperAdmin && productId && (
+          <div style={{ marginBottom: 16, padding: "10px 16px", background: globallyAvailable ? "#E8F5E9" : "#FFF3E0", border: `1px solid ${globallyAvailable ? "#A5D6A7" : "#FFCC80"}`, fontSize: 13, color: globallyAvailable ? "#2E7D32" : "#E65100", fontFamily: "Inter" }}>
+            {globallyAvailable ? "This product is available to every pharmacy." : "This product is hidden from other pharmacies."}
+          </div>
+        )}
+
+        {/* 1 — Product Identity */}
+        <SectionCard icon={<StepChip><PillIcon /></StepChip>} title="Product Identity" subtitle="Use the approved catalog name, strength, and pack information.">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px 20px" }}>
             <div>
               <FL req>Generic name</FL>
@@ -671,11 +772,11 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
             </div>
             <div>
               <FL req>Dosage form</FL>
-              <DropdownSelect value={form.dosageForm} onChange={v => upd("dosageForm", v)} options={DOSAGE_FORMS} disabled={isView} />
+              <DropdownSelect value={form.dosageForm} onChange={v => upd("dosageForm", v)} options={names(masters.dosage_forms)} disabled={isView} />
             </div>
             <div>
               <FL req>Route</FL>
-              <DropdownSelect value={form.route} onChange={v => upd("route", v)} options={ROUTES} disabled={isView} />
+              <DropdownSelect value={form.route} onChange={v => upd("route", v)} options={names(masters.routes)} disabled={isView} />
             </div>
             <div>
               <FL req>Pack / Unit</FL>
@@ -683,15 +784,17 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
             </div>
             <div>
               <FL req>Manufacturer</FL>
-              <ManufacturerField value={form.manufacturer} onChange={v => upd("manufacturer", v)} disabled={isView} />
+              <ManufacturerField value={form.manufacturer} onChange={v => upd("manufacturer", v)} disabled={isView}
+                options={names(masters.manufacturers)} types={["Pharmaceutical", "Biotechnology", "Generic", "OTC", "Ayurvedic", "Veterinary", "Contract Manufacturing"]}
+                onCreate={async e => { await addMaster("manufacturers", { name: e.name, code: e.code, manufacturer_type: e.type, city: e.city, address: e.address }); }} />
             </div>
             <div>
               <FL req>Therapeutic category</FL>
-              <TextInput value={form.therapeuticCategory} onChange={e => upd("therapeuticCategory", e.target.value)} placeholder="e.g. Analgesic & antipyretic" disabled={isView} />
+              <MasterCombo value={form.therapeuticCategory} onChange={v => upd("therapeuticCategory", v)} options={names(masters.categories)} placeholder="e.g. Analgesic & antipyretic" noun="category" disabled={isView} />
             </div>
             <div>
               <FL req>Therapeutic class</FL>
-              <TextInput value={form.therapeuticClass} onChange={e => upd("therapeuticClass", e.target.value)} placeholder="e.g. Analgesic" disabled={isView} />
+              <MasterCombo value={form.therapeuticClass} onChange={v => upd("therapeuticClass", v)} options={names(masters.classes)} placeholder="e.g. Analgesic" noun="class" disabled={isView} />
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <FL req>Salt composition</FL>
@@ -713,17 +816,12 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
             </div>
             <div>
               <FL>Prescription status</FL>
-              <DropdownSelect value={form.prescriptionStatus} onChange={v => upd("prescriptionStatus", v)} options={PRESCRIPTION_STATUSES} disabled={isView} />
+              <DropdownSelect value={form.prescriptionStatus} onChange={v => upd("prescriptionStatus", v)} options={names(masters.prescription_statuses)} disabled={isView} />
             </div>
             <div>
               <FL req>GST / Tax rate</FL>
-              <div style={{ display: "flex" }}>
-                <input value={form.gstRate} onChange={e => upd("gstRate", e.target.value)} placeholder="12" disabled={isView}
-                  style={{ flex: 1, padding: "10px 12px", borderRadius: "6px 0 0 6px", border: "1.5px solid #E8ECF4", borderRight: "none", fontSize: 13, outline: "none", fontFamily: "Inter", background: isView ? "#F8FAFC" : "#fff", color: isView ? "#9CA3AF" : "#0C1B33", minHeight: 40, boxSizing: "border-box" as const }}
-                  onFocus={isView ? undefined : e => { e.currentTarget.style.borderColor = "#1B6CA8"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(27,108,168,0.08)"; }}
-                  onBlur={isView ? undefined : e => { e.currentTarget.style.borderColor = "#E8ECF4"; e.currentTarget.style.boxShadow = "none"; }} />
-                <span style={{ padding: "10px 12px", borderRadius: "0 6px 6px 0", border: "1.5px solid #E8ECF4", borderLeft: "none", fontSize: 13, color: "#6B7280", background: "#F8FAFC", whiteSpace: "nowrap" as const, flexShrink: 0, minHeight: 40, boxSizing: "border-box" as const, display: "flex", alignItems: "center" }}>%</span>
-              </div>
+              <DropdownSelect value={form.gstRate ? `${Number(form.gstRate)}%` : ""} onChange={v => upd("gstRate", v.replace("%", ""))}
+                options={masters.gst_slabs.map(g => `${g.rate}%`)} disabled={isView} />
             </div>
             <div>
               <FL req>Storage condition</FL>
@@ -735,7 +833,7 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
             </div>
             <div>
               <FL req>Storage zone</FL>
-              <TextInput value={form.storageZone} onChange={e => upd("storageZone", e.target.value)} placeholder="Main store" disabled={isView} />
+              <MasterCombo value={form.storageZone} onChange={v => upd("storageZone", v)} options={names(masters.storage_zones)} placeholder="Main store" noun="zone" disabled={isView} />
             </div>
             <div>
               <FL>Manufacturer product code</FL>
@@ -771,7 +869,7 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
         </SectionCard>
 
         {/* 3 — Pricing & Stock */}
-        <SectionCard icon={<StepChip><BoxIcon /></StepChip>} title="Pricing & Stock" subtitle="Pricing, stock levels, and unit configuration for this medicine.">
+        <SectionCard icon={<StepChip><BoxIcon /></StepChip>} title="Pricing & Stock" subtitle="Pricing, stock levels, and unit configuration for this product.">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px 20px" }}>
             <div>
               <FL req>MRP</FL>
@@ -819,30 +917,30 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
             </div>
             <div>
               <FL req>Stock location</FL>
-              <TextInput value={form.stockLocation} onChange={e => upd("stockLocation", e.target.value)} placeholder="Main store" disabled={isView} />
+              <MasterCombo value={form.stockLocation} onChange={v => upd("stockLocation", v)} options={names(masters.storage_locations)} placeholder="Main store" noun="location" disabled={isView} />
             </div>
             <div>
               <FL req>Location / Bin</FL>
-              <TextInput value={form.location} onChange={e => upd("location", e.target.value)} placeholder="e.g. Rack A / Shelf 2 / Bin 04" disabled={isView} />
+              <MasterCombo value={form.location} onChange={v => upd("location", v)} options={binOptions} placeholder="e.g. Rack A / Shelf 2 / Bin 04" noun="bin" disabled={isView} />
             </div>
             <div>
               <FL>Base unit</FL>
-              <TextInput value={form.baseUnit} onChange={e => upd("baseUnit", e.target.value)} placeholder="Unit" disabled={isView} />
+              <DropdownSelect value={form.baseUnit} onChange={v => upd("baseUnit", v)} options={names(masters.unit_types)} disabled={isView} />
             </div>
             <div>
               <FL>Purchase unit</FL>
-              <TextInput value={form.purchaseUnit} onChange={e => upd("purchaseUnit", e.target.value)} placeholder="Box" disabled={isView} />
+              <DropdownSelect value={form.purchaseUnit} onChange={v => upd("purchaseUnit", v)} options={names(masters.unit_types)} disabled={isView} />
             </div>
             <div>
               <FL>Sale unit</FL>
-              <TextInput value={form.saleUnit} onChange={e => upd("saleUnit", e.target.value)} placeholder="Strip" disabled={isView} />
+              <DropdownSelect value={form.saleUnit} onChange={v => upd("saleUnit", v)} options={names(masters.unit_types)} disabled={isView} />
             </div>
             <div>
               <FL>Unit conversion</FL>
               <TextInput value={form.unitConversion} onChange={e => upd("unitConversion", e.target.value)} placeholder="1 box = 10 strips" disabled={isView} />
             </div>
             {/* Loose Sell toggle — visible only for applicable dosage forms */}
-            {LOOSE_SELL_FORMS.has(form.dosageForm) && (
+            {looseSellAllowed && (
               <div>
                 <FL>Loose Sell Allowed</FL>
                 <div style={{ display: "flex", alignItems: "center", minHeight: 40 }}>
@@ -864,7 +962,7 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
         </SectionCard>
 
         {/* 4 — Clinical Notes */}
-        <SectionCard icon={<StepChip><CheckCircleIcon /></StepChip>} title="Clinical Notes" subtitle="Patient-facing and catalog review information for this medicine.">
+        <SectionCard icon={<StepChip><CheckCircleIcon /></StepChip>} title="Clinical Notes" subtitle="Patient-facing and catalog review information for this product.">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 20px" }}>
             <div>
               <FL>Therapeutic indications</FL>
@@ -904,16 +1002,16 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
             </div>
             <div>
               <FL>Product status</FL>
-              <DropdownSelect value={form.productStatus} onChange={v => upd("productStatus", v)} options={PRODUCT_STATUSES} disabled={isView} />
+              <DropdownSelect value={form.productStatus} onChange={v => upd("productStatus", v)} options={names(masters.product_statuses)} disabled={isView} />
             </div>
             <div>
               <FL>Effective from</FL>
-              <TextInput type="date" value={form.effectiveFrom} onChange={e => upd("effectiveFrom", e.target.value)} disabled={isView} />
+              <DatePicker value={form.effectiveFrom} onChange={v => upd("effectiveFrom", v)} disabled={isView} />
             </div>
           </div>
           <div style={{ marginTop: 20, padding: "12px 16px", background: "#E8F5E9", border: "1px solid #A5D6A7", display: "flex", alignItems: "center", gap: 12 }}>
             <ShieldSolidIcon />
-            <span style={{ fontSize: 13, color: "#2E7D32", lineHeight: 1.5 }}>Saving creates a protected medicine master record and makes it immediately searchable from the purchase invoice.</span>
+            <span style={{ fontSize: 13, color: "#2E7D32", lineHeight: 1.5 }}>Saving creates a protected product master record and makes it immediately searchable from the purchase invoice.</span>
           </div>
         </SectionCard>
 
@@ -955,7 +1053,30 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
             </div>
           )}
 
-          {/* Thumbnails */}
+          {/* Already uploaded (served from S3 by a short-lived link) */}
+          {savedImages.length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: productImages.length > 0 ? 12 : 0 }}>
+              {savedImages.map(img => (
+                <div key={img.id} data-testid="saved-image" style={{ border: "1px solid #E8ECF4", borderRadius: 8, overflow: "hidden", background: "#fff" }}>
+                  <div style={{ position: "relative" as const, height: 96, background: "#F8FAFC" }}>
+                    {img.url ? <img src={img.url} alt={img.filename} style={{ width: "100%", height: "100%", objectFit: "cover" as const, display: "block" }} /> : null}
+                    {!isView && (
+                      <button type="button" onClick={() => removeSavedImage(img)}
+                        style={{ position: "absolute" as const, top: 5, right: 5, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1L1 9" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ padding: "6px 8px" }}>
+                    <div style={{ fontSize: 10, fontFamily: "Inter", color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{img.filename}</div>
+                    <div style={{ fontSize: 10, color: "#C4C9D4", marginTop: 1 }}>{(img.size_bytes / 1024).toFixed(0)} KB</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Thumbnails (picked now, uploaded on save) */}
           {productImages.length > 0 && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
               {productImages.map((img, idx) => (
@@ -990,7 +1111,7 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
           )}
 
           {/* View-mode empty state */}
-          {isView && productImages.length === 0 && (
+          {isView && productImages.length === 0 && savedImages.length === 0 && (
             <div style={{ padding: "32px 24px", textAlign: "center" as const, color: "#9CA3AF", fontSize: 13, border: "2px dashed #EEF1F6", borderRadius: 10, background: "#FAFBFD" }}>
               No product images uploaded
             </div>
@@ -1008,7 +1129,7 @@ function CreateMedicinePage({ onBack, mode = "create", drug, onSaved, onDraftSav
 
 const SHORT_BOOK_STORE: Set<string> = new Set();
 
-function AddToShortBookDrawer({ drug, onClose }: { drug: (typeof drugs)[0]; onClose: () => void }) {
+function AddToShortBookDrawer({ drug, onClose }: { drug: (typeof products)[0]; onClose: () => void }) {
   const alreadyIn = SHORT_BOOK_STORE.has(drug.name);
   const suggested = Math.max(0, drug.minStock * 3 - drug.stock);
   const [orderQty, setOrderQty] = useState(String(suggested || drug.minStock));
@@ -1096,7 +1217,7 @@ function AddToShortBookDrawer({ drug, onClose }: { drug: (typeof drugs)[0]; onCl
         </div>
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Medicine info */}
+          {/* Product info */}
           <div style={{ background: "#F8FAFC", borderRadius: 6, border: "1px solid #EEF1F6", padding: "12px 14px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0C1B33", marginBottom: 8 }}>{drug.name}</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -1505,7 +1626,7 @@ function FiltersDrawer(props: FiltersDrawerProps) {
 
   const handleReset = () => {
     setDraftCat("All Categories"); setDraftSupplier("All Distributors"); setDraftLocation("All Locations");
-    setDraftStatuses(["In Stock", "Low Stock", "Out of Stock"]);
+    setDraftStatuses(["In Stock", "Low Stock", "Out of Stock", "Draft"]);
     setDraftExpiryRange("All"); setDraftExpiryRisk("All");
     setDraftMinPrice(""); setDraftMaxPrice("");
     setDraftSortBy("Name (A - Z)");
@@ -1536,7 +1657,7 @@ function FiltersDrawer(props: FiltersDrawerProps) {
           </PnlSection>
           <PnlSection label="Stock Status">
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {["In Stock", "Low Stock", "Out of Stock", "Near Expiry", "Expired", "Quarantine"].map(s => (
+              {["In Stock", "Low Stock", "Out of Stock", "Draft", "Near Expiry", "Expired", "Quarantine"].map(s => (
                 <label key={s} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                   <input type="checkbox" checked={draftStatuses.includes(s)} onChange={() => toggleStatus(s)}
                     style={{ width: 16, height: 16, accentColor: "#1B6CA8", cursor: "pointer" }} />
@@ -1779,7 +1900,7 @@ const INV_AUDIT: { date: string; action: string; changedBy: string; detail: stri
   { date: "2026-08-15", action: "Stock Adjusted",  changedBy: "Manager", detail: "+5 units (correction)"      },
   { date: "2026-07-10", action: "Status Changed",  changedBy: "Admin",   detail: "Status set to Low Stock"    },
   { date: "2026-06-01", action: "Reorder Updated", changedBy: "Manager", detail: "Reorder level changed"      },
-  { date: "2026-04-15", action: "Record Created",  changedBy: "Admin",   detail: "Added to medicine catalog"  },
+  { date: "2026-04-15", action: "Record Created",  changedBy: "Admin",   detail: "Added to product catalog"   },
 ];
 
 const INV_APPROVALS: { id: number; date: string; systemQty: number; physicalQty: number; variance: number; reason: string; notes: string; submittedBy: string; status: "Pending" | "Approved" | "Rejected" }[] = [
@@ -1833,7 +1954,7 @@ const DEMO_SCANS: Record<string, string> = {
 };
 
 function AddBatchModal({ drug, onClose, onSaved }: {
-  drug: typeof drugs[0];
+  drug: typeof products[0];
   onClose: () => void;
   onSaved: (ok: boolean, batchId: string) => void;
 }) {
@@ -2007,13 +2128,11 @@ function AddBatchModal({ drug, onClose, onSaved }: {
               </div>
               <div>
                 {lbl("Mfg Date", true)}
-                <input type="date" value={mfgDate} onChange={e => setMfgDate(e.target.value)}
-                  style={{ ...inputStyle, fontFamily: "JetBrains Mono", ...hlStyle("mfgDate") }} onFocus={fi} onBlur={fo} />
+                <DatePicker value={mfgDate} onChange={setMfgDate} />
               </div>
               <div>
                 {lbl("Expiry Date", true)}
-                <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)}
-                  style={{ ...inputStyle, fontFamily: "JetBrains Mono", borderColor: (!validExpiry && expiryDate) ? "#E53935" : highlighted.has("expiryDate") ? "#2E7D32" : "#E8ECF4", ...hlStyle("expiryDate") }} onFocus={fi} onBlur={fo} />
+                <DatePicker value={expiryDate} onChange={setExpiryDate} inputStyle={{ border: `1px solid ${(!validExpiry && expiryDate) ? "#E53935" : "#E8ECF4"}` }} />
                 {!validExpiry && expiryDate && (
                   <div style={{ fontSize: 11, color: "#C62828", marginTop: 4 }}>Must be after Mfg Date</div>
                 )}
@@ -2134,7 +2253,7 @@ function generateTrfId() {
 
 function TransferBatchModal({ batch, drug, onClose }: {
   batch: typeof INV_BATCHES[0];
-  drug: typeof drugs[0];
+  drug: typeof products[0];
   onClose: () => void;
 }) {
   const [trfRef,       setTrfRef]       = useState(generateTrfId);
@@ -2292,13 +2411,11 @@ function TransferBatchModal({ batch, drug, onClose }: {
               </div>
               <div>
                 {lbl("Transfer Date", true)}
-                <input type="date" value={transferDate} onChange={e => setTransferDate(e.target.value)}
-                  style={{ ...inputStyle, fontFamily: "JetBrains Mono" }} onFocus={fi} onBlur={fo} />
+                <DatePicker value={transferDate} onChange={setTransferDate} />
               </div>
               <div>
                 {lbl("Expected Delivery")}
-                <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)}
-                  style={{ ...inputStyle, fontFamily: "JetBrains Mono" }} onFocus={fi} onBlur={fo} />
+                <DatePicker value={deliveryDate} onChange={setDeliveryDate} />
               </div>
             </div>
           </div>
@@ -2488,7 +2605,7 @@ type AdjustType = "add" | "remove" | "set";
 
 function AdjustStockModal({ batch, drug, onClose }: {
   batch: typeof INV_BATCHES[0];
-  drug: typeof drugs[0];
+  drug: typeof products[0];
   onClose: () => void;
 }) {
   const [adjType, setAdjType] = useState<AdjustType>("add");
@@ -2712,7 +2829,7 @@ function FakeBarcode({ value, width, height }: { value: string; width: number; h
   );
 }
 
-function LabelPreview({ batch, drug, size }: { batch: typeof INV_BATCHES[0] | null; drug: typeof drugs[0]; size: LabelSize }) {
+function LabelPreview({ batch, drug, size }: { batch: typeof INV_BATCHES[0] | null; drug: typeof products[0]; size: LabelSize }) {
   const sz = LABEL_SIZES.find(s => s.key === size)!;
   const form   = DRUG_DOSAGE_FORM[drug.name] ?? drug.unit;
   const mfr    = DRUG_MANUFACTURER[drug.name] ?? drug.supplier;
@@ -2777,7 +2894,7 @@ function LabelPreview({ batch, drug, size }: { batch: typeof INV_BATCHES[0] | nu
 
 function PrintLabelModal({ batch, drug, onClose }: {
   batch: typeof INV_BATCHES[0] | null;
-  drug: typeof drugs[0];
+  drug: typeof products[0];
   onClose: () => void;
 }) {
   const [size,   setSize]   = useState<LabelSize>("standard");
@@ -3019,7 +3136,7 @@ const TX_STYLE: Record<string, { bg: string; color: string; dot: string }> = {
 
 function BatchHistoryModal({ batch, drug, onClose }: {
   batch: typeof INV_BATCHES[0];
-  drug: typeof drugs[0];
+  drug: typeof products[0];
   onClose: () => void;
 }) {
   const txs = BATCH_HISTORY[batch.id] ?? [];
@@ -3164,7 +3281,7 @@ function BatchHistoryModal({ batch, drug, onClose }: {
 const STOCK_COUNT_REASONS = ["Entry Error", "Damaged", "Expired", "Theft / Loss", "Transfer", "Adjustment", "Other"];
 
 function StockCountModal({ drug, drugBatches, systemStock, onClose }: {
-  drug: typeof drugs[0];
+  drug: typeof products[0];
   drugBatches: typeof INV_BATCHES;
   systemStock: number;
   onClose: () => void;
@@ -3290,9 +3407,7 @@ function StockCountModal({ drug, drugBatches, systemStock, onClose }: {
             </div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.07em", marginBottom: 7 }}>Count Date</div>
-              <input type="date" value={countDate} onChange={e => setCountDate(e.target.value)}
-                style={{ ...inputStyle, fontFamily: "JetBrains Mono" }}
-                onFocus={focusIn} onBlur={focusOut} />
+              <DatePicker value={countDate} onChange={setCountDate} />
             </div>
           </div>
 
@@ -3441,428 +3556,13 @@ function genDistHistory(drugName: string, distName: string, baseCost: number) {
   return rows.sort((a, b) => b.date.localeCompare(a.date));
 }
 
-function InvViewHistoryModal({ drugName, distributorName, baseCost, onClose }: {
-  drugName: string;
-  distributorName: string;
-  baseCost: number;
-  onClose: () => void;
-}) {
-  const [search, setSearch]   = useState("");
-  const [period, setPeriod]   = useState("All");
-  const [typeFilter, setTypeFilter] = useState<"All" | "Purchase" | "Return">("All");
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 6;
-
-  const PERIOD_OPTS = ["All", "Day", "Week", "Month", "Year"];
-  const allRows = genDistHistory(drugName, distributorName, baseCost);
-
-  const filtered = allRows.filter(r => {
-    const matchType   = typeFilter === "All" || r.type === typeFilter;
-    const matchSearch = !search || r.ref.toLowerCase().includes(search.toLowerCase());
-    let matchPeriod   = true;
-    if (period !== "All") {
-      const diff = new Date("2026-08-30").getTime() - new Date(r.date).getTime();
-      if (period === "Day")   matchPeriod = diff <= 86400000;
-      if (period === "Week")  matchPeriod = diff <= 7 * 86400000;
-      if (period === "Month") matchPeriod = diff <= 30 * 86400000;
-      if (period === "Year")  matchPeriod = diff <= 365 * 86400000;
-    }
-    return matchType && matchSearch && matchPeriod;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage   = Math.min(page, totalPages);
-  const pageRows   = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-
-  const totalPurchases = allRows.filter(r => r.type === "Purchase").length;
-  const totalReturns   = allRows.filter(r => r.type === "Return").length;
-  const totalOrdered   = allRows.filter(r => r.type === "Purchase").reduce((s, r) => s + r.orderedQty, 0);
-  const totalReturned  = allRows.filter(r => r.type === "Return").reduce((s, r) => s + r.returnQty, 0);
-
-  const SC: Record<string, { bg: string; color: string }> = {
-    Received:             { bg: "#E8F5E9", color: "#2E7D32" },
-    "Partially Received": { bg: "#FFF3E0", color: "#E65100" },
-    Cancelled:            { bg: "#FFEBEE", color: "#C62828" },
-    Pending:              { bg: "#FFF8E1", color: "#E65100" },
-    Credited:             { bg: "#E8F5E9", color: "#2E7D32" },
-    Rejected:             { bg: "#FFEBEE", color: "#C62828" },
-  };
-
-  const pill = (label: string, custom?: { bg: string; color: string }) => {
-    const s = custom ?? SC[label] ?? { bg: "#F5F5F5", color: "#6B7280" };
-    return <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "Inter", padding: "3px 8px", borderRadius: 4, background: s.bg, color: s.color, whiteSpace: "nowrap" as const }}>{label}</span>;
-  };
-
-  const TH = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
-    <th style={{ padding: "9px 12px", fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.07em", textTransform: "uppercase" as const, fontFamily: "Inter", textAlign: right ? "right" as const : "left" as const, borderBottom: "1px solid #EEF1F6", whiteSpace: "nowrap" as const, background: "#F8FAFC" }}>{children}</th>
-  );
-  const TD = ({ children, mono, right, bold, color }: { children: React.ReactNode; mono?: boolean; right?: boolean; bold?: boolean; color?: string }) => (
-    <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: mono ? "JetBrains Mono" : "Inter", color: color ?? "#1A2436", fontWeight: bold ? 700 : 400, textAlign: right ? "right" as const : "left" as const, whiteSpace: "nowrap" as const }}>{children}</td>
-  );
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", width: 900, maxHeight: "90vh", display: "flex", flexDirection: "column", borderRadius: 10, border: "1px solid #E8ECF4", boxShadow: "0 8px 40px rgba(0,0,0,0.16)" }}>
-
-        {/* Header */}
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Distributor History</div>
-            <div style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter", marginTop: 2 }}>{drugName} · {distributorName}</div>
-          </div>
-          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "0 2px", display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
-        </div>
-
-        {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderBottom: "1px solid #EEF1F6", flexShrink: 0 }}>
-          {[
-            { label: "Total Purchases", value: String(totalPurchases), sub: `${totalOrdered} units ordered`,  color: "#1B6CA8" },
-            { label: "Total Returns",   value: String(totalReturns),   sub: `${totalReturned} units returned`, color: "#E65100" },
-            { label: "Net Qty",         value: `${totalOrdered - totalReturned}`, sub: "units net received",  color: "#2E7D32" },
-            { label: "Avg Rate",        value: `₹${baseCost.toFixed(2)}`,         sub: "purchase cost / unit", color: "#0C1B33" },
-          ].map((s, i, arr) => (
-            <div key={s.label} style={{ padding: "12px 16px", borderRight: i < arr.length - 1 ? "1px solid #EEF1F6" : "none", background: "#FAFBFD" }}>
-              <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: 4 }}>{s.label}</div>
-              <div style={{ fontFamily: "JetBrains Mono", fontSize: 14, fontWeight: 700, color: s.color }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter", marginTop: 2 }}>{s.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Filter bar */}
-        <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
-          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search ref…"
-            style={{ width: 180, padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", color: "#0C1B33", outline: "none", flexShrink: 0 }} />
-          <select value={period} onChange={e => { setPeriod(e.target.value); setPage(1); }}
-            style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", color: "#0C1B33", background: "#fff", cursor: "pointer", outline: "none", flexShrink: 0 }}>
-            {PERIOD_OPTS.map(p => <option key={p} value={p}>{p === "All" ? "All Time" : `This ${p}`}</option>)}
-          </select>
-          <div style={{ display: "flex", gap: 4 }}>
-            {(["All", "Purchase", "Return"] as const).map(t => (
-              <button key={t} onClick={() => { setTypeFilter(t); setPage(1); }}
-                style={{ padding: "6px 14px", borderRadius: 999, border: `1px solid ${typeFilter === t ? "#1B6CA8" : "#E8ECF4"}`, background: typeFilter === t ? "#EFF6FF" : "#fff", fontSize: 12, fontFamily: "Inter", fontWeight: typeFilter === t ? 600 : 400, color: typeFilter === t ? "#1B6CA8" : "#6B7280", cursor: "pointer" }}>
-                {t}
-              </button>
-            ))}
-          </div>
-          <div style={{ marginLeft: "auto", fontSize: 12, color: "#9CA3AF", fontFamily: "Inter" }}>
-            {filtered.length} of {allRows.length} records
-          </div>
-        </div>
-
-        {/* Table */}
-        <div style={{ overflowY: "auto", flex: 1 }}>
-          {filtered.length === 0 ? (
-            <div style={{ padding: "40px 0", textAlign: "center" as const, color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No records match your filter.</div>
-          ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <TH>Ref Number</TH>
-                  <TH>Date</TH>
-                  <TH>Type</TH>
-                  <TH right>Ordered Qty</TH>
-                  <TH right>Received Qty</TH>
-                  <TH right>Pending</TH>
-                  <TH right>Return Qty</TH>
-                  <TH>Reason</TH>
-                  <TH right>Rate</TH>
-                  <TH right>Amount</TH>
-                  <TH>Status</TH>
-                </tr>
-              </thead>
-              <tbody>
-                {pageRows.map((r, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #F4F6FA" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#F7F9FC")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
-                    <TD mono color="#1B6CA8" bold>{r.ref}</TD>
-                    <TD color="#6B7280">{r.date}</TD>
-                    <td style={{ padding: "10px 12px" }}>
-                      {pill(r.type, r.type === "Purchase" ? { bg: "#EFF6FF", color: "#1B6CA8" } : { bg: "#FFF3E0", color: "#E65100" })}
-                    </td>
-                    <TD mono right bold>{r.type === "Purchase" ? r.orderedQty : "—"}</TD>
-                    <TD mono right color="#2E7D32" bold>{r.type === "Purchase" ? r.receivedQty : "—"}</TD>
-                    <TD mono right color={r.pendingQty > 0 ? "#E65100" : "#9CA3AF"} bold>{r.type === "Purchase" ? r.pendingQty : "—"}</TD>
-                    <TD mono right color="#E65100" bold>{r.type === "Return" ? r.returnQty : "—"}</TD>
-                    <TD color="#6B7280">{r.reason || "—"}</TD>
-                    <TD mono right>₹{r.rate.toFixed(2)}</TD>
-                    <TD mono right bold>
-                      {r.type === "Return" && r.credit === 0 ? "—" : `₹${r.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
-                    </TD>
-                    <td style={{ padding: "10px 12px" }}>{pill(r.status)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Pagination footer */}
-        <div style={{ padding: "8px 16px", borderTop: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FAFBFD", flexShrink: 0 }}>
-          <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>
-            Showing {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {[
-              { label: "«", target: 1,           disabled: safePage === 1 },
-              { label: "‹", target: safePage - 1, disabled: safePage === 1 },
-              { label: "›", target: safePage + 1, disabled: safePage >= totalPages },
-              { label: "»", target: totalPages,   disabled: safePage >= totalPages },
-            ].map(b => (
-              <button key={b.label} onClick={() => setPage(b.target)} disabled={b.disabled}
-                style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: b.disabled ? "default" : "pointer", color: b.disabled ? "#C8CDD8" : "#1A2436", fontSize: 12, fontFamily: "Inter", minWidth: 28 }}>
-                {b.label}
-              </button>
-            ))}
-            <span style={{ padding: "0 8px", fontFamily: "JetBrains Mono", fontSize: 12, color: "#1A2436" }}>{safePage} / {totalPages}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Inventory Place Order Modal ──────────────────────────────────────────────
 
 type InvPoStep = "choose" | "existing" | "new";
 
-function InvPlaceOrderModal({ drugName, distributorName, lastRate, onClose, onDone }: {
-  drugName: string;
-  distributorName: string;
-  lastRate: number;
-  onClose: () => void;
-  onDone: (msg: string) => void;
-}) {
-  const [step, setStep] = useState<InvPoStep>("choose");
-  const [selectedPoId, setSelectedPoId] = useState<string | null>(null);
-  const [qty, setQty] = useState("1");
-  const [rate, setRate] = useState(lastRate.toFixed(2));
-  const [delivery, setDelivery] = useState("");
-  const [payTerms, setPayTerms] = useState("Credit 30 Days");
-
-  const openPOs = purchaseOrders
-    .filter(o => o.status !== "Completed")
-    .sort((a, b) => b.date.localeCompare(a.date));
-
-  const cardWidth = step === "choose" ? 490 : step === "existing" ? 760 : 520;
-
-  const fieldStyle: React.CSSProperties = {
-    width: "100%", padding: "8px 11px", borderRadius: 6, border: "1.5px solid #E8ECF4",
-    fontSize: 13, fontFamily: "Inter", color: "#0C1B33", outline: "none", boxSizing: "border-box" as const,
-  };
-  const labelStyle: React.CSSProperties = {
-    fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.07em",
-    textTransform: "uppercase" as const, fontFamily: "Inter", marginBottom: 4, display: "block",
-  };
-
-  const canSubmitExisting = !!selectedPoId && !!qty && Number(qty) >= 1;
-  const canSubmitNew = !!qty && Number(qty) >= 1 && !!delivery;
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", width: cardWidth, maxHeight: "88vh", display: "flex", flexDirection: "column", borderRadius: 10, border: "1px solid #E8ECF4", boxShadow: "0 8px 40px rgba(0,0,0,0.16)" }}>
-
-        {/* Header */}
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-          {step !== "choose" && (
-            <button onClick={() => { setStep("choose"); setSelectedPoId(null); }}
-              style={{ border: "none", background: "transparent", cursor: "pointer", color: "#6B7280", fontSize: 18, lineHeight: 1, padding: "0 4px 0 0", flexShrink: 0 }}>‹</button>
-          )}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>
-              {step === "choose" ? "Add to Purchase Order" : step === "existing" ? "Select Purchase Order" : "New Purchase Order"}
-            </div>
-            <div style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter", marginTop: 2 }}>
-              {drugName} · {distributorName}
-            </div>
-          </div>
-          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "0 2px", flexShrink: 0, display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round"/></svg></button>
-        </div>
-
-        {/* Body */}
-        <div style={{ overflowY: "auto", padding: 20, flex: 1 }}>
-
-          {/* Step 1 — choose */}
-          {step === "choose" && (
-            <div style={{ display: "flex", gap: 12 }}>
-              {[
-                {
-                  icon: (
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                      <rect x="5" y="4" width="14" height="18" rx="2" stroke="#1B6CA8" strokeWidth="1.6"/>
-                      <path d="M9 9h6M9 13h6M9 17h4" stroke="#1B6CA8" strokeWidth="1.4" strokeLinecap="round"/>
-                      <circle cx="20" cy="19" r="5" fill="#E8F5E9" stroke="#2E7D32" strokeWidth="1.4"/>
-                      <path d="M18 19l1.5 1.5L22 17" stroke="#2E7D32" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  ),
-                  title: "Add to Existing PO",
-                  desc: "Append this medicine to an open purchase order",
-                  action: () => setStep("existing"),
-                },
-                {
-                  icon: (
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                      <rect x="5" y="4" width="14" height="18" rx="2" stroke="#1B6CA8" strokeWidth="1.6"/>
-                      <path d="M12 10v6M9 13h6" stroke="#1B6CA8" strokeWidth="1.6" strokeLinecap="round"/>
-                    </svg>
-                  ),
-                  title: "Create New PO",
-                  desc: "Start a fresh purchase order with this medicine",
-                  action: () => setStep("new"),
-                },
-              ].map(opt => (
-                <button key={opt.title} onClick={opt.action}
-                  style={{ flex: 1, border: "1.5px solid #DDE3EC", borderRadius: 8, background: "#fff", cursor: "pointer", padding: "20px 16px", textAlign: "left", display: "flex", flexDirection: "column", gap: 10 }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#F0F3F7")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
-                  {opt.icon}
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0C1B33", fontFamily: "Inter", marginBottom: 4 }}>{opt.title}</div>
-                    <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter", lineHeight: 1.5 }}>{opt.desc}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Step 2a — existing PO list */}
-          {step === "existing" && (
-            <div>
-              {openPOs.length === 0 ? (
-                <div style={{ padding: "32px 0", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>
-                  No open purchase orders found.
-                </div>
-              ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ background: "#F8FAFC" }}>
-                      {["PO Number", "Distributor", "Date", "Items", "Value", "Status"].map(h => (
-                        <th key={h} style={{ padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.07em", textTransform: "uppercase" as const, fontFamily: "Inter", textAlign: h === "Value" ? "right" as const : "left" as const, borderBottom: "1px solid #EEF1F6" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {openPOs.map(po => {
-                      const isSel = selectedPoId === po.id;
-                      return (
-                        <tr key={po.id}
-                          onClick={() => setSelectedPoId(isSel ? null : po.id)}
-                          style={{ cursor: "pointer", background: isSel ? "#EFF6FF" : "#fff", borderLeft: isSel ? "3px solid #1B6CA8" : "3px solid transparent", borderBottom: "1px solid #F4F6FA" }}
-                          onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = "#F7F9FC"; }}
-                          onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "#fff"; }}>
-                          <td style={{ padding: "10px 10px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1B6CA8", fontWeight: 600 }}>{po.id}</td>
-                          <td style={{ padding: "10px 10px", fontSize: 12, fontFamily: "Inter", color: "#1A2436" }}>{po.supplier}</td>
-                          <td style={{ padding: "10px 10px", fontSize: 12, fontFamily: "Inter", color: "#6B7280" }}>{po.date}</td>
-                          <td style={{ padding: "10px 10px", fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{po.items} items</td>
-                          <td style={{ padding: "10px 10px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", fontWeight: 700, textAlign: "right" as const }}>₹{po.orderValue.toLocaleString("en-IN")}</td>
-                          <td style={{ padding: "10px 10px" }}>
-                            <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "Inter", padding: "2px 8px", borderRadius: 4,
-                              background: po.status === "Approved" ? "#EFF6FF" : po.status === "Partially Received" ? "#FFF3E0" : po.status === "Pending Approval" ? "#FFF8E1" : "#F5F5F5",
-                              color: po.status === "Approved" ? "#1B6CA8" : po.status === "Partially Received" ? "#E65100" : po.status === "Pending Approval" ? "#E65100" : "#6B7280",
-                            }}>{po.status}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-
-              {selectedPoId && (
-                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #EEF1F6" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1A2436", fontFamily: "Inter", marginBottom: 12 }}>
-                    Add to {selectedPoId}
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                    <div>
-                      <label style={labelStyle}>Medicine</label>
-                      <input value={drugName} readOnly style={{ ...fieldStyle, background: "#F8FAFC", color: "#9CA3AF" }} />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>Qty</label>
-                      <input type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} style={fieldStyle} />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>Rate (₹)</label>
-                      <input type="number" value={rate} onChange={e => setRate(e.target.value)} style={fieldStyle} />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 2b — new PO */}
-          {step === "new" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={labelStyle}>Medicine</label>
-                  <input value={drugName} readOnly style={{ ...fieldStyle, background: "#F8FAFC", color: "#9CA3AF" }} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Distributor</label>
-                  <input value={distributorName} readOnly style={{ ...fieldStyle, background: "#F8FAFC", color: "#9CA3AF" }} />
-                </div>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={labelStyle}>Qty</label>
-                  <input type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} style={fieldStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Purchase Rate (₹)</label>
-                  <input type="number" value={rate} onChange={e => setRate(e.target.value)} style={fieldStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Expected Delivery</label>
-                  <input type="date" value={delivery} onChange={e => setDelivery(e.target.value)} style={fieldStyle} />
-                </div>
-              </div>
-              <div>
-                <label style={labelStyle}>Payment Terms</label>
-                <select value={payTerms} onChange={e => setPayTerms(e.target.value)} style={{ ...fieldStyle, appearance: "none" as const }}>
-                  {PAYMENT_TERMS_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        {step !== "choose" && (
-          <div style={{ padding: "12px 20px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end", gap: 8, flexShrink: 0 }}>
-            <button onClick={onClose}
-              style={{ padding: "8px 18px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>
-              Cancel
-            </button>
-            {step === "existing" && (
-              <button
-                disabled={!canSubmitExisting}
-                onClick={() => { if (canSubmitExisting) onDone(`${drugName} added to ${selectedPoId}`); }}
-                style={{ padding: "8px 18px", borderRadius: 6, border: "none", background: canSubmitExisting ? "#1B6CA8" : "#C8CDD8", fontSize: 13, cursor: canSubmitExisting ? "pointer" : "not-allowed", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
-                Add to PO
-              </button>
-            )}
-            {step === "new" && (
-              <button
-                disabled={!canSubmitNew}
-                onClick={() => { if (canSubmitNew) onDone(`New PO created for ${distributorName}`); }}
-                style={{ padding: "8px 18px", borderRadius: 6, border: "none", background: canSubmitNew ? "#1B6CA8" : "#C8CDD8", fontSize: 13, cursor: canSubmitNew ? "pointer" : "not-allowed", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
-                Create PO
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─── Location Stock Modal ──────────────────────────────────────────────────────
 
-function InvLocationStockModal({ drug, onClose }: { drug: typeof drugs[0]; onClose: () => void }) {
+function InvLocationStockModal({ drug, onClose }: { drug: typeof products[0]; onClose: () => void }) {
   const packStr = DRUG_PACK[drug.name] ?? "";
   const packMatch = packStr.match(/^(\d+)[^/]*\/\s*(.+)$/);
   const packSize = packMatch ? parseInt(packMatch[1]) : 1;
@@ -3912,7 +3612,7 @@ function InvLocationStockModal({ drug, onClose }: { drug: typeof drugs[0]; onClo
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 10 }}>Storage Locations</div>
             {(!loc || loc.slots.length === 0) ? (
-              <div style={{ padding: "24px 0", textAlign: "center" as const, color: "#9CA3AF", fontSize: 13 }}>No location data available for this medicine</div>
+              <div style={{ padding: "24px 0", textAlign: "center" as const, color: "#9CA3AF", fontSize: 13 }}>No location data available for this product</div>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, border: "1px solid #EEF1F6", borderRadius: 6, overflow: "hidden" as const }}>
                 <thead>
@@ -4002,7 +3702,7 @@ function InvLocationStockModal({ drug, onClose }: { drug: typeof drugs[0]; onClo
 
 // ─── Expiry Risk Modal ─────────────────────────────────────────────────────────
 
-function InvExpiryRiskModal({ drug, onClose }: { drug: typeof drugs[0]; onClose: () => void }) {
+function InvExpiryRiskModal({ drug, onClose }: { drug: typeof products[0]; onClose: () => void }) {
   const today = new Date("2026-08-30");
   const packStr = DRUG_PACK[drug.name] ?? "";
   const packMatch = packStr.match(/^(\d+)[^/]*\/\s*(.+)$/);
@@ -4150,8 +3850,8 @@ function InvExpiryRiskModal({ drug, onClose }: { drug: typeof drugs[0]; onClose:
 
 // ─── Drug Detail Page ──────────────────────────────────────────────────────────
 
-function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDeactivate, onShortBook, onEditDistributor }: {
-  drug: typeof drugs[0];
+function ProductDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDeactivate, onShortBook, onEditDistributor }: {
+  drug: typeof products[0];
   onBack: () => void;
   onEdit: () => void;
   isDeactivated: boolean;
@@ -4164,10 +3864,11 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showStockCount, setShowStockCount] = useState(false);
   const [showAddBatch,  setShowAddBatch]  = useState(false);
-  const [adjustBatch,   setAdjustBatch]   = useState<typeof INV_BATCHES[0] | null>(null);
-  const [transferBatch, setTransferBatch] = useState<typeof INV_BATCHES[0] | null>(null);
-  const [historyBatch,  setHistoryBatch]  = useState<typeof INV_BATCHES[0] | null>(null);
+  const [adjustBatch,   setAdjustBatch]   = useState<{ batch: BatchView; writeOff: boolean } | null>(null);
+  const [transferBatch, setTransferBatch] = useState<BatchView | null>(null);
+  const [statusBatch,   setStatusBatch]   = useState<BatchView | null>(null);
   const [printLabelBatch, setPrintLabelBatch] = useState<typeof INV_BATCHES[0] | null>(null);
+  const { masters: stockMasters } = useMasters();
   const [toast, setToast] = useState<ToastState>(null);
   const [batchSearch, setBatchSearch] = useState("");
   const [batchFilter, setBatchFilter] = useState<"All" | "Available" | "Near Expiry" | "Quarantine" | "Blocked">("All");
@@ -4176,8 +3877,8 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
   const [batchPage, setBatchPage] = useState(1);
   const [batchPageSize, setBatchPageSize] = useState(10);
   const [movSearch, setMovSearch] = useState("");
-  const [movFilter, setMovFilter] = useState<"All" | "Purchase" | "Sale" | "Sale Return" | "Transfer In" | "Transfer Out" | "Adjustment" | "Expiry" | "Return to Distributor">("All");
-  const [movPeriod, setMovPeriod] = useState<"All" | "Daily" | "Weekly" | "Monthly" | "Yearly">("Monthly");
+  const [movFilter, setMovFilter] = useState<string>("All");
+  const [movPeriod, setMovPeriod] = useState<"All" | "Daily" | "Weekly" | "Monthly" | "Yearly">("All");
   const [movPeriodOpen, setMovPeriodOpen] = useState(false);
   const [movPeriodPos, setMovPeriodPos] = useState<{ top: number; right: number } | null>(null);
   const [movPage, setMovPage] = useState(1);
@@ -4200,35 +3901,117 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
   const [suppPageSize, setSuppPageSize] = useState(10);
   const [openSuppMenu, setOpenSuppMenu] = useState<string | null>(null);
   const [suppMenuPos, setSuppMenuPos] = useState<{ top: number; right: number } | null>(null);
-  const [placeOrderDist, setPlaceOrderDist] = useState<{ name: string; lastRate: number } | null>(null);
-  const [viewHistoryDist, setViewHistoryDist] = useState<string | null>(null);
+  const [placeOrderDist, setPlaceOrderDist] = useState<{ id: string; name: string; lastRate: number } | null>(null);
   const [showLocationStock, setShowLocationStock] = useState(false);
   const [showExpiryRisk, setShowExpiryRisk] = useState(false);
-  const [suppList, setSuppList] = useState(() => DRUG_SUPPLIERS[drug.name] ?? []);
   const qaRef = useRef<HTMLDivElement>(null);
 
-  const today = new Date("2026-08-30");
-  const daysRemaining = Math.floor((new Date(drug.expiry).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  const avgDailySale = Math.max(1, Math.round(drug.minStock / 30));
-  const reserved = drug.status === "Low Stock" ? Math.floor(drug.stock * 0.05) : 0;
-  const damaged = 0;
-  const quarantine = 0;
-  const blocked = 0;
-  const available = Math.max(0, drug.stock - reserved - damaged - quarantine - blocked);
-  const openPO = 50;
-  const daysOfStock = Math.round(available / avgDailySale);
-  const stockValue = drug.stock * drug.cost;
-  const margin = drug.price > 0 ? ((drug.price - drug.cost) / drug.price * 100) : 0;
-  const risk = daysRemaining < 90 ? "High" : daysRemaining < 180 ? "Medium" : "Low";
+  // ── Real data: the product's catalog + settings row, this pharmacy's batches and stock figures ──────────
+  const productId = String(drug.id);
+  const [auditPage, setAuditPage] = useState(1);
+  const [visited, setVisited] = useState<Set<string>>(() => new Set(["overview"]));
+  useEffect(() => { setVisited(v => (v.has(tab) ? v : new Set(v).add(tab))); }, [tab]);
+  const [detail, setDetail] = useState<ApiMyProduct | null>(null);
+  const [stock, setStock] = useState<StockSummary>(EMPTY_STOCK);
+  const [liveBatches, setLiveBatches] = useState<ProductBatch[]>([]);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+  const [loadError, setLoadError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const refresh = () => setReloadKey(k => k + 1);
+
+  useEffect(() => {
+    let live = true;
+    setLoadState("loading");
+    Promise.all([fetchMyProductDetail(productId), fetchStockSummary(productId), fetchProductBatches(productId)])
+      .then(([d, s, b]) => { if (live) { setDetail(d); setStock(s); setLiveBatches(b); setLoadState("ready"); } })
+      .catch((e: unknown) => {
+        if (live) { setLoadError(e instanceof Error ? e.message.replace(/^API \d+:\s*/, "") : "Could not load this product"); setLoadState("error"); }
+      });
+    return () => { live = false; };
+  }, [productId, reloadKey]);
+
+  const distributorsQ = useTabData(
+    visited.has("suppliers"), `${productId}|${reloadKey}`,
+    async () => { const items = await fetchProductDistributors(productId); return { items, total: items.length, page: 1, pageSize: items.length || 1 }; },
+  );
+  const suppRows = distributorsQ.rows.map(d => ({
+    id: d.distributorId, name: d.name, contact: d.email || d.phone, status: (d.preferred ? "Preferred" : d.active ? "Active" : "Inactive") as "Preferred" | "Active" | "Inactive",
+    currentStock: d.currentStock, lastOrderDate: d.lastOrderDate, lastRate: d.lastRate, effCost: d.effectiveCost,
+    leadDays: d.leadDays, totalOrders: d.totalOrders,
+  }));
+  // Period dropdowns on these tabs map to date bounds sent to the server
+  const toRange = (label: string): "daily" | "weekly" | "monthly" | "all" =>
+    label === "Daily" ? "daily" : label === "Weekly" ? "weekly" : label === "Monthly" || label === "Quarterly" || label === "Yearly" ? "monthly" : "all";
+  const bounds = (label: string) => {
+    if (label === "Quarterly" || label === "Yearly") {
+      const d = new Date(); d.setDate(d.getDate() - (label === "Quarterly" ? 91 : 365));
+      const iso = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+      return { dateFrom: iso(d), dateTo: iso(new Date()) };
+    }
+    return periodBounds(toRange(label));
+  };
+  const dMov = useDebounced(movSearch), dPh = useDebounced(phSearch), dSh = useDebounced(shSearch);
+  const movBounds = movPeriod === "All" ? {} : movPeriod === "Yearly" ? bounds("Yearly") : bounds(movPeriod === "Daily" ? "Daily" : movPeriod === "Weekly" ? "Weekly" : "Monthly");
+  const movQ = { page: movPage, pageSize: movPageSize, event: movFilter === "All" ? undefined : eventCode(movFilter), search: dMov, ...movBounds };
+  const movementsQ = useTabData<Movement, { totalIn: number; totalOut: number }>(visited.has("movement"), `${productId}|${reloadKey}|${JSON.stringify(movQ)}`, () => fetchMovements(productId, movQ));
+  const phQ = {
+    page: phPage, pageSize: phPageSize, search: dPh, kind: phStatus === "Returned" || phType === "Return" ? "Return" : phType === "Purchase Order" ? "Purchase" : undefined,
+    status: ({ Received: "paid", Pending: "pending", Partial: "partial" } as Record<string, string>)[phStatus], ...(phPeriod === "All Periods" ? {} : bounds(phPeriod)),
+  };
+  const purchasesQ = useTabData<PurchaseRow, { totalPurchased: number; totalPurchaseValue: number }>(visited.has("purchase-history"), `${productId}|${reloadKey}|${JSON.stringify(phQ)}`, () => fetchPurchaseHistory(productId, phQ));
+  const shQ = {
+    page: shPage, pageSize: shPageSize, search: dSh,
+    status: shStatus === "All" ? undefined : shStatus.toLowerCase(), ...(shPeriod === "All Periods" ? {} : bounds(shPeriod)),
+  };
+  const salesQ = useTabData<SaleRow, { totalSold: number; totalSaleValue: number }>(visited.has("sale-history"), `${productId}|${reloadKey}|${JSON.stringify(shQ)}`, () => fetchSaleHistory(productId, shQ));
+  const demandQ = useTabData(visited.has("sales"), `${productId}|${reloadKey}`,
+    async () => { const items = await fetchDemand(productId, 7); return { items, total: items.length, page: 1, pageSize: 7 }; });
+  const auditQ = useTabData(visited.has("audit"), `${productId}|${reloadKey}|${auditPage}`, () => fetchProductAudit(productId, auditPage, 25));
+  const prod = detail?.product;
+  const cfg = detail?.pharmacy_settings;
+  const todayMs = Date.now();
+  const today = new Date(todayMs);
+  const mrpNum = prod ? Number(prod.mrp) : drug.price;
+  const sellingNum = cfg ? Number(cfg.selling_price) : drug.price;
+  const costNum = cfg ? Number(cfg.wholesale_price) : drug.cost;
+  const minStockNum = cfg?.minimum_stock ?? drug.minStock;
+  const nearestExpiryDays = liveBatches
+    .filter(b => b.qtyCurrent > 0)
+    .map(b => Math.floor((new Date(b.expiry).getTime() - todayMs) / 86400000))
+    .reduce<number | null>((m, d) => (m === null || d < m ? d : m), null);
+  const daysRemaining = nearestExpiryDays ?? 9999;
+  const avgDailySale = stock.avgDaily;
+  const reserved = 0;                       // nothing reserves stock yet
+  const damaged = stock.damaged;
+  const quarantine = stock.quarantine;
+  const blocked = stock.blocked;
+  const available = stock.available;
+  const openPO = stock.openPoQty;
+  const daysOfStock = stock.daysOfStock ?? 0;
+  const stockValue = stock.stockValue;
+  const margin = sellingNum > 0 && costNum > 0 ? ((sellingNum - costNum) / sellingNum * 100) : 0;
+  const risk = nearestExpiryDays === null ? "Low" : nearestExpiryDays < 90 ? "High" : nearestExpiryDays < 180 ? "Medium" : "Low";
   const riskColor = risk === "High" ? "#C62828" : risk === "Medium" ? "#E65100" : "#2E7D32";
   const expectedStock = available + openPO;
-  const safetyStock = Math.floor(drug.minStock * 0.5);
-  const drugBatches = INV_BATCHES.filter(b => b.drug === drug.name);
-  const barcode = `8901234${drug.id.toString().padStart(7, "0")}`;
-  const statusBg = drug.status === "In Stock" ? "#E8F5E9" : drug.status === "Low Stock" ? "#FFF3E0" : "#FFEBEE";
-  const statusColor = drug.status === "In Stock" ? "#2E7D32" : drug.status === "Low Stock" ? "#E65100" : "#C62828";
+  const safetyStock = Math.floor(minStockNum * 0.5);
+  // Batch rows in the shape the existing tables expect, from the database
+  const drugBatches = liveBatches.map(b => ({
+    id: b.batchNo, dbId: b.id, drug: drug.name, expiry: b.expiry, qtyCurrent: b.qtyCurrent, qtyReceived: b.qtyReceived,
+    receivedDate: b.receivedDate, purchasePrice: b.cost, mrp: b.mrp, supplier: b.distributorId ?? "",
+    location: stock.byLocation.find(l => l.locationId === b.locationId)?.location ?? "", locationId: b.locationId, status: b.status,
+  }));
+  const barcode = prod?.barcode ?? "";
+  const liveStatus = loadState !== "ready" ? drug.status
+    : cfg?.is_draft ? "Draft" : available <= 0 ? "Out of Stock" : available < minStockNum ? "Low Stock" : "In Stock";
+  const statusBg = liveStatus === "In Stock" ? "#E8F5E9" : liveStatus === "Low Stock" ? "#FFF3E0" : liveStatus === "Draft" ? "#F3F4F6" : "#FFEBEE";
+  const statusColor = liveStatus === "In Stock" ? "#2E7D32" : liveStatus === "Low Stock" ? "#E65100" : liveStatus === "Draft" ? "#6B7280" : "#C62828";
 
-  const packStr = DRUG_PACK[drug.name] ?? "";
+  const text = (k: string) => String((prod as Record<string, unknown> | undefined)?.[k] ?? "");
+  const rxLabel = text("prescription_status") || "OTC";
+  const rxRequired = prod ? Boolean(prod.prescription_required) || rxLabel !== "OTC" : false;
+  const storageLabel = [text("storage_condition"), text("temp_range")].filter(Boolean).join(" · ");
+  const sideEffectList = text("side_effects").split(/[,;\n]/).map(x => x.trim()).filter(Boolean);
+  const packStr = text("pack_unit");
   const packMatch = packStr.match(/^(\d+)[^/]*\/\s*(.+)$/);
   const packSize = packMatch ? parseInt(packMatch[1]) : 1;
   const rawPackUnit = packMatch ? packMatch[2].trim() : drug.unit;
@@ -4322,7 +4105,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
           </button>
           <span style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter" }}>Stock</span>
           <span style={{ fontSize: 12, color: "#9CA3AF" }}>›</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>Medicine Details</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>Product Details</span>
         </div>
       </div>
 
@@ -4333,24 +4116,17 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const, minWidth: 0 }}>
             <div style={{ fontFamily: "Outfit", fontSize: 19, fontWeight: 700, color: "#0C1B33", letterSpacing: "-0.02em", whiteSpace: "nowrap" as const }}>{drug.name}</div>
             <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: statusBg, color: statusColor, flexShrink: 0 }}>
-              {drug.status === "In Stock" ? "Active" : drug.status}
+              {liveStatus === "In Stock" ? "Active" : liveStatus}
             </span>
-            {(() => {
-              const rx = DRUG_PRESCRIPTION[drug.name] ?? "OTC";
-              const rc = rx === "OTC" ? "#2E7D32" : rx === "Schedule H" ? "#1B6CA8" : rx === "Schedule H1" ? "#E65100" : "#C62828";
-              const rb = rx === "OTC" ? "#E8F5E9" : rx === "Schedule H" ? "#EFF6FF" : rx === "Schedule H1" ? "#FFF3E0" : "#FFEBEE";
-              const required = rx !== "OTC";
-              const s = DRUG_STORAGE[drug.name] ?? { label: "15–30°C", icon: "", color: "#2E7D32", bg: "#E8F5E9" };
-              return (
-                <>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999, background: rb, color: rc, flexShrink: 0 }}>{rx}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 999, background: required ? "#FFEBEE" : "#E8F5E9", color: required ? "#C62828" : "#2E7D32", flexShrink: 0 }}>
-                    {required ? "Rx Required" : "No Rx Needed"}
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 999, background: s.bg, color: s.color, flexShrink: 0 }}>{s.icon} {s.label}</span>
-                </>
-              );
-            })()}
+            {prod && (
+              <>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999, background: rxLabel === "OTC" ? "#E8F5E9" : "#EFF6FF", color: rxLabel === "OTC" ? "#2E7D32" : "#1B6CA8", flexShrink: 0 }}>{rxLabel}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 999, background: rxRequired ? "#FFEBEE" : "#E8F5E9", color: rxRequired ? "#C62828" : "#2E7D32", flexShrink: 0 }}>
+                  {rxRequired ? "Rx Required" : "No Rx Needed"}
+                </span>
+                {storageLabel && <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 999, background: "#E8F5E9", color: "#2E7D32", flexShrink: 0 }}>{storageLabel}</span>}
+              </>
+            )}
           </div>
           <div ref={qaRef} style={{ position: "relative", flexShrink: 0 }}>
             <button onClick={() => setShowQuickActions(o => !o)}
@@ -4366,7 +4142,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
             {showQuickActions && (
               <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", boxShadow: "0 4px 16px rgba(12,27,51,0.10)", zIndex: 200, minWidth: 200 }}>
                 {([
-                  { label: "Edit Medicine",   color: "#1B6CA8", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M11 2l3 3-8 8H3v-3l8-8z"/></svg>, action: () => { onEdit(); setShowQuickActions(false); } },
+                  { label: "Edit Product",   color: "#1B6CA8", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M11 2l3 3-8 8H3v-3l8-8z"/></svg>, action: () => { onEdit(); setShowQuickActions(false); } },
                   { label: "Add Batch",       color: "#2E7D32", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M8 5v6M5 8h6"/></svg>, action: () => { setShowAddBatch(true); setShowQuickActions(false); } },
                   { label: "Short Book",      color: "#7B1FA2", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h4M6 8h4M6 11h2"/></svg>, action: () => { onShortBook(); setShowQuickActions(false); } },
                   { label: "Print Label",     color: "#0C1B33", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="6" width="10" height="7" rx="1"/><path d="M5 6V3h6v3"/><circle cx="12" cy="9" r="0.8" fill="currentColor" stroke="none"/></svg>, action: () => { setPrintLabelBatch(drugBatches[0] ?? null); setShowQuickActions(false); } },
@@ -4388,22 +4164,22 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
 
         {/* Line 2: Form · Manufacturer · Barcode */}
         <div style={{ display: "flex", alignItems: "center", marginTop: 3, fontSize: 12, color: "#6B7280" }}>
-          <span>{DRUG_DOSAGE_FORM[drug.name] ?? drug.unit}</span>
+          <span>{prod?.dosage_form || drug.unit}</span>
           <span style={{ margin: "0 6px", color: "#DDE3EC" }}>·</span>
-          <span>{DRUG_MANUFACTURER[drug.name] ?? drug.supplier}</span>
+          <span>{prod?.manufacturer || drug.supplier}</span>
         </div>
 
         {/* Line 3: Category + Indication */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, flexWrap: "wrap" as const }}>
-          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 4, background: "#EFF6FF", color: "#1B6CA8", border: "1px solid #BFDBFE" }}>{drug.category}</span>
+          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 4, background: "#EFF6FF", color: "#1B6CA8", border: "1px solid #BFDBFE" }}>{prod?.therapeutic_category || drug.category}</span>
           <span style={{ color: "#DDE3EC", fontSize: 13 }}>·</span>
-          <span style={{ fontSize: 12, color: "#6B7280" }}>{DRUG_INDICATIONS[drug.name] ?? ""}</span>
+          <span style={{ fontSize: 12, color: "#6B7280" }}>{text("therapeutic_indications")}</span>
         </div>
 
         {/* Line 4: Side Effects */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, flexWrap: "wrap" as const }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: "#1A2436", letterSpacing: "0.08em", textTransform: "uppercase" as const, flexShrink: 0 }}>Side Effects</span>
-          {(DRUG_SIDE_EFFECTS[drug.name] ?? []).map(se => (
+          {sideEffectList.map(se => (
             <span key={se} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: "#FFF3E0", color: "#C2410C", border: "1px solid #FED7AA", fontFamily: "Inter" }}>{se}</span>
           ))}
         </div>
@@ -4516,8 +4292,8 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               {/* Stock by Location */}
               {(() => {
-                const loc = DRUG_LOCATIONS[drug.name];
-                if (!loc || loc.slots.length === 0) return <div />;
+                const loc = { store: "This pharmacy", slots: stock.byLocation.filter(l => l.quantity > 0).map(l => ({ name: l.location || "Unassigned", qty: l.quantity })) };
+                if (loc.slots.length === 0) return <div />;
                 const total = loc.slots.reduce((s, r) => s + r.qty, 0);
                 return (
                   <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
@@ -4658,7 +4434,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
           const BATCH_FILTERS = ["All", "Available", "Near Expiry", "Quarantine", "Blocked"] as const;
           const filtered = drugBatches.filter(b => {
             const q = batchSearch.toLowerCase();
-            if (q && !b.id.toLowerCase().includes(q) && !b.supplier.toLowerCase().includes(q) && !b.location.toLowerCase().includes(q)) return false;
+            if (q && !b.id.toLowerCase().includes(q) && !b.location.toLowerCase().includes(q)) return false;
             if (batchFilter === "All") return true;
             const days = Math.floor((new Date(b.expiry).getTime() - today.getTime()) / 86400000);
             if (batchFilter === "Available") return days > 0 && b.status !== "Blocked" && b.status !== "Quarantine";
@@ -4705,7 +4481,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
               <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 8, flexShrink: 0, flexWrap: "nowrap" as const, overflowX: "auto" as const }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "10px 12px", flex: "0 0 220px", minHeight: 40, boxSizing: "border-box" as const }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                  <input value={batchSearch} onChange={e => { setBatchSearch(e.target.value); setBatchPage(1); }} placeholder="Search batch, distributor, location…"
+                  <input value={batchSearch} onChange={e => { setBatchSearch(e.target.value); setBatchPage(1); }} placeholder="Search batch, location…"
                     style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
                 </div>
                 {BATCH_FILTERS.map(f => (
@@ -4750,7 +4526,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                         const margin = b.mrp > 0 ? Math.round(((b.mrp - b.purchasePrice) / b.mrp) * 100) : 0;
                         const batchValue = b.qtyCurrent * b.purchasePrice;
 
-                        const statusLabel = days <= 0 ? "Expired" : b.status === "Expiring Soon" ? "Near Expiry" : b.status === "Low" ? "Low Stock" : b.status === "Quarantine" ? "Quarantine" : b.status === "Blocked" ? "Blocked" : "Active";
+                        const statusLabel = days <= 0 ? "Expired" : b.status === "Quarantine" ? "Quarantine" : b.status === "Blocked" ? "Blocked" : b.status === "Damaged" ? "Damaged" : days <= 90 ? "Near Expiry" : "Active";
                         const statusCfg: Record<string, { bg: string; color: string }> = {
                           "Active":      { bg: "#E8F5E9", color: "#2E7D32" },
                           "Low Stock":   { bg: "#FFF3E0", color: "#E65100" },
@@ -4758,6 +4534,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                           "Expired":     { bg: "#FFEBEE", color: "#C62828" },
                           "Quarantine":  { bg: "#EFF6FF", color: "#1B6CA8" },
                           "Blocked":     { bg: "#FFEBEE", color: "#C62828" },
+                          "Damaged":     { bg: "#FFEBEE", color: "#C62828" },
                         };
                         const sc = statusCfg[statusLabel] ?? { bg: "#F0F3F7", color: "#6B7280" };
 
@@ -4775,7 +4552,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                             {/* Batch No + Supplier subtitle */}
                             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" as const }}>
                               <div style={{ fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 600, color: "#0C1B33" }}>{b.id}</div>
-                              <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{b.supplier}</div>
+                              
                             </td>
                             {/* Status — square pill, matching inventory */}
                             <td style={{ padding: "10px 12px" }}>
@@ -4850,7 +4627,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                   <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33", marginBottom: 8 }}>{drug.name}</div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2436", marginBottom: 10 }}>No inventory batches found.</div>
                   <div style={{ fontSize: 13, color: "#6B7280", textAlign: "center" as const, maxWidth: 380, lineHeight: 1.6, marginBottom: 28 }}>
-                    This medicine exists in Medicine Master but has not yet been purchased for this store.
+                    This product exists in Product Master but has not yet been purchased for this store.
                   </div>
                   <button
                     style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 22px", background: "#1B6CA8", color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontFamily: "Inter", fontWeight: 600, cursor: "pointer" }}
@@ -4880,9 +4657,9 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                   </button>
                 </div>
               )}
-              {filtered.length > 0 && (
+              {movementsQ.total > 0 && (
                 <PaginationFooter
-                  total={filtered.length}
+                  total={movementsQ.total}
                   page={safePage}
                   pageSize={batchPageSize}
                   totalPages={totalPages}
@@ -4897,11 +4674,12 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                 <div onMouseDown={e => e.stopPropagation()}
                   style={{ position: "fixed" as const, top: batchMenuPos.top, right: batchMenuPos.right, background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", boxShadow: "0 4px 12px rgba(12,27,51,0.12)", zIndex: 500, width: 168,  overflow: "hidden" }}>
                   {[
-                    { label: "Adjust Stock",  icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>,                                                                                                                                                                                       color: "#1B6CA8", action: () => { const b = drugBatches.find(x => x.id === openBatchMenu); if (b) setAdjustBatch(b); setOpenBatchMenu(null); setBatchMenuPos(null); } },
+                    { label: "Adjust Stock",  icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>,                                                                                                                                                                                       color: "#1B6CA8", action: () => { const b = drugBatches.find(x => x.id === openBatchMenu); if (b) setAdjustBatch({ batch: b, writeOff: false }); setOpenBatchMenu(null); setBatchMenuPos(null); } },
                     { label: "Transfer",      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>,                                                                                                                                                                                    color: "#6B21A8", action: () => { const b = drugBatches.find(x => x.id === openBatchMenu); if (b) setTransferBatch(b); setOpenBatchMenu(null); setBatchMenuPos(null); } },
-                    { label: "View History",  icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,                                                                                                                                               color: "#0C6E6E", action: () => { const b = drugBatches.find(x => x.id === openBatchMenu); if (b) setHistoryBatch(b); setOpenBatchMenu(null); setBatchMenuPos(null); } },
+                    { label: "View History",  icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,                                                                                                                                               color: "#0C6E6E", action: () => { const b = drugBatches.find(x => x.id === openBatchMenu); if (b) { setMovSearch(b.id); setMovPage(1); setTab("movement"); } setOpenBatchMenu(null); setBatchMenuPos(null); } },
                     { label: "Print Label",   icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,                                          color: "#6B7280", action: () => { const b = drugBatches.find(x => x.id === openBatchMenu); setPrintLabelBatch(b ?? null); setOpenBatchMenu(null); setBatchMenuPos(null); } },
-                    { label: "Write-off",     icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>,                                                                                                                                 color: "#C62828", action: () => { setOpenBatchMenu(null); setBatchMenuPos(null); } },
+                    { label: "Quarantine / status", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l9 4v6c0 5-4 9-9 10-5-1-9-5-9-10V6z"/></svg>, action: () => { const b = drugBatches.find(x => x.id === openBatchMenu); if (b) setStatusBatch(b); setOpenBatchMenu(null); setBatchMenuPos(null); } },
+                    { label: "Write-off",     icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>,                                                                                                                                 color: "#C62828", action: () => { const b = drugBatches.find(x => x.id === openBatchMenu); if (b) setAdjustBatch({ batch: b, writeOff: true }); setOpenBatchMenu(null); setBatchMenuPos(null); } },
                   ].map((item, mi, arr) => (
                     <button key={item.label} onClick={item.action}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, fontFamily: "Inter", fontWeight: 500, color: item.color, textAlign: "left" as const, borderBottom: mi < arr.length - 1 ? "1px solid #F0F3F7" : "none" }}
@@ -4919,7 +4697,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
 
         {tab === "suppliers" && (() => {
           const SUPP_FILTERS = ["All", "Preferred", "Active", "Inactive"] as const;
-          const allSuppliers = suppList;
+          const allSuppliers = suppRows;
           const filtered = allSuppliers.filter(s => {
             const q = suppSearch.toLowerCase();
             if (q && !s.name.toLowerCase().includes(q) && !s.contact.toLowerCase().includes(q)) return false;
@@ -4939,7 +4717,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
               <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 10, flexShrink: 0 }}>
                 <div>
                   <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#0C1B33" }}>Distributors for {drug.name}</div>
-                  <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{allSuppliers.length} registered distributor{allSuppliers.length !== 1 ? "s" : ""}</div>
+                  <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{distributorsQ.loading && allSuppliers.length === 0 ? "Loading…" : `${allSuppliers.length} distributor${allSuppliers.length !== 1 ? "s" : ""} you have bought this from`}</div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   {preferred && (
@@ -4986,7 +4764,6 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                           { label: "Margin",        align: "right"  },
                           { label: "Lead Time",     align: "center" },
                           { label: "Orders",        align: "center" },
-                          { label: "Rating",        align: "center" },
                           { label: "Actions",       align: "center" },
                         ].map(h => (
                           <th key={h.label} style={{ padding: "9px 12px", textAlign: h.align as "left" | "right" | "center", fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.09em", textTransform: "uppercase" as const, whiteSpace: "nowrap" as const }}>{h.label}</th>
@@ -4995,7 +4772,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                     </thead>
                     <tbody>
                       {suppPageRows.map(s => {
-                        const margin = drug.mrp > 0 ? Math.round(((drug.mrp - s.effCost) / drug.mrp) * 100) : 0;
+                        const margin = mrpNum > 0 ? Math.round(((mrpNum - s.effCost) / mrpNum) * 100) : 0;
                         const marginColor = margin >= 25 ? "#2E7D32" : margin >= 15 ? "#E65100" : "#C62828";
                         const statusCfg = s.status === "Preferred"
                           ? { bg: "#F0FDF4", color: "#166534", border: "#BBF7D0" }
@@ -5039,16 +4816,12 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                             </td>
                             {/* Lead Time */}
                             <td style={{ padding: "10px 12px", textAlign: "center" as const }}>
-                              <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 600, color: s.leadDays <= 1 ? "#2E7D32" : s.leadDays <= 2 ? "#E65100" : "#C62828" }}>
-                                {s.leadDays} day{s.leadDays !== 1 ? "s" : ""}
+                              <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 600, color: s.leadDays === null ? "#9CA3AF" : s.leadDays <= 1 ? "#2E7D32" : s.leadDays <= 2 ? "#E65100" : "#C62828" }}>
+                                {s.leadDays === null ? "—" : `${s.leadDays} day${s.leadDays !== 1 ? "s" : ""}`}
                               </span>
                             </td>
                             {/* Total Orders */}
                             <td style={{ padding: "10px 12px", textAlign: "center" as const, fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{s.totalOrders}</td>
-                            {/* Rating */}
-                            <td style={{ padding: "10px 12px", textAlign: "center" as const }}>
-                              <span style={{ fontFamily: "JetBrains Mono", fontSize: 13, color: "#F59E0B" }}>{s.rating}/5</span>
-                            </td>
                             {/* Actions */}
                             <td style={{ padding: "10px 12px", textAlign: "center" as const }}>
                               <button
@@ -5076,7 +4849,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                   </div>
                   <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33", marginBottom: 8 }}>No distributors registered</div>
                   <div style={{ fontSize: 13, color: "#6B7280", textAlign: "center" as const, maxWidth: 360, lineHeight: 1.6, marginBottom: 28 }}>
-                    No distributors have been linked to this medicine yet. Add a distributor to start tracking pricing and lead times.
+                    No distributors have been linked to this product yet. Add a distributor to start tracking pricing and lead times.
                   </div>
                   <button style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 22px", background: "#1B6CA8", color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontFamily: "Inter", fontWeight: 600, cursor: "pointer" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#155A8A")}
@@ -5117,13 +4890,17 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                 <div onMouseDown={e => e.stopPropagation()}
                   style={{ position: "fixed" as const, top: suppMenuPos.top, right: suppMenuPos.right, background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", boxShadow: "0 4px 12px rgba(12,27,51,0.12)", zIndex: 500, width: 172,  overflow: "hidden" }}>
                   {[
-                    { label: "Place Order",     icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>,                                                                                                                             color: "#1B6CA8", action: () => { const suppName = openSuppMenu; const dist = suppName ? suppList.find(s => s.name === suppName) : null; setOpenSuppMenu(null); setSuppMenuPos(null); setPlaceOrderDist({ name: suppName ?? "", lastRate: dist?.lastRate ?? drug.cost }); } },
-                    { label: "View History",    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,                                                                                    color: "#0C6E6E", action: () => { const n = openSuppMenu; setOpenSuppMenu(null); setSuppMenuPos(null); setViewHistoryDist(n); } },
-                    ...(suppList.find(s => s.name === openSuppMenu)?.status !== "Preferred" ? [
-                    { label: "Mark Preferred",  icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>, color: "#E65100", action: () => { const target = openSuppMenu; setOpenSuppMenu(null); setSuppMenuPos(null); setSuppList(prev => prev.map(s => { if (s.name === target) return { ...s, status: "Preferred" as const }; if (s.status === "Preferred") return { ...s, status: (s.currentStock > 0 ? "Active" : "Inactive") as "Active" | "Inactive" }; return s; })); setToast({ ok: true, msg: `${target} marked as Preferred distributor` }); } },
+                    { label: "Place Order",     icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>,                                                                                                                             color: "#1B6CA8", action: () => { const dist = suppRows.find(s => s.name === openSuppMenu); setOpenSuppMenu(null); setSuppMenuPos(null); if (dist) setPlaceOrderDist({ id: dist.id, name: dist.name, lastRate: dist.lastRate }); } },
+                    { label: "View History",    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,                                                                                    color: "#0C6E6E", action: () => { const n = openSuppMenu; setOpenSuppMenu(null); setSuppMenuPos(null); if (n) { setPhSearch(n); setPhPage(1); setTab("purchase-history"); } } },
+                    ...(suppRows.find(s => s.name === openSuppMenu)?.status !== "Preferred" ? [
+                    { label: "Mark Preferred",  icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>, color: "#E65100", action: async () => {
+                      const target = suppRows.find(x => x.name === openSuppMenu); setOpenSuppMenu(null); setSuppMenuPos(null);
+                      if (!target) return;
+                      try { await updateMyDistributorSettings(target.id, { preferred: true }); setToast({ ok: true, msg: `${target.name} is now your preferred distributor` }); refresh(); }
+                      catch (e) { setToast({ ok: false, msg: e instanceof Error ? e.message.replace(/^API \d+:\s*/, "") : "Could not update the distributor" }); }
+                    } },
                     ] : []),
                     { label: "Edit Distributor",   icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, color: "#6B7280", action: () => { const n = openSuppMenu; setOpenSuppMenu(null); setSuppMenuPos(null); onEditDistributor?.(n ?? ""); } },
-                    { label: "Remove",          icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>,                                                                     color: "#C62828", action: () => { setOpenSuppMenu(null); setSuppMenuPos(null); } },
                   ].map((item, mi, arr) => (
                     <button key={item.label} onClick={item.action}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, fontFamily: "Inter", fontWeight: 500, color: item.color, textAlign: "left" as const, borderBottom: mi < arr.length - 1 ? "1px solid #F0F3F7" : "none" }}
@@ -5139,31 +4916,18 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
         })()}
 
         {tab === "movement" && (() => {
-          const MOV_FILTERS: (typeof movFilter)[] = ["All", "Purchase", "Sale", "Sale Return", "Transfer In", "Transfer Out", "Adjustment", "Expiry", "Return to Distributor"];
+          const MOV_FILTERS = ["All", ...MOVEMENT_FILTERS] as (typeof movFilter)[];
           const MOV_PERIODS: (typeof movPeriod)[] = ["All", "Daily", "Weekly", "Monthly", "Yearly"];
-          const allMovements = DRUG_MOVEMENTS[drug.name] ?? [];
-          const now = new Date("2026-09-25");
-          const periodCutoff = new Date(now);
-          if (movPeriod === "Daily")        periodCutoff.setDate(now.getDate() - 1);
-          else if (movPeriod === "Weekly")  periodCutoff.setDate(now.getDate() - 7);
-          else if (movPeriod === "Monthly") periodCutoff.setMonth(now.getMonth() - 1);
-          else if (movPeriod === "Yearly")  periodCutoff.setFullYear(now.getFullYear() - 1);
-          else                              periodCutoff.setFullYear(2000); // "All" — no cutoff
-          const filtered = allMovements.filter(m => {
-            const mDate = new Date(m.date);
-            if (mDate < periodCutoff) return false;
-            const q = movSearch.toLowerCase();
-            if (q && !m.batch.toLowerCase().includes(q) && !m.ref.toLowerCase().includes(q) && !m.user.toLowerCase().includes(q) && !m.event.toLowerCase().includes(q)) return false;
-            return movFilter === "All" || m.event === movFilter;
-          });
-          const movTotalPages = Math.max(1, Math.ceil(filtered.length / movPageSize));
+          // Filtering, paging and the in/out totals are done by the server over the whole ledger
+          const allMovements = movementsQ.rows;
+          const filtered = allMovements;
+          const movTotalPages = Math.max(1, Math.ceil(movementsQ.total / movPageSize));
           const movSafePage = Math.min(movPage, movTotalPages);
           const movStart = (movSafePage - 1) * movPageSize;
-          const movEnd = Math.min(movSafePage * movPageSize, filtered.length);
-          const movPageRows = filtered.slice(movStart, movEnd);
-
-          const totalIn  = allMovements.filter(m => m.qty > 0).reduce((s, m) => s + m.qty, 0);
-          const totalOut = allMovements.filter(m => m.qty < 0).reduce((s, m) => s + m.qty, 0);
+          const movEnd = Math.min(movSafePage * movPageSize, movementsQ.total);
+          const movPageRows = allMovements;
+          const totalIn  = (movementsQ.extra?.totalIn ?? 0);
+          const totalOut = -Math.abs(movementsQ.extra?.totalOut ?? 0);
 
           const EVENT_CFG: Record<string, { bg: string; color: string; border: string }> = {
             "Purchase":              { bg: "#E8F5E9", color: "#2E7D32", border: "#A5D6A7" },
@@ -5174,6 +4938,9 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
             "Adjustment":            { bg: "#FFF7ED", color: "#C2410C", border: "#FED7AA" },
             "Expiry":                { bg: "#FFEBEE", color: "#C62828", border: "#FFCDD2" },
             "Return to Distributor": { bg: "#FEF9C3", color: "#92400E", border: "#FDE68A" },
+            "Return Cancelled":      { bg: "#F0FDF4", color: "#166534", border: "#BBF7D0" },
+            "Damage Write-off":      { bg: "#FFEBEE", color: "#C62828", border: "#FFCDD2" },
+            "Opening":               { bg: "#F5F3FF", color: "#6B21A8", border: "#DDD6FE" },
           };
 
           return (
@@ -5182,7 +4949,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
               <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 10, flexShrink: 0 }}>
                 <div>
                   <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#0C1B33" }}>Stock Movement — {drug.name}</div>
-                  <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{allMovements.length} total movement{allMovements.length !== 1 ? "s" : ""}</div>
+                  <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{movementsQ.loading && movementsQ.total === 0 ? "Loading…" : `${movementsQ.total} movement${movementsQ.total !== 1 ? "s" : ""}`}</div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <div style={{ background: "#E8F5E9", border: "1px solid #A5D6A7", borderRadius: 6, padding: "5px 12px", textAlign: "center" as const }}>
@@ -5253,7 +5020,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                       {movPageRows.map(m => {
                         const d = new Date(m.date);
                         const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-                        const dateStr = `${d.getDate()} ${d.toLocaleString("en-IN", { month: "short" })} ${String(d.getFullYear()).slice(2)}`;
+                        const dateStr = `${d.getDate()} ${d.toLocaleString("en-IN", { month: "short" })} ${String(d.getFullYear()).slice(2)}, ${d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
                         const dayStr  = days[d.getDay()];
                         const ec = EVENT_CFG[m.event] ?? { bg: "#F0F3F7", color: "#6B7280", border: "#DDE3EC" };
                         const isIn    = m.qty > 0;
@@ -5262,9 +5029,9 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                         const qtyStr  = isIn ? `+${toPacks(m.qty)}` : `${toPacks(m.qty)}`;
                         const qtyLabel = isIn ? "Inbound" : "Outbound";
                         const refType: Record<string, string> = { "Purchase": "Purchase Order", "Sale": "Sales Invoice", "Sale Return": "Return Note", "Transfer In": "Transfer Slip", "Transfer Out": "Transfer Slip", "Adjustment": "Adjustment Note", "Expiry": "Write-off", "Return to Distributor": "Debit Note" };
-                        const roleColor: Record<string, string> = { "Cashier": "#1B6CA8", "Pharmacist": "#6B21A8", "Manager": "#C2410C", "System": "#6B7280" };
+                        
                         return (
-                          <tr key={`${m.date}-${m.ref}`}
+                          <tr key={m.id}
                             style={{ borderBottom: "1px solid #EEF1F6" }}
                             onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")}
                             onMouseLeave={e => (e.currentTarget.style.background = "")}>
@@ -5279,7 +5046,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                             </td>
                             {/* Batch No */}
                             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" as const }}>
-                              <div style={{ fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, color: "#0C1B33" }}>{m.batch}</div>
+                              <div style={{ fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, color: "#0C1B33" }}>{m.batchNo}</div>
                               <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>{drug.name}</div>
                             </td>
                             {/* Qty */}
@@ -5295,7 +5062,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                             {/* Reference */}
                             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" as const }}>
                               <div style={{ fontSize: 12, fontFamily: "JetBrains Mono", fontWeight: 600, color: "#1B6CA8" }}>{m.ref}</div>
-                              <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>{refType[m.event] ?? "Document"}</div>
+                              <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>{m.refType.replace(/_/g, " ")}</div>
                             </td>
                             {/* Note */}
                             <td style={{ padding: "10px 12px", maxWidth: 180 }}>
@@ -5304,7 +5071,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                             {/* User */}
                             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" as const }}>
                               <div style={{ fontSize: 13, fontWeight: 600, color: "#0C1B33", fontFamily: "Inter" }}>{m.user}</div>
-                              <div style={{ fontSize: 10, color: roleColor[m.role] ?? "#6B7280", marginTop: 2 }}>{m.role}</div>
+                              
                             </td>
                           </tr>
                         );
@@ -5312,13 +5079,17 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                     </tbody>
                   </table>
                 </div>
-              ) : allMovements.length === 0 ? (
+              ) : movementsQ.loading ? (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#9CA3AF", fontSize: 13, padding: 48 }}>Loading movements…</div>
+              ) : movementsQ.error ? (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#B91C1C", fontSize: 13, padding: 48 }}>Could not load movements: {movementsQ.error} <button onClick={movementsQ.reload} style={{ marginLeft: 10 }}>Retry</button></div>
+              ) : movementsQ.total === 0 && !dMov && movFilter === "All" && movPeriod === "All" ? (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", padding: "48px 32px" }}>
                   <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#F0F3F7", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
                   </div>
                   <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33", marginBottom: 8 }}>No movements recorded</div>
-                  <div style={{ fontSize: 13, color: "#6B7280", textAlign: "center" as const, maxWidth: 360, lineHeight: 1.6 }}>Stock movements will appear here once purchases, sales, or adjustments are made for this medicine.</div>
+                  <div style={{ fontSize: 13, color: "#6B7280", textAlign: "center" as const, maxWidth: 360, lineHeight: 1.6 }}>Stock movements will appear here once purchases, sales, or adjustments are made for this product.</div>
                 </div>
               ) : (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", padding: 48 }}>
@@ -5327,7 +5098,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2436", marginBottom: 6 }}>No movements match the filter</div>
                   <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 16 }}>Try a different filter or clear your search.</div>
-                  <button onClick={() => { setMovSearch(""); setMovFilter("All"); setMovPeriod("Monthly"); setMovPage(1); }}
+                  <button onClick={() => { setMovSearch(""); setMovFilter("All"); setMovPeriod("All"); setMovPage(1); }}
                     style={{ fontSize: 12, fontFamily: "Inter", fontWeight: 600, padding: "6px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", color: "#1B6CA8",  cursor: "pointer" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#EFF6FF")}
                     onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
@@ -5341,7 +5112,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                   page={movSafePage}
                   pageSize={movPageSize}
                   totalPages={movTotalPages}
-                  startLabel={filtered.length === 0 ? 0 : movStart + 1}
+                  startLabel={movementsQ.total === 0 ? 0 : movStart + 1}
                   endLabel={movEnd}
                   onPageChange={p => setMovPage(Math.min(Math.max(1, p), movTotalPages))}
                   onPageSizeChange={n => { setMovPageSize(n); setMovPage(1); }}
@@ -5367,62 +5138,38 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
         })()}
 
         {(tab === "purchase-history" || tab === "sale-history" || tab === "audit") && (() => {
-          const allPurchaseRows = [
-            { date: "28 Jul 2025", po: "PO-2025-0134", distributor: drug.supplier, batch: "BT-0041", qty: 50,  rate: drug.cost * 0.95, amount: 50  * drug.cost * 0.95, status: "Received", type: "Purchase Order" },
-            { date: "15 Jun 2025", po: "PO-2025-0098", distributor: drug.supplier, batch: "BT-0028", qty: 100, rate: drug.cost * 0.93, amount: 100 * drug.cost * 0.93, status: "Received", type: "Purchase Order" },
-            { date: "02 May 2025", po: "RTN-2025-0067", distributor: drug.supplier, batch: "BT-0019", qty: 10, rate: drug.cost * 0.92, amount: 10  * drug.cost * 0.92, status: "Returned", type: "Return" },
-            { date: "18 Mar 2025", po: "PO-2025-0031", distributor: drug.supplier, batch: "BT-0011", qty: 60,  rate: drug.cost * 0.90, amount: 60  * drug.cost * 0.90, status: "Received", type: "Purchase Order" },
-            { date: "05 Feb 2025", po: "PO-2025-0008", distributor: drug.supplier, batch: "BT-0004", qty: 80,  rate: drug.cost * 0.90, amount: 80  * drug.cost * 0.90, status: "Received", type: "Purchase Order" },
-            { date: "10 Jan 2025", po: "RTN-2025-0003", distributor: drug.supplier, batch: "BT-0002", qty: 5,  rate: drug.cost * 0.88, amount: 5   * drug.cost * 0.88, status: "Returned", type: "Return" },
-          ];
-          const saleRows = [
-            { date: "28 Jul 2025", invoice: "INV-2025-1084", patient: "Rajesh Kumar",  qty: 2, rate: drug.price, amount: 2 * drug.price, type: "Sale",   status: "Paid" },
-            { date: "27 Jul 2025", invoice: "INV-2025-1071", patient: "Priya Sharma",  qty: 1, rate: drug.price, amount: 1 * drug.price, type: "Sale",   status: "Paid" },
-            { date: "26 Jul 2025", invoice: "INV-2025-1058", patient: "Amit Verma",    qty: 3, rate: drug.price, amount: 3 * drug.price, type: "Sale",   status: "Pending" },
-            { date: "25 Jul 2025", invoice: "RTN-2025-0042", patient: "Sunita Patel",  qty: 1, rate: drug.price, amount: 1 * drug.price, type: "Return", status: "Returned" },
-            { date: "24 Jul 2025", invoice: "INV-2025-1039", patient: "Vikram Singh",  qty: 2, rate: drug.price, amount: 2 * drug.price, type: "Sale",   status: "Paid" },
-            { date: "23 Jul 2025", invoice: "INV-2025-1021", patient: "Meena Iyer",    qty: 1, rate: drug.price, amount: 1 * drug.price, type: "Sale",   status: "Cancelled" },
-          ];
-          const auditRows = [
-            { date: "28 Jul 2025 10:42", event: "Stock Adjusted",    user: "Admin",       detail: "Stock +10 units — manual count correction" },
-            { date: "15 Jun 2025 09:15", event: "Price Updated",     user: "Pharmacist",  detail: `Sale rate: ₹${(drug.price * 0.95).toFixed(2)} → ₹${drug.price.toFixed(2)}` },
-            { date: "02 May 2025 14:30", event: "Batch Received",    user: "Storekeeper", detail: "Batch BT-0019 added — Qty 75" },
-            { date: "18 Mar 2025 11:05", event: "Reorder Level Set", user: "Admin",       detail: `Min stock set to ${drug.minStock} units` },
-            { date: "05 Feb 2025 16:20", event: "Medicine Created",  user: "Admin",       detail: "Medicine master record created" },
-          ];
-
-          // Purchase history filters
+          const fmtDate = (iso: string, withTime = false) => {
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return iso;
+            const base = `${String(d.getDate()).padStart(2, "0")} ${d.toLocaleString("en-IN", { month: "short" })} ${d.getFullYear()}`;
+            return withTime ? `${base} ${d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` : base;
+          };
           const PH_STATUSES = ["All", "Received", "Returned", "Pending", "Partial"];
-          const phFiltered = allPurchaseRows.filter(r => {
-            const matchSearch = !phSearch || r.po.toLowerCase().includes(phSearch.toLowerCase()) || r.distributor.toLowerCase().includes(phSearch.toLowerCase()) || r.batch.toLowerCase().includes(phSearch.toLowerCase());
-            const matchType = phType === "All Types" || r.type === phType;
-            const matchStatus = phStatus === "All" || r.status === phStatus;
-            return matchSearch && matchType && matchStatus;
-          });
-          const phTotalPages = Math.max(1, Math.ceil(phFiltered.length / phPageSize));
+          const phPageRows = purchasesQ.rows;
+          const phTotalPages = Math.max(1, Math.ceil(purchasesQ.total / phPageSize));
           const phSafePage = Math.min(phPage, phTotalPages);
-          const phPageRows = phFiltered.slice((phSafePage - 1) * phPageSize, phSafePage * phPageSize);
 
-          // Sale history filters
-          const SH_STATUSES = ["All", "Paid", "Pending", "Returned", "Cancelled"];
-          const shFiltered = saleRows.filter(r => {
-            const matchSearch = !shSearch || r.invoice.toLowerCase().includes(shSearch.toLowerCase()) || r.patient.toLowerCase().includes(shSearch.toLowerCase());
-            const matchType = shType === "All Types" || r.type === shType;
-            const matchStatus = shStatus === "All" || r.status === shStatus;
-            return matchSearch && matchType && matchStatus;
-          });
-          const shTotalPages = Math.max(1, Math.ceil(shFiltered.length / shPageSize));
+          const SH_STATUSES = ["All", "Confirmed", "Cancelled"];
+          const shPageRows = salesQ.rows;
+          const shTotalPages = Math.max(1, Math.ceil(salesQ.total / shPageSize));
           const shSafePage = Math.min(shPage, shTotalPages);
-          const shPageRows = shFiltered.slice((shSafePage - 1) * shPageSize, shSafePage * shPageSize);
+          const phFiltered = { length: purchasesQ.total };
+          const shFiltered = { length: salesQ.total };
+          const auditPages = Math.max(1, Math.ceil(auditQ.total / 25));
+          const loadingRow = (cols: number, q: { loading: boolean; error: string; reload: () => void }, empty: string) => (
+            <tr><td colSpan={cols} style={{ padding: "32px", textAlign: "center", color: q.error ? "#B91C1C" : "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>
+              {q.loading ? "Loading…" : q.error ? <>Could not load: {q.error} <button onClick={q.reload} style={{ marginLeft: 8 }}>Retry</button></> : empty}
+            </td></tr>
+          );
 
           const thStyle: React.CSSProperties = { padding: "9px 14px", fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.07em", textTransform: "uppercase", textAlign: "left", borderBottom: "1px solid #EEF1F6", background: "#FAFBFD", whiteSpace: "nowrap" };
           const tdStyle: React.CSSProperties = { padding: "10px 14px", fontSize: 13, color: "#1A2436", borderBottom: "1px solid #EEF1F6", fontFamily: "Inter" };
           const monoStyle: React.CSSProperties = { ...tdStyle, fontFamily: "JetBrains Mono", fontSize: 12 };
 
-          const totalPurchased = allPurchaseRows.reduce((s, r) => s + r.qty, 0);
-          const totalPurchaseValue = allPurchaseRows.reduce((s, r) => s + r.amount, 0);
-          const totalSold = saleRows.reduce((s, r) => s + r.qty, 0);
-          const totalSaleValue = saleRows.reduce((s, r) => s + r.amount, 0);
+          const totalPurchased = purchasesQ.extra?.totalPurchased ?? 0;
+          const totalPurchaseValue = purchasesQ.extra?.totalPurchaseValue ?? 0;
+          const totalSold = salesQ.extra?.totalSold ?? 0;
+          const totalSaleValue = salesQ.extra?.totalSaleValue ?? 0;
 
           return (
             <div style={{ display: "flex", flexDirection: "column" as const, gap: 0 }}>
@@ -5433,7 +5180,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                   <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 10, flexShrink: 0 }}>
                     <div>
                       <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#0C1B33" }}>Purchase History — {drug.name}</div>
-                      <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{allPurchaseRows.length} purchase record{allPurchaseRows.length !== 1 ? "s" : ""}</div>
+                      <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{purchasesQ.total} record{purchasesQ.total !== 1 ? "s" : ""}</div>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 6, padding: "5px 12px", textAlign: "center" as const }}>
@@ -5453,7 +5200,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                   <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 10, flexShrink: 0 }}>
                     <div>
                       <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#0C1B33" }}>Sale History — {drug.name}</div>
-                      <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{saleRows.length} sale record{saleRows.length !== 1 ? "s" : ""}</div>
+                      <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{salesQ.total} record{salesQ.total !== 1 ? "s" : ""}</div>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <div style={{ background: "#E8F5E9", border: "1px solid #A5D6A7", borderRadius: 6, padding: "5px 12px", textAlign: "center" as const }}>
@@ -5521,13 +5268,6 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                         onChange={v => { setShPeriod(v); setShPage(1); }}
                       />
                     </div>
-                    <div style={{ flexShrink: 0 }}>
-                      <InvFilterDropdown
-                        value={shType} label="All Types"
-                        options={["Sale", "Return"]}
-                        onChange={v => { setShType(v); setShPage(1); }}
-                      />
-                    </div>
                     <div style={{ width: 1, height: 24, background: "#DDE3EC", flexShrink: 0 }} />
                     {SH_STATUSES.map(s => (
                       <button key={s} onClick={() => { setShStatus(s); setShPage(1); }}
@@ -5570,22 +5310,20 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                         </tr>
                       </thead>
                       <tbody>
-                        {phPageRows.length === 0 ? (
-                          <tr><td colSpan={9} style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No records match the filter</td></tr>
-                        ) : phPageRows.map((r, i) => (
-                          <tr key={i} onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                            <td style={monoStyle}>{r.date}</td>
-                            <td style={{ ...monoStyle, color: "#1B6CA8" }}>{r.po}</td>
+                        {phPageRows.length === 0 ? loadingRow(9, purchasesQ, "No purchases or returns for this product yet") : phPageRows.map((r, i) => (
+                          <tr key={`${r.refId}-${r.batch}-${i}`} onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                            <td style={monoStyle}>{fmtDate(r.date)}</td>
+                            <td style={{ ...monoStyle, color: "#1B6CA8" }}>{r.reference}</td>
                             <td style={{ ...tdStyle, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{r.distributor}</td>
                             <td style={tdStyle}>
-                              <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: r.type === "Return" ? "#FFF3E0" : "#EFF6FF", color: r.type === "Return" ? "#E65100" : "#1B6CA8" }}>{r.type}</span>
+                              <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: r.kind === "Return" ? "#FFF3E0" : "#EFF6FF", color: r.kind === "Return" ? "#E65100" : "#1B6CA8" }}>{r.kind === "Return" ? "Return" : "Purchase Order"}</span>
                             </td>
                             <td style={monoStyle}>{r.batch}</td>
                             <td style={{ ...monoStyle, textAlign: "right" as const }}>{r.qty}</td>
                             <td style={{ ...monoStyle, textAlign: "right" as const }}>&#8377;{r.rate.toFixed(2)}</td>
                             <td style={{ ...monoStyle, textAlign: "right" as const, fontWeight: 700 }}>&#8377;{r.amount.toFixed(2)}</td>
                             <td style={tdStyle}>
-                              <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: r.status === "Returned" ? "#FFF3E0" : "#E8F5E9", color: r.status === "Returned" ? "#E65100" : "#2E7D32" }}>{r.status}</span>
+                              <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: r.kind === "Return" ? "#FFF3E0" : r.status === "paid" ? "#E8F5E9" : "#FEF9C3", color: r.kind === "Return" ? "#E65100" : r.status === "paid" ? "#2E7D32" : "#92400E", textTransform: "capitalize" as const }}>{r.kind === "Return" ? r.status : r.status === "paid" ? "Received" : r.status}</span>
                             </td>
                           </tr>
                         ))}
@@ -5598,7 +5336,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                         <col style={{ width: 108 }} />{/* Date */}
                         <col style={{ width: 136 }} />{/* Invoice No. */}
                         <col style={{ width: 150 }} />{/* Patient */}
-                        <col style={{ width: 100 }} />{/* Type */}
+                        <col style={{ width: 100 }} />{/* Batch */}
                         <col style={{ width: 60 }} />{/* Qty */}
                         <col style={{ width: 96 }} />{/* Unit Rate */}
                         <col style={{ width: 110 }} />{/* Amount */}
@@ -5610,7 +5348,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                             { label: "Date",        align: "left"  },
                             { label: "Invoice No.", align: "left"  },
                             { label: "Patient",     align: "left"  },
-                            { label: "Type",        align: "left"  },
+                            { label: "Batch",       align: "left"  },
                             { label: "Qty",         align: "right" },
                             { label: "Unit Rate",   align: "right" },
                             { label: "Amount",      align: "right" },
@@ -5621,29 +5359,25 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                         </tr>
                       </thead>
                       <tbody>
-                        {shPageRows.length === 0 ? (
-                          <tr><td colSpan={8} style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No records match the filter</td></tr>
-                        ) : shPageRows.map((r, i) => {
+                        {shPageRows.length === 0 ? loadingRow(8, salesQ, "No sales of this product yet") : shPageRows.map((r, i) => {
                           const statusStyle: Record<string, { bg: string; color: string }> = {
-                            Paid:      { bg: "#E8F5E9", color: "#2E7D32" },
-                            Pending:   { bg: "#FFF3E0", color: "#E65100" },
-                            Returned:  { bg: "#FFEBEE", color: "#C62828" },
-                            Cancelled: { bg: "#F0F3F7", color: "#6B7280" },
+                            confirmed: { bg: "#E8F5E9", color: "#2E7D32" },
+                            cancelled: { bg: "#F0F3F7", color: "#6B7280" },
                           };
-                          const ss = statusStyle[r.status] ?? { bg: "#EFF6FF", color: "#1B6CA8" };
+                          const ss = statusStyle[r.status.toLowerCase()] ?? { bg: "#EFF6FF", color: "#1B6CA8" };
                           return (
-                            <tr key={i} onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                              <td style={monoStyle}>{r.date}</td>
+                            <tr key={`${r.refId}-${i}`} onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                              <td style={monoStyle}>{fmtDate(r.date)}</td>
                               <td style={{ ...monoStyle, color: "#1B6CA8" }}>{r.invoice}</td>
                               <td style={{ ...tdStyle, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{r.patient}</td>
                               <td style={tdStyle}>
-                                <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: r.type === "Return" ? "#FFF3E0" : "#EFF6FF", color: r.type === "Return" ? "#E65100" : "#1B6CA8" }}>{r.type}</span>
+                                <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#F8FAFC", color: "#1B6CA8" }}>{r.batch}</span>
                               </td>
                               <td style={{ ...monoStyle, textAlign: "right" as const }}>{r.qty}</td>
                               <td style={{ ...monoStyle, textAlign: "right" as const }}>&#8377;{r.rate.toFixed(2)}</td>
                               <td style={{ ...monoStyle, textAlign: "right" as const, fontWeight: 700 }}>&#8377;{r.amount.toFixed(2)}</td>
                               <td style={tdStyle}>
-                                <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: ss.bg, color: ss.color }}>{r.status}</span>
+                                <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: ss.bg, color: ss.color, textTransform: "capitalize" as const }}>{r.status}</span>
                               </td>
                             </tr>
                           );
@@ -5667,9 +5401,9 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                         </tr>
                       </thead>
                       <tbody>
-                        {auditRows.map((r, i) => (
-                          <tr key={i} onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                            <td style={monoStyle}>{r.date}</td>
+                        {auditQ.rows.length === 0 ? loadingRow(4, auditQ, "No changes recorded yet") : auditQ.rows.map(r => (
+                          <tr key={r.id} onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                            <td style={monoStyle}>{fmtDate(r.at, true)}</td>
                             <td style={tdStyle}>
                               {(() => {
                                 const evStyle: Record<string, { bg: string; color: string }> = {
@@ -5677,10 +5411,10 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                                   "Price Updated":     { bg: "#FFF3E0", color: "#E65100" },
                                   "Batch Received":    { bg: "#E8F5E9", color: "#2E7D32" },
                                   "Reorder Level Set": { bg: "#F5F3FF", color: "#7B1FA2" },
-                                  "Medicine Created":  { bg: "#F0F3F7", color: "#6B7280" },
+                                  "Product Created":  { bg: "#F0F3F7", color: "#6B7280" },
                                 };
-                                const s = evStyle[r.event] ?? { bg: "#EFF6FF", color: "#1B6CA8" };
-                                return <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: s.bg, color: s.color, whiteSpace: "nowrap" as const }}>{r.event}</span>;
+                                const s = evStyle[r.action] ?? { bg: "#EFF6FF", color: "#1B6CA8" };
+                                return <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: s.bg, color: s.color, whiteSpace: "nowrap" as const }}>{r.action}</span>;
                               })()}
                             </td>
                             <td style={tdStyle}>{r.user}</td>
@@ -5691,6 +5425,17 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                     </table>
                   )}
                 </div>
+
+                {tab === "audit" && auditQ.total > 25 && (
+                  <div style={{ padding: "8px 14px", borderTop: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FAFBFD", fontSize: 12, color: "#6B7280" }}>
+                    <div>{auditQ.total} entries</div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <button disabled={auditPage <= 1} onClick={() => setAuditPage(auditPage - 1)}>‹</button>
+                      <span>{auditPage} / {auditPages}</span>
+                      <button disabled={auditPage >= auditPages} onClick={() => setAuditPage(auditPage + 1)}>›</button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Pagination — purchase-history */}
                 {tab === "purchase-history" && (
@@ -5755,8 +5500,14 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
         })()}
 
         {tab === "sales" && (() => {
-          const sd = DRUG_SALES[drug.name] ?? { today: 0, last7: 0, last30: 0, avgDaily: 0, currentAvailable: 0, openPO: 0, reorderLevel: 0, recommendedQty: 0, trend: [] };
-          const daysOfStock = sd.avgDaily > 0 ? Math.floor(sd.currentAvailable / sd.avgDaily) : 0;
+          const dayLetters = demandQ.rows.map(d => ({ ...d, day: d.day.slice(0, 3) }));
+          const sd = {
+            today: stock.soldToday, last7: stock.sold7, last30: stock.sold30, avgDaily: stock.avgDaily,
+            currentAvailable: available, openPO: openPO, reorderLevel: minStockNum,
+            recommendedQty: Math.max(0, (cfg?.reorder_qty as number | undefined) || Math.max(0, minStockNum * 2 - available - openPO)),
+            trend: dayLetters,
+          };
+          const daysOfStock = stock.daysOfStock ?? 0;
           const needsReorder = sd.currentAvailable <= sd.reorderLevel && sd.openPO === 0;
           return (
             <div style={{ display: "flex", flexDirection: "column" as const, gap: 16 }}>
@@ -5792,7 +5543,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                         <div style={{ padding: "12px 16px", background: "#FAFBFD", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <div>
                             <div style={{ fontSize: 12, fontWeight: 700, color: "#0C1B33", fontFamily: "Outfit" }}>Sales Trend</div>
-                            <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>Last 7 days</div>
+                            <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>{demandQ.loading ? "Loading…" : demandQ.error ? "Could not load" : "Last 7 days"}</div>
                           </div>
                           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                             <div style={{ textAlign: "right" as const }}>
@@ -5816,7 +5567,7 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
                               <Tooltip
                                 cursor={{ fill: "#F0F3F7", radius: 4 } as object}
                                 contentStyle={{ fontSize: 12, fontFamily: "Inter", border: "1px solid #DDE3EC", borderRadius: 6, padding: "6px 12px", boxShadow: "0 2px 8px rgba(12,27,51,0.08)" }}
-                                formatter={(v: number) => [`${v} units`, "Sold"]}
+                                formatter={(v) => [`${v ?? 0} units`, "Sold"]}
                                 labelStyle={{ fontWeight: 600, color: "#0C1B33", marginBottom: 2 }}
                               />
                               <Bar dataKey="qty" radius={[4, 4, 0, 0]} maxBarSize={32}>
@@ -5943,24 +5694,26 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
           onSaved={(ok, id) => {
             setShowAddBatch(false);
             setToast({ ok, msg: ok ? `Batch ${id} added successfully` : "Failed to add batch. Please try again." });
+            if (ok) refresh();
           }}
         />
       )}
 
       {transferBatch && (
-        <TransferBatchModal batch={transferBatch} drug={drug} onClose={() => setTransferBatch(null)} />
+        <TransferStockDialog batch={transferBatch} productName={drug.name} locations={stockMasters.storage_locations}
+          reasons={stockMasters.transfer_reasons} onClose={() => setTransferBatch(null)}
+          onDone={msg => { setTransferBatch(null); setToast({ ok: true, msg }); refresh(); }} />
       )}
 
       {adjustBatch && (
-        <AdjustStockModal
-          batch={adjustBatch}
-          drug={drug}
-          onClose={() => setAdjustBatch(null)}
-        />
+        <AdjustStockDialog batch={adjustBatch.batch} writeOff={adjustBatch.writeOff} productName={drug.name}
+          reasons={stockMasters.adjustment_reasons} onClose={() => setAdjustBatch(null)}
+          onDone={msg => { setAdjustBatch(null); setToast({ ok: true, msg }); refresh(); }} />
       )}
 
-      {historyBatch && (
-        <BatchHistoryModal batch={historyBatch} drug={drug} onClose={() => setHistoryBatch(null)} />
+      {statusBatch && (
+        <BatchStatusDialog batch={statusBatch} productName={drug.name} onClose={() => setStatusBatch(null)}
+          onDone={msg => { setStatusBatch(null); setToast({ ok: true, msg }); refresh(); }} />
       )}
 
       {printLabelBatch !== null && (
@@ -5974,22 +5727,9 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
       <Toast toast={toast} onDone={() => setToast(null)} />
 
       {placeOrderDist && (
-        <InvPlaceOrderModal
-          drugName={drug.name}
-          distributorName={placeOrderDist.name}
-          lastRate={placeOrderDist.lastRate}
+        <PlaceOrderDialog productId={productId} productName={drug.name} distributor={placeOrderDist}
           onClose={() => setPlaceOrderDist(null)}
-          onDone={msg => { setPlaceOrderDist(null); setToast({ ok: true, msg }); }}
-        />
-      )}
-
-      {viewHistoryDist && (
-        <InvViewHistoryModal
-          drugName={drug.name}
-          distributorName={viewHistoryDist}
-          baseCost={drug.cost}
-          onClose={() => setViewHistoryDist(null)}
-        />
+          onDone={msg => { setPlaceOrderDist(null); setToast({ ok: true, msg }); refresh(); }} />
       )}
 
       {showLocationStock && (
@@ -6006,13 +5746,13 @@ function DrugDetailPage({ drug, onBack, onEdit, isDeactivated, onActivate, onDea
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
 
-export default function Inventory({ onEditDistributor }: { onEditDistributor?: (name: string) => void } = {}) {
+export default function Inventory({ onEditDistributor, isSuperAdmin = false }: { onEditDistributor?: (name: string) => void; isSuperAdmin?: boolean } = {}) {
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("All Categories");
   const [supplierFilter, setSupplierFilter] = useState("All Distributors");
   const [availFilter, setAvailFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("All Locations");
-  const [stockStatuses, setStockStatuses] = useState<string[]>(["In Stock", "Low Stock", "Out of Stock"]);
+  const [stockStatuses, setStockStatuses] = useState<string[]>(["In Stock", "Low Stock", "Out of Stock", "Draft"]);
   const [expiryRange, setExpiryRange] = useState("All");
   const [expiryRisk, setExpiryRisk] = useState("All");
   const [minPrice, setMinPrice] = useState("");
@@ -6020,12 +5760,43 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
   const [sortBy, setSortBy] = useState("Name (A - Z)");
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [view, setView] = useState<"list" | "create" | "view" | "edit">("list");
-  const [selectedDrug, setSelectedDrug] = useState<(typeof drugs)[0] | null>(null);
-  const editDrugRef = useRef<(typeof drugs)[0] | null>(null);
+  const [selectedDrug, setSelectedDrug] = useState<(typeof products)[0] | null>(null);
+  const editDrugRef = useRef<(typeof products)[0] | null>(null);
   const [invToast, setInvToast] = useState<ToastState>(null);
   const [deactivatedIds, setDeactivatedIds] = useState<Set<number>>(new Set());
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const [reorderDrug, setReorderDrug] = useState<(typeof drugs)[0] | null>(null);
+  const [reorderDrug, setReorderDrug] = useState<(typeof products)[0] | null>(null);
+  const [productList, setProductList] = useState<(typeof products)[0][]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  async function applyBulk(available: boolean) {
+    if (selectedIds.size === 0 || bulkBusy) return;
+    setBulkBusy(true);
+    try {
+      const r = await bulkSetAvailability([...selectedIds], available);
+      setInvToast({ ok: true, msg: `${r.updated} product${r.updated === 1 ? "" : "s"} ${available ? "made available to all pharmacies" : "hidden from other pharmacies"}` });
+      setSelectedIds(new Set());
+      loadProducts();
+    } catch (e) {
+      setInvToast({ ok: false, msg: e instanceof Error ? e.message.replace(/^API \d+:\s*/, "") : "Could not update availability" });
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+  const [listState, setListState] = useState<"loading" | "ready" | "error">("loading");
+  const [listError, setListError] = useState("");
+
+  const loadProducts = () => {
+    setListState("loading");
+    fetchProducts()
+      .then(d => { setProductList(d.items as any); setListState("ready"); })
+      .catch((e: unknown) => {
+        setListError(e instanceof Error ? e.message.replace(/^API \d+:\s*/, "") : "Could not load products");
+        setListState("error");
+      });
+  };
+  useEffect(() => { loadProducts(); }, []);
 
   useEffect(() => {
     function handle() { setOpenMenuId(null); }
@@ -6035,11 +5806,11 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
     }
   }, [openMenuId]);
 
-  const allDrugs = drugs.filter(d => !deactivatedIds.has(d.id));
-  const allCategories = Array.from(new Set(drugs.map(d => d.category))).sort();
-  const allSuppliers = Array.from(new Set(drugs.map(d => d.supplier))).sort();
+  const allDrugs = productList.filter(d => !deactivatedIds.has(d.id as any));
+  const allCategories = Array.from(new Set(productList.map(d => d.category))).sort();
+  const allSuppliers = Array.from(new Set(productList.map(d => d.supplier))).sort();
   const locationZones = Array.from(
-    new Set(drugs.map(d => d.location.includes("COLD") ? "Cold Storage" : `Section ${d.location.charAt(0)}`))
+    new Set(products.map(d => d.location.includes("COLD") ? "Cold Storage" : `Section ${d.location.charAt(0)}`))
   ).sort();
 
   const preFiltered = allDrugs.filter(d => {
@@ -6106,7 +5877,7 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
 
   if (view === "view" && selectedDrug) return (
     <>
-      <DrugDetailPage
+      <ProductDetailPage
         drug={selectedDrug}
         onBack={() => { setSelectedDrug(null); setView("list"); }}
         onEdit={() => { editDrugRef.current = selectedDrug; setSelectedDrug(null); setInvToast(null); setView("edit"); }}
@@ -6120,24 +5891,29 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
     </>
   );
 
+  const afterSave = (okMsg: string, failMsg: string) => (ok: boolean, message?: string) => {
+    setInvToast({ ok, msg: ok ? (message ?? okMsg) : (message ?? failMsg) });
+    if (ok) loadProducts();
+  };
+
   if (view === "create") return (
-    <CreateMedicinePage
+    <CreateProductPage
       onBack={() => setView("list")}
       mode="create"
-      onSaved={ok => setInvToast({ ok, msg: ok ? "Medicine added successfully" : "Failed to save medicine. Please try again." })}
-      onDraftSaved={ok => setInvToast({ ok, msg: ok ? "Draft saved successfully" : "Failed to save draft. Please try again." })}
-      onVerificationSent={ok => setInvToast({ ok, msg: ok ? "Send for verification successfully" : "Failed to send verification request. Please try again." })}
+      isSuperAdmin={isSuperAdmin}
+      onSaved={afterSave("Product added successfully", "Failed to save product. Please try again.")}
+      onDraftSaved={afterSave("Draft saved successfully", "Failed to save draft. Please try again.")}
     />
   );
 
   if (view === "edit" && editDrugRef.current) return (
-    <CreateMedicinePage
+    <CreateProductPage
       onBack={() => { editDrugRef.current = null; setView("list"); }}
       mode="edit"
       drug={editDrugRef.current}
-      onSaved={ok => setInvToast({ ok, msg: ok ? "Medicine added successfully" : "Failed to update medicine. Please try again." })}
-      onDraftSaved={ok => setInvToast({ ok, msg: ok ? "Draft saved successfully" : "Failed to save draft. Please try again." })}
-      onVerificationSent={ok => setInvToast({ ok, msg: ok ? "Send for verification successfully" : "Failed to send verification request. Please try again." })}
+      isSuperAdmin={isSuperAdmin}
+      onSaved={afterSave("Product updated successfully", "Failed to update product. Please try again.")}
+      onDraftSaved={afterSave("Draft saved successfully", "Failed to save draft. Please try again.")}
     />
   );
 
@@ -6151,7 +5927,7 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
           <h1 style={S.pageTitle}>Inventory</h1>
           <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2, fontFamily: "Inter" }}>
             <span style={{ fontFamily: "JetBrains Mono", fontWeight: 600, color: "#1A2436" }}>{allDrugs.length.toLocaleString()}</span>
-            {" Medicines · "}
+            {" Products · "}
             <span style={{ fontFamily: "JetBrains Mono", fontWeight: 600, color: "#1A2436" }}>{fmtVal(totalStockValue)}</span>
             {" Stock Value · "}
             <span style={{ fontFamily: "JetBrains Mono", fontWeight: 600, color: totalAlerts > 0 ? "#C62828" : "#1A2436" }}>{totalAlerts}</span>
@@ -6161,7 +5937,7 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
         <div style={{ display: "flex", gap: 8 }}>
           <button style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33", fontFamily: "Inter" }}>Import Stock</button>
           <button style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33", fontFamily: "Inter" }}>Export</button>
-          <button onClick={() => { setInvToast(null); setView("create"); }} style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>+ Add Medicine</button>
+          <button onClick={() => { setInvToast(null); setView("create"); }} style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>+ Add Product</button>
         </div>
       </div>
 
@@ -6173,7 +5949,7 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
         <div style={{ padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
           {([
             { dotColor: "#C62828", valueStr: String(outStockCount || 6), label: "Stock Mismatch", onClick: () => setStockStatuses(["Out of Stock"]) },
-            { dotColor: "#E65100", valueStr: String(nearExpiryCount),    label: "Expiry Return",  onClick: () => { setExpiryRange("Expiring in 60 days"); setStockStatuses(["In Stock", "Low Stock", "Out of Stock"]); } },
+            { dotColor: "#E65100", valueStr: String(nearExpiryCount),    label: "Expiry Return",  onClick: () => { setExpiryRange("Expiring in 60 days"); setStockStatuses(["In Stock", "Low Stock", "Out of Stock", "Draft"]); } },
             { dotColor: "#F57F17", valueStr: String(lowCoverageCount),   label: "Low Coverage",   onClick: () => setStockStatuses(["Low Stock"]) },
             { dotColor: "#C62828", valueStr: "8",                         label: "Quarantine",     onClick: () => {} },
             { dotColor: "#E65100", valueStr: "3",                         label: "Distributor Short", onClick: () => {} },
@@ -6227,7 +6003,7 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F8FAFC", borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px", flex: "0 0 260px", minHeight: 40, boxSizing: "border-box" as const }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" placeholder="Medicine / Barcode / Batch..." value={search} onChange={e => setSearch(e.target.value)}
+            <input type="text" placeholder="Product / Barcode / Batch..." value={search} onChange={e => setSearch(e.target.value)}
               style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
           </div>
           <InvFilterDropdown value={catFilter}      onChange={setCatFilter}      options={allCategories} label="All Categories" />
@@ -6247,12 +6023,34 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
           </div>
         </div>
 
+        {isSuperAdmin && selectedIds.size > 0 && (
+          <div data-testid="bulk-bar" style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 12, background: "#EFF6FF", borderBottom: "1px solid #BFDBFE", fontSize: 13, fontFamily: "Inter" }}>
+            <strong>{selectedIds.size} selected</strong>
+            <button disabled={bulkBusy} onClick={() => applyBulk(true)}
+              style={{ padding: "6px 14px", border: "1px solid #2E7D32", background: "#fff", color: "#2E7D32", cursor: "pointer", fontWeight: 600 }}>Make available to all</button>
+            <button disabled={bulkBusy} onClick={() => applyBulk(false)}
+              style={{ padding: "6px 14px", border: "1px solid #E65100", background: "#fff", color: "#E65100", cursor: "pointer", fontWeight: 600 }}>Hide from other pharmacies</button>
+            <button onClick={() => setSelectedIds(new Set())} style={{ marginLeft: "auto", border: "none", background: "transparent", color: "#6B7280", cursor: "pointer" }}>Clear</button>
+          </div>
+        )}
+
         {/* Table */}
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1200 }}>
             <thead>
               <tr>
-                <Th onSort={() => handleSort("name")} sortDir={sortCol === "name" ? sortDir : null}>Medicine</Th>
+                {isSuperAdmin && (
+                  <Th>
+                    <input type="checkbox" aria-label="Select all on this page"
+                      checked={pageRows.length > 0 && pageRows.every(r => selectedIds.has(String(r.id)))}
+                      onChange={e => setSelectedIds(prev => {
+                        const n = new Set(prev);
+                        pageRows.forEach(r => e.target.checked ? n.add(String(r.id)) : n.delete(String(r.id)));
+                        return n;
+                      })} />
+                  </Th>
+                )}
+                <Th onSort={() => handleSort("name")} sortDir={sortCol === "name" ? sortDir : null}>Product</Th>
                 <Th onSort={() => handleSort("supplier")} sortDir={sortCol === "supplier" ? sortDir : null}>Manufacturer</Th>
                 <Th>Dosage Form</Th>
                 <Th>Pack</Th>
@@ -6273,7 +6071,7 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
                 const daysCover = Math.round(d.stock / dailyDemand);
                 const reservedQty = d.status === "Low Stock" ? Math.floor(d.stock * 0.05) : 0;
                 const saleableQty = Math.max(0, d.stock - reservedQty);
-                const packStr = DRUG_PACK[d.name] ?? "";
+                const packStr = (d as unknown as { packUnit?: string }).packUnit ?? "";
                 const packDisplay = packStr
                   .replace(/\s*\/\s*/g, "/")
                   .replace(/\s+(?:Tabs?|Capsules?|Caps?)/gi, "")
@@ -6288,27 +6086,36 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
                 const unitAlreadyPack = rawPackUnit.toLowerCase() === d.unit.toLowerCase() || rawPackUnit.toLowerCase() === d.unit.toLowerCase().replace(/s$/, "");
                 const packCount = unitAlreadyPack ? saleableQty : Math.floor(saleableQty / packSize);
                 const looseUnits = unitAlreadyPack ? 0 : saleableQty % packSize;
-                const batchCode = DRUG_BATCH_MAP[d.name] || (d.name.replace(/\s+/g, "").slice(0, 2).toUpperCase() + d.id.toString().padStart(3, "0"));
-                const coverColor = daysCover < 14 ? "#C62828" : daysCover < 30 ? "#E65100" : "#1A2436";
+                                const coverColor = daysCover < 14 ? "#C62828" : daysCover < 30 ? "#E65100" : "#1A2436";
                 return (
                   <tr key={d.id} style={{ borderBottom: "1px solid #F0F3F7" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")}
                     onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
 
-                    {/* Medicine */}
+                    {isSuperAdmin && (
+                      <td style={{ padding: "10px 12px", width: 32 }}>
+                        <input type="checkbox" aria-label={`Select ${d.name}`} checked={selectedIds.has(String(d.id))}
+                          onChange={e => setSelectedIds(prev => { const n = new Set(prev); e.target.checked ? n.add(String(d.id)) : n.delete(String(d.id)); return n; })} />
+                      </td>
+                    )}
+                    {/* Product */}
                     <td style={{ padding: "10px 12px", minWidth: 160 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#0C1B33" }}>{d.name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#0C1B33" }}>{d.name}
+                        {isSuperAdmin && (d as unknown as { isGloballyAvailable?: boolean }).isGloballyAvailable === false && (
+                          <span title="Hidden from other pharmacies" style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, padding: "2px 6px", background: "#FFF3E0", color: "#E65100" }}>HIDDEN</span>
+                        )}
+                      </div>
                       <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{d.category}</div>
                     </td>
 
                     {/* Manufacturer */}
                     <td style={{ padding: "10px 12px", fontSize: 12, color: "#1A2436", whiteSpace: "nowrap" as const }}>
-                      {DRUG_MANUFACTURER[d.name] ?? d.supplier}
+                      {d.manufacturer || "—"}
                     </td>
 
                     {/* Dosage Form */}
                     <td style={{ padding: "10px 12px", fontSize: 12, color: "#6B7280", whiteSpace: "nowrap" as const }}>
-                      {DRUG_DOSAGE_FORM[d.name] ?? d.unit}
+                      {(d as unknown as { form?: string }).form || d.unit}
                     </td>
 
                     {/* Pack */}
@@ -6319,7 +6126,7 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
                     {/* HSN Code */}
                     <td style={{ padding: "10px 12px" }}>
                       <span style={{ fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>
-                        {DRUG_HSN[d.name] ?? "30049090"}
+                        {(d as unknown as { hsnCode?: string }).hsnCode || "—"}
                       </span>
                     </td>
 
@@ -6397,7 +6204,12 @@ export default function Inventory({ onEditDistributor }: { onEditDistributor?: (
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <div style={{ padding: 40, textAlign: "center", color: "#6B7280", fontSize: 13 }}>No products match your search.</div>
+            <div style={{ padding: 40, textAlign: "center", color: listState === "error" ? "#B91C1C" : "#6B7280", fontSize: 13 }}>
+              {listState === "loading" ? "Loading products…"
+                : listState === "error" ? <>Could not load products: {listError} <button onClick={loadProducts} style={{ marginLeft: 8, padding: "3px 10px", border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", fontSize: 12, color: "#1B6CA8" }}>Retry</button></>
+                : productList.length === 0 ? "No products yet. Click “+ Add Product” to add your first one."
+                : "No products match your search."}
+            </div>
           )}
         </div>
         <PaginationFooter {...footerProps} />

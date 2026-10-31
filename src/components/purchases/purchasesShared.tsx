@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { DatePicker } from "../shared/DatePicker";
 import { suppliers } from "../../data/mockData";
+import { createDistributor, updateMyDistributorSettings, upsertMyDistributorPolicy } from "../../lib/supplierApi";
 import { ChevronDown } from "../shared/Icons";
 import {
   type PriorBatch, priorBatchesFor,
@@ -8,6 +10,7 @@ import {
   type CompositionEntry,
   type DistributorFormData, emptyDistributor,
   DISTRIBUTOR_TYPES, ACCOUNT_STATUSES, DISTRIBUTOR_PAYMENT_TERMS, INDIAN_STATES, NOTIFY_CHANNEL_OPTIONS,
+  WEEK_DAYS, EXPIRY_PERIODS,
   type PurchaseLine, parsedDrugs, purchaseOrders, purchaseInvoices, purchaseReturns, purchasePayments,
   DISTRIBUTOR_POLICIES,
   money, formatDMY, calcLineAmount,
@@ -321,13 +324,14 @@ export function DrawerSectionHeader({ n, title, subtitle, icon }: { n: string; t
   );
 }
 
-export function DrawerField({ label, required, children, gridSpan }: { label: string; required?: boolean; children: React.ReactNode; gridSpan?: number }) {
+export function DrawerField({ label, required, children, gridSpan, error }: { label: string; required?: boolean; children: React.ReactNode; gridSpan?: number; error?: string }) {
   return (
     <div style={gridSpan ? { gridColumn: `span ${gridSpan}` } : undefined}>
       <div style={{ fontSize: 12, color: "#4A5875", fontWeight: 500, marginBottom: 6, fontFamily: "Inter" }}>
         {label}{required && <span style={{ color: "#C62828", marginLeft: 3 }}>*</span>}
       </div>
       {children}
+      {error && <div style={{ fontSize: 11, color: "#C62828", marginTop: 4, fontFamily: "Inter" }}>{error}</div>}
     </div>
   );
 }
@@ -337,7 +341,7 @@ export function DrawerRow({ children }: { children: React.ReactNode }) {
 }
 
 function MedStepper({ current }: { current: number }) {
-  return <HorizontalStepper steps={["Medicine", "Compliance", "Operations", "Review"]} current={current} />;
+  return <HorizontalStepper steps={["Product", "Compliance", "Operations", "Review"]} current={current} />;
 }
 
 export function drugBarcode(id: number): string {
@@ -519,9 +523,9 @@ function MedCheckbox({ checked, onChange, label }: { checked: boolean; onChange:
   );
 }
 
-// ─── Add Medicine Drawer ──────────────────────────────────────────────────────
+// ─── Add Product Drawer ───────────────────────────────────────────────────────
 
-export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialName: string; onClose: () => void; onSaved: (name: string) => void }) {
+export function AddProductDrawer({ initialName, onClose, onSaved }: { initialName: string; onClose: () => void; onSaved: (name: string) => void }) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [form, setForm] = useState<AddMedForm>({ ...emptyMedForm(), genericName: initialName });
 
@@ -534,7 +538,7 @@ export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialNa
   const upd = <K extends keyof AddMedForm>(key: K, value: AddMedForm[K]) => setForm(prev => ({ ...prev, [key]: value }));
   const goNext = () => {
     if (step < 4) setStep(s => (s + 1) as 1 | 2 | 3 | 4);
-    else { onSaved(form.genericName || form.brandName || "New Medicine"); onClose(); }
+    else { onSaved(form.genericName || form.brandName || "New Product"); onClose(); }
   };
   const goBack = () => { if (step > 1) setStep(s => (s - 1) as 1 | 2 | 3 | 4); };
   const continueDisabled = step === 1 && !form.genericName.trim();
@@ -549,8 +553,8 @@ export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialNa
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(12,27,51,0.5)", zIndex: 500, backdropFilter: "blur(2px)" }} />
       <aside style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "min(760px, 58vw)", background: "#fff", zIndex: 501, display: "flex", flexDirection: "column", boxShadow: "-8px 0 24px rgba(12,27,51,0.15)" }}>
         <div style={{ padding: "22px 32px 20px", position: "relative", flexShrink: 0, borderBottom: "1px solid #EEF1F6" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.14em", textTransform: "uppercase" }}>Inventory · New Medicine</div>
-          <div style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", letterSpacing: "-0.02em", marginTop: 6 }}>Add medicine</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.14em", textTransform: "uppercase" }}>Inventory · New Product</div>
+          <div style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", letterSpacing: "-0.02em", marginTop: 6 }}>Add product</div>
           <div style={{ fontSize: 13, color: "#6B7280", marginTop: 4, maxWidth: 560 }}>Create a catalog record that is ready for purchasing, batch tracking, and stock control.</div>
           <button onClick={onClose} aria-label="Close"
             style={{ position: "absolute", top: 22, right: 22, width: 32, height: 32, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", color: "#6B7280", fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
@@ -559,7 +563,7 @@ export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialNa
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px" }}>
           {step === 1 && (
             <>
-              <DrawerSectionHeader n="01" title="Medicine identity" subtitle="Use the approved catalog name, strength, and pack information." icon={<StepChip><PillIcon /></StepChip>} />
+              <DrawerSectionHeader n="01" title="Product identity" subtitle="Use the approved catalog name, strength, and pack information." icon={<StepChip><PillIcon /></StepChip>} />
               <DrawerRow><DrawerField label="Generic name" required><TextInput value={form.genericName} onChange={e => upd("genericName", e.target.value)} placeholder="e.g. Paracetamol" /></DrawerField><DrawerField label="Brand name" required><TextInput value={form.brandName} onChange={e => upd("brandName", e.target.value)} placeholder="e.g. Crocin 500" /></DrawerField></DrawerRow>
               <DrawerRow><DrawerField label="Strength" required><TextInput value={form.strength} onChange={e => upd("strength", e.target.value)} placeholder="e.g. 500 mg" /></DrawerField><DrawerField label="Dosage form" required><DropdownSelect value={form.dosageForm} onChange={v => upd("dosageForm", v)} options={DOSAGE_FORMS} /></DrawerField></DrawerRow>
               <DrawerRow><DrawerField label="Route" required><DropdownSelect value={form.route} onChange={v => upd("route", v)} options={ROUTES} /></DrawerField><DrawerField label="Pack / Unit" required><TextInput value={form.packUnit} onChange={e => upd("packUnit", e.target.value)} placeholder="e.g. 10 tablets / strip" /></DrawerField></DrawerRow>
@@ -584,7 +588,7 @@ export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialNa
           )}
           {step === 3 && (
             <>
-              <DrawerSectionHeader n="03" title="Operations" subtitle="Pricing, stock levels, and unit configuration for this medicine." icon={<StepChip><BoxIcon /></StepChip>} />
+              <DrawerSectionHeader n="03" title="Operations" subtitle="Pricing, stock levels, and unit configuration for this product." icon={<StepChip><BoxIcon /></StepChip>} />
               <DrawerRow><DrawerField label="MRP" required><TextInput value={form.mrp} onChange={e => upd("mrp", e.target.value)} placeholder="e.g. 45" /></DrawerField><DrawerField label="Selling price" required><TextInput value={form.sellingPrice} onChange={e => upd("sellingPrice", e.target.value)} placeholder="e.g. 45" /></DrawerField></DrawerRow>
               <DrawerRow><DrawerField label="Opening stock" required><TextInput value={form.openingStock} onChange={e => upd("openingStock", e.target.value)} placeholder="e.g. 04" /></DrawerField><DrawerField label="Reorder threshold" required><TextInput value={form.reorderThreshold} onChange={e => upd("reorderThreshold", e.target.value)} placeholder="e.g. 10" /></DrawerField></DrawerRow>
               <DrawerRow><DrawerField label="Minimum stock" required><TextInput value={form.minimumStock} onChange={e => upd("minimumStock", e.target.value)} placeholder="e.g. 5" /></DrawerField><DrawerField label="Stock location" required><TextInput value={form.stockLocation} onChange={e => upd("stockLocation", e.target.value)} placeholder="Main store" /></DrawerField></DrawerRow>
@@ -599,7 +603,7 @@ export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialNa
           )}
           {step === 4 && (
             <>
-              <DrawerSectionHeader n="04" title="Review medicine" subtitle="Confirm the catalog record before making it available to purchasing." icon={<StepChip><CheckCircleIcon /></StepChip>} />
+              <DrawerSectionHeader n="04" title="Review product" subtitle="Confirm the catalog record before making it available to purchasing." icon={<StepChip><CheckCircleIcon /></StepChip>} />
               <div style={{ borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 {[
                   { l1: "Generic / Brand", v1: reviewName, l2: "Strength &amp; Form", v2: reviewStrength },
@@ -620,29 +624,29 @@ export function AddMedicineDrawer({ initialName, onClose, onSaved }: { initialNa
               </div>
               <div style={{ marginTop: 18, padding: "12px 16px", background: "#E8F5E9", border: "1px solid #A5D6A7", display: "flex", alignItems: "center", gap: 12 }}>
                 <ShieldSolidIcon />
-                <span style={{ fontSize: 13, color: "#2E7D32", lineHeight: 1.5 }}>Saving creates a protected medicine master record and makes it immediately searchable from the purchase invoice.</span>
+                <span style={{ fontSize: 13, color: "#2E7D32", lineHeight: 1.5 }}>Saving creates a protected product master record and makes it immediately searchable from the purchase invoice.</span>
               </div>
             </>
           )}
         </div>
-        <DrawerStepFooter step={step} total={4} onBack={step > 1 ? goBack : undefined} onCancel={onClose} onContinue={goNext} continueDisabled={continueDisabled} finalLabel="Save medicine" />
+        <DrawerStepFooter step={step} total={4} onBack={step > 1 ? goBack : undefined} onCancel={onClose} onContinue={goNext} continueDisabled={continueDisabled} finalLabel="Save product" />
       </aside>
     </>
   );
 }
 
-// ─── Medicine Name Cell ───────────────────────────────────────────────────────
+// ─── Product Name Cell ────────────────────────────────────────────────────────
 
-import { drugs } from "../../data/mockData";
+import { products } from "../../data/mockData";
 
-export function MedicineNameCell({ value, alloc, onSelect }: {
+export function ProductNameCell({ value, alloc, onSelect }: {
   value: string;
   alloc: "FEFO" | "LEFO";
   onSelect: (name: string, batch: PriorBatch) => void;
 }) {
   const [text, setText] = useState(value);
   const [open, setOpen] = useState(false);
-  const [batchDrug, setBatchDrug] = useState<typeof drugs[0] | null>(null);
+  const [batchDrug, setBatchDrug] = useState<typeof products[0] | null>(null);
   const [showAddMed, setShowAddMed] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -657,15 +661,15 @@ export function MedicineNameCell({ value, alloc, onSelect }: {
 
   const matches = useMemo(() => {
     const q = text.trim().toLowerCase();
-    if (!q) return drugs.slice(0, 8);
-    return drugs.filter(d => d.name.toLowerCase().includes(q) || d.category.toLowerCase().includes(q) || d.supplier.toLowerCase().includes(q)).slice(0, 8);
+    if (!q) return products.slice(0, 8);
+    return products.filter(d => d.name.toLowerCase().includes(q) || d.category.toLowerCase().includes(q) || d.supplier.toLowerCase().includes(q)).slice(0, 8);
   }, [text]);
 
   const hasQuery = text.trim().length > 0;
   const noResults = hasQuery && matches.length === 0;
 
-  const openBatchesFor = (d: typeof drugs[0]) => { setText(d.name); setBatchDrug(d); setOpen(true); };
-  const commitBatch = (d: typeof drugs[0], b: PriorBatch) => { setText(d.name); onSelect(d.name, b); setOpen(false); setBatchDrug(null); };
+  const openBatchesFor = (d: typeof products[0]) => { setText(d.name); setBatchDrug(d); setOpen(true); };
+  const commitBatch = (d: typeof products[0], b: PriorBatch) => { setText(d.name); onSelect(d.name, b); setOpen(false); setBatchDrug(null); };
 
   return (
     <>
@@ -678,7 +682,7 @@ export function MedicineNameCell({ value, alloc, onSelect }: {
           <input ref={inputRef} value={text}
             onChange={e => { setText(e.target.value); setOpen(true); setBatchDrug(null); }}
             onFocus={() => setOpen(true)}
-            placeholder="Search medicine, generic name..."
+            placeholder="Search product, generic name..."
             style={{ flex: 1, padding: "5px 8px 5px 26px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" as const, minWidth: 170 }} />
         </div>
         {open && !batchDrug && (matches.length > 0 || noResults || !hasQuery) && (
@@ -696,10 +700,10 @@ export function MedicineNameCell({ value, alloc, onSelect }: {
                   <tr>
                     <td colSpan={4} style={{ padding: "14px 12px" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: 12, color: "#9CA3AF" }}>No medicine found for "{text.trim()}"</span>
+                        <span style={{ fontSize: 12, color: "#9CA3AF" }}>No product found for "{text.trim()}"</span>
                         <button onMouseDown={e => e.preventDefault()} onClick={() => { setOpen(false); setShowAddMed(true); }}
                           style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#1B6CA8", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
-                          <span style={{ fontSize: 15, lineHeight: 1 }}>+</span> Add Medicine
+                          <span style={{ fontSize: 15, lineHeight: 1 }}>+</span> Add Product
                         </button>
                       </div>
                     </td>
@@ -729,7 +733,7 @@ export function MedicineNameCell({ value, alloc, onSelect }: {
                         onMouseEnter={e => (e.currentTarget.style.background = "#DBEAFE")}
                         onMouseLeave={e => (e.currentTarget.style.background = "#F0F6FF")}>
                         <span style={{ fontSize: 15, lineHeight: 1 }}>+</span>
-                        Add Medicine{text.trim() ? ` — "${text.trim()}"` : ""}
+                        Add Product{text.trim() ? ` — "${text.trim()}"` : ""}
                       </button>
                     </td>
                   </tr>
@@ -780,7 +784,7 @@ export function MedicineNameCell({ value, alloc, onSelect }: {
           </div>
         )}
       </div>
-      {showAddMed && <AddMedicineDrawer initialName={text.trim()} onClose={() => setShowAddMed(false)} onSaved={name => { setText(name); setShowAddMed(false); }} />}
+      {showAddMed && <AddProductDrawer initialName={text.trim()} onClose={() => setShowAddMed(false)} onSaved={name => { setText(name); setShowAddMed(false); }} />}
     </>
   );
 }
@@ -791,12 +795,11 @@ function DistributorStepper({ current }: { current: number }) {
   return <HorizontalStepper steps={["Business", "Compliance", "Terms", "Review"]} current={current} />;
 }
 
-const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const EXPIRY_PERIODS = ["15 days", "30 days", "45 days", "60 days", "90 days", "180 days"];
 
 type DistributorStepProps = {
   data: DistributorFormData;
   update: <K extends keyof DistributorFormData>(key: K, value: DistributorFormData[K]) => void;
+  errors?: Partial<Record<keyof DistributorFormData, string>>;
 };
 
 function DayPills({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
@@ -833,12 +836,12 @@ function YesNoToggle({ value, onChange }: { value: string; onChange: (v: string)
   );
 }
 
-function BusinessStep({ data, update }: DistributorStepProps) {
+function BusinessStep({ data, update, errors }: DistributorStepProps) {
   return (
     <>
       <DrawerSectionHeader n="01" title="Business identity" subtitle="Use the legal name shown on invoices and licenses." icon={<StepChip><BriefcaseIcon /></StepChip>} />
       <DrawerRow>
-        <DrawerField label="Distributor Name" required><TextInput value={data.name} onChange={e => update("name", e.target.value)} placeholder="e.g. Medline Distributors" /></DrawerField>
+        <DrawerField label="Distributor Name" required error={errors?.name}><TextInput value={data.name} onChange={e => update("name", e.target.value)} placeholder="e.g. Medline Distributors" /></DrawerField>
         <DrawerField label="Legal Business Name"><TextInput value={data.legalName} onChange={e => update("legalName", e.target.value)} placeholder="Registered legal name" /></DrawerField>
       </DrawerRow>
       <DrawerRow>
@@ -849,24 +852,24 @@ function BusinessStep({ data, update }: DistributorStepProps) {
   );
 }
 
-function ComplianceStep({ data, update }: DistributorStepProps) {
+function ComplianceStep({ data, update, errors }: DistributorStepProps) {
   return (
     <>
       <DrawerSectionHeader n="02" title="Compliance &amp; primary contact" subtitle="These details appear on purchase invoices and audit records." icon={<StepChip><ShieldSolidIcon /></StepChip>} />
       <DrawerRow>
-        <DrawerField label="GSTIN" required><TextInput value={data.gstin} onChange={e => update("gstin", e.target.value)} placeholder="27AAAAA0000A1Z5" /></DrawerField>
-        <DrawerField label="Drug License No. 1" required><TextInput value={data.drugLicense1} onChange={e => update("drugLicense1", e.target.value)} placeholder="DL-20B-123456" /></DrawerField>
+        <DrawerField label="GSTIN" required error={errors?.gstin}><TextInput value={data.gstin} onChange={e => update("gstin", e.target.value)} placeholder="27AAAAA0000A1Z5" /></DrawerField>
+        <DrawerField label="Drug License No. 1" required error={errors?.drugLicense1}><TextInput value={data.drugLicense1} onChange={e => update("drugLicense1", e.target.value)} placeholder="DL-20B-123456" /></DrawerField>
       </DrawerRow>
       <DrawerRow>
         <DrawerField label="Drug License No. 2"><TextInput value={data.drugLicense2} onChange={e => update("drugLicense2", e.target.value)} placeholder="DL-21B-123456" /></DrawerField>
-        <DrawerField label="PAN"><TextInput value={data.pan} onChange={e => update("pan", e.target.value)} placeholder="AAAAA0000A" /></DrawerField>
+        <DrawerField label="PAN" error={errors?.pan}><TextInput value={data.pan} onChange={e => update("pan", e.target.value)} placeholder="AAAAA0000A" /></DrawerField>
       </DrawerRow>
       <DrawerRow>
-        <DrawerField label="Contact person" required><TextInput value={data.contactPerson} onChange={e => update("contactPerson", e.target.value)} placeholder="Full name" /></DrawerField>
-        <DrawerField label="Phone" required><TextInput value={data.phone} onChange={e => update("phone", e.target.value)} placeholder="+91 98765 43210" /></DrawerField>
+        <DrawerField label="Contact person" required error={errors?.contactPerson}><TextInput value={data.contactPerson} onChange={e => update("contactPerson", e.target.value)} placeholder="Full name" /></DrawerField>
+        <DrawerField label="Phone" required error={errors?.phone}><TextInput value={data.phone} onChange={e => update("phone", e.target.value)} placeholder="+91 98765 43210" /></DrawerField>
       </DrawerRow>
       <DrawerRow>
-        <DrawerField label="Email"><TextInput type="email" value={data.email} onChange={e => update("email", e.target.value)} placeholder="orders@distributor.com" /></DrawerField>
+        <DrawerField label="Email" error={errors?.email}><TextInput type="email" value={data.email} onChange={e => update("email", e.target.value)} placeholder="orders@distributor.com" /></DrawerField>
         <DrawerField label="Sales representative"><TextInput value={data.salesRep} onChange={e => update("salesRep", e.target.value)} placeholder="Assigned sales rep" /></DrawerField>
       </DrawerRow>
       <DrawerRow>
@@ -878,25 +881,25 @@ function ComplianceStep({ data, update }: DistributorStepProps) {
   );
 }
 
-function TermsStep({ data, update }: DistributorStepProps) {
+function TermsStep({ data, update, errors }: DistributorStepProps) {
   return (
     <>
       <DrawerSectionHeader n="03" title="Address &amp; credit terms" subtitle="Set the defaults your procurement team will use for every order." icon={<StepChip><TruckIcon /></StepChip>} />
       <DrawerRow>
-        <DrawerField label="Address line 1" required><TextInput value={data.addressLine1} onChange={e => update("addressLine1", e.target.value)} placeholder="Street, building" /></DrawerField>
+        <DrawerField label="Address line 1" required error={errors?.addressLine1}><TextInput value={data.addressLine1} onChange={e => update("addressLine1", e.target.value)} placeholder="Street, building" /></DrawerField>
         <DrawerField label="Address line 2"><TextInput value={data.addressLine2} onChange={e => update("addressLine2", e.target.value)} placeholder="Landmark (optional)" /></DrawerField>
       </DrawerRow>
       <DrawerRow>
-        <DrawerField label="City" required><TextInput value={data.city} onChange={e => update("city", e.target.value)} placeholder="City" /></DrawerField>
-        <DrawerField label="State" required><DropdownSelect value={data.state} onChange={v => update("state", v)} options={INDIAN_STATES} placeholder="— Select state —" /></DrawerField>
+        <DrawerField label="City" required error={errors?.city}><TextInput value={data.city} onChange={e => update("city", e.target.value)} placeholder="City" /></DrawerField>
+        <DrawerField label="State" required error={errors?.state}><DropdownSelect value={data.state} onChange={v => update("state", v)} options={INDIAN_STATES} placeholder="— Select state —" /></DrawerField>
       </DrawerRow>
       <DrawerRow>
-        <DrawerField label="Pincode" required><TextInput value={data.pincode} onChange={e => update("pincode", e.target.value)} placeholder="400001" /></DrawerField>
-        <DrawerField label="Credit limit"><TextInput value={data.creditLimit} onChange={e => update("creditLimit", e.target.value)} placeholder="₹ 0.00" /></DrawerField>
+        <DrawerField label="Pincode" required error={errors?.pincode}><TextInput value={data.pincode} onChange={e => update("pincode", e.target.value)} placeholder="400001" /></DrawerField>
+        <DrawerField label="Credit limit" error={errors?.creditLimit}><TextInput value={data.creditLimit} onChange={e => update("creditLimit", e.target.value)} placeholder="₹ 0.00" /></DrawerField>
       </DrawerRow>
       <DrawerRow>
         <DrawerField label="Payment terms" required><DropdownSelect value={data.paymentTerms} onChange={v => update("paymentTerms", v)} options={DISTRIBUTOR_PAYMENT_TERMS} /></DrawerField>
-        <DrawerField label="Expected delivery days" required><TextInput type="number" value={data.expectedDeliveryDays} onChange={e => update("expectedDeliveryDays", e.target.value)} placeholder="8" /></DrawerField>
+        <DrawerField label="Expected delivery days" required error={errors?.expectedDeliveryDays}><TextInput type="number" value={data.expectedDeliveryDays} onChange={e => update("expectedDeliveryDays", e.target.value)} placeholder="8" /></DrawerField>
       </DrawerRow>
       <div style={{ margin: "24px 0 20px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1, height: 1, background: "#EEF1F6" }} />
@@ -963,10 +966,34 @@ function ReviewStep({ data }: { data: DistributorFormData }) {
 
 // ─── Add Distributor Drawer ───────────────────────────────────────────────────
 
-export function AddDistributorDrawer({ onClose, onSaved, initialData }: { onClose: () => void; onSaved: (name: string) => void; initialData?: Partial<DistributorFormData> }) {
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const _GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+const _PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+const _PHONE_DIGITS_RE = /^[6-9][0-9]{9}$/;
+const _EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const _PINCODE_RE = /^[1-9][0-9]{5}$/;
+
+function extractApiErrorMessage(err: unknown): string {
+  if (!(err instanceof Error)) return "Failed to save distributor. Please try again.";
+  const text = err.message;
+  const jsonIdx = text.indexOf('{');
+  if (jsonIdx !== -1) {
+    try {
+      const body = JSON.parse(text.slice(jsonIdx)) as { detail?: string | Array<{ msg: string }> };
+      if (typeof body.detail === "string") return body.detail;
+      if (Array.isArray(body.detail)) return body.detail.map(e => e.msg).join("; ");
+    } catch {}
+  }
+  return text.replace(/^API \d+:\s*/, "") || "Failed to save distributor.";
+}
+
+export function AddDistributorDrawer({ onClose, onSaved, initialData, distributorId }: { onClose: () => void; onSaved: (name: string) => void; initialData?: Partial<DistributorFormData>; distributorId?: string }) {
   const isEdit = !!initialData;
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [data, setData] = useState<DistributorFormData>(initialData ? { ...emptyDistributor, ...initialData } : emptyDistributor);
+  const [errors, setErrors] = useState<Partial<Record<keyof DistributorFormData, string>>>({});
+  const [apiError, setApiError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -974,14 +1001,147 @@ export function AddDistributorDrawer({ onClose, onSaved, initialData }: { onClos
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const update = <K extends keyof DistributorFormData>(key: K, value: DistributorFormData[K]) => { setData(d => ({ ...d, [key]: value })); };
-  const canContinueStep1 = data.name.trim().length > 0;
-  const goNext = () => {
-    if (step < 4) setStep(s => (s + 1) as 1 | 2 | 3 | 4);
-    else { if (data.name.trim()) onSaved(data.name.trim()); onClose(); }
+  const update = <K extends keyof DistributorFormData>(key: K, value: DistributorFormData[K]) => {
+    setData(d => ({ ...d, [key]: value }));
+    if (errors[key]) setErrors(prev => { const n = { ...prev }; delete n[key]; return n; });
   };
-  const goBack = () => { if (step > 1) setStep(s => (s - 1) as 1 | 2 | 3 | 4); };
-  const continueDisabled = step === 1 && !canContinueStep1;
+
+  function validateStep1(): Partial<Record<keyof DistributorFormData, string>> {
+    const e: Partial<Record<keyof DistributorFormData, string>> = {};
+    if (!data.name.trim()) e.name = "Distributor name is required";
+    return e;
+  }
+
+  function validateStep2(): Partial<Record<keyof DistributorFormData, string>> {
+    const e: Partial<Record<keyof DistributorFormData, string>> = {};
+    if (!data.contactPerson.trim()) e.contactPerson = "Contact person is required";
+    if (!data.phone.trim()) {
+      e.phone = "Phone number is required";
+    } else {
+      const digits = data.phone.replace(/[\s\-\+]/g, "").replace(/^91(\d{10})$/, "$1");
+      if (!_PHONE_DIGITS_RE.test(digits)) e.phone = "Must be a valid 10-digit Indian number (starts 6–9)";
+    }
+    if (!data.drugLicense1.trim()) e.drugLicense1 = "Drug License No. 1 is required";
+    if (data.gstin.trim() && !_GSTIN_RE.test(data.gstin.trim().toUpperCase())) {
+      e.gstin = "Invalid GSTIN — expected format 27AAAAA0000A1Z5";
+    }
+    if (data.pan.trim() && !_PAN_RE.test(data.pan.trim().toUpperCase())) {
+      e.pan = "Invalid PAN — expected format AAAAA0000A";
+    }
+    if (data.email.trim() && !_EMAIL_RE.test(data.email.trim())) {
+      e.email = "Invalid email address";
+    }
+    return e;
+  }
+
+  function validateStep3(): Partial<Record<keyof DistributorFormData, string>> {
+    const e: Partial<Record<keyof DistributorFormData, string>> = {};
+    if (!data.addressLine1.trim()) e.addressLine1 = "Address line 1 is required";
+    if (!data.city.trim()) e.city = "City is required";
+    if (!data.state.trim()) e.state = "State is required";
+    if (data.pincode.trim() && !_PINCODE_RE.test(data.pincode.trim())) {
+      e.pincode = "Must be a valid 6-digit PIN code";
+    }
+    if (data.creditLimit.trim()) {
+      const n = parseFloat(data.creditLimit);
+      if (isNaN(n) || n < 0) e.creditLimit = "Enter a valid credit limit";
+      else if (n > 10_000_000) e.creditLimit = "Credit limit cannot exceed ₹1,00,00,000";
+    }
+    if (data.expectedDeliveryDays.trim()) {
+      const d = parseInt(data.expectedDeliveryDays, 10);
+      if (isNaN(d) || d < 1 || d > 365) e.expectedDeliveryDays = "Must be between 1 and 365 days";
+    }
+    return e;
+  }
+
+  const goNext = async () => {
+    setApiError("");
+    let stepErrors: Partial<Record<keyof DistributorFormData, string>> = {};
+    if (step === 1) stepErrors = validateStep1();
+    else if (step === 2) stepErrors = validateStep2();
+    else if (step === 3) stepErrors = validateStep3();
+
+    if (Object.keys(stepErrors).length > 0) {
+      setErrors(stepErrors);
+      return;
+    }
+    setErrors({});
+
+    if (step < 4) {
+      setStep(s => (s + 1) as 1 | 2 | 3 | 4);
+      return;
+    }
+
+    // Final step — POST to backend
+    setSaving(true);
+    try {
+      if (distributorId) {
+        // Edit: update this pharmacy's own terms and policies only. Shared (global) fields
+        // are not editable from here.
+        await updateMyDistributorSettings(distributorId, {
+          credit_limit: data.creditLimit.trim() ? parseFloat(data.creditLimit) : 0,
+          payment_terms: data.paymentTerms,
+          expected_delivery_days: data.expectedDeliveryDays.trim() ? parseInt(data.expectedDeliveryDays, 10) : 7,
+          delivery_days: data.deliveryDays,
+          salesperson_visit_days: data.salespersonVisitDays,
+          same_day_delivery: data.sameDayDelivery === "Yes",
+        });
+        await Promise.all([
+          upsertMyDistributorPolicy(distributorId, "RETURN", { is_allowed: data.returnAllowed === "Yes" }),
+          upsertMyDistributorPolicy(distributorId, "DAMAGE_RETURN", { is_allowed: data.damageReturnAllowed === "Yes" }),
+          upsertMyDistributorPolicy(distributorId, "EXPIRY_RETURN", {
+            is_allowed: data.expiryReturnAllowed === "Yes",
+            params: data.expiryReturnPeriod ? { period: data.expiryReturnPeriod } : {},
+          }),
+        ]);
+        onSaved(data.name.trim());
+        onClose();
+        return;
+      }
+      await createDistributor({
+        name: data.name.trim(),
+        legal_name: data.legalName.trim(),
+        type: data.type,
+        account_status: data.accountStatus,
+        gst_number: data.gstin.trim().toUpperCase(),
+        drug_license_number: data.drugLicense1.trim(),
+        drug_license_2: data.drugLicense2.trim(),
+        pan: data.pan.trim().toUpperCase(),
+        contact_person: data.contactPerson.trim(),
+        email: data.email.trim().toLowerCase(),
+        phone: data.phone.trim(),
+        sales_rep: data.salesRep.trim(),
+        notify_channel: data.notifyChannel,
+        address: data.addressLine1.trim(),
+        address_line2: data.addressLine2.trim(),
+        city: data.city.trim(),
+        state: data.state,
+        pincode: data.pincode.trim(),
+        credit_limit: data.creditLimit.trim() ? parseFloat(data.creditLimit) : 0,
+        payment_terms: data.paymentTerms,
+        expected_delivery_days: data.expectedDeliveryDays.trim() ? parseInt(data.expectedDeliveryDays, 10) : 7,
+        delivery_days: data.deliveryDays,
+        salesperson_visit_days: data.salespersonVisitDays,
+        same_day_delivery: data.sameDayDelivery === "Yes",
+        return_allowed: data.returnAllowed === "Yes",
+        damage_return_allowed: data.damageReturnAllowed === "Yes",
+        expiry_return_allowed: data.expiryReturnAllowed === "Yes",
+        expiry_return_period: data.expiryReturnPeriod,
+      });
+      onSaved(data.name.trim());
+      onClose();
+    } catch (err) {
+      setApiError(extractApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const goBack = () => {
+    setErrors({});
+    setApiError("");
+    if (step > 1) setStep(s => (s - 1) as 1 | 2 | 3 | 4);
+  };
 
   return (
     <>
@@ -996,12 +1156,17 @@ export function AddDistributorDrawer({ onClose, onSaved, initialData }: { onClos
         </div>
         <DistributorStepper current={step} />
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px" }}>
-          {step === 1 && <BusinessStep data={data} update={update} />}
-          {step === 2 && <ComplianceStep data={data} update={update} />}
-          {step === 3 && <TermsStep data={data} update={update} />}
+          {step === 1 && <BusinessStep data={data} update={update} errors={errors} />}
+          {step === 2 && <ComplianceStep data={data} update={update} errors={errors} />}
+          {step === 3 && <TermsStep data={data} update={update} errors={errors} />}
           {step === 4 && <ReviewStep data={data} />}
+          {apiError && (
+            <div style={{ margin: "16px 0 0", padding: "12px 16px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 6, fontSize: 13, color: "#B91C1C", fontFamily: "Inter", lineHeight: 1.5 }}>
+              {apiError}
+            </div>
+          )}
         </div>
-        <DrawerStepFooter step={step} total={4} onBack={step > 1 ? goBack : undefined} onCancel={onClose} onContinue={goNext} continueDisabled={continueDisabled} finalLabel={isEdit ? "Save changes" : "Save distributor"} />
+        <DrawerStepFooter step={step} total={4} onBack={step > 1 ? goBack : undefined} onCancel={onClose} onContinue={goNext} continueDisabled={saving} finalLabel={saving ? "Saving…" : (isEdit ? "Save changes" : "Save distributor")} />
       </aside>
     </>
   );
@@ -1073,7 +1238,7 @@ export function DistributorSearch({ selected, onSelect, distributors, onAdd }: {
   );
 }
 
-export function MedicineMapModal({
+export function ProductMapModal({
   importedName,
   onMap,
   onCreateNew,
@@ -1113,13 +1278,13 @@ export function MedicineMapModal({
       <div style={{ background: "#fff", width: 720, maxWidth: "calc(100vw - 32px)", maxHeight: "80vh", display: "flex", flexDirection: "column", borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 12px 40px rgba(10,22,44,0.18)" }}>
 
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #EEF1F6", flexShrink: 0 }}>
-          <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Map Medicine Name</div>
+          <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Map Product Name</div>
           <div style={{ fontSize: 12, color: "#6B7280", marginTop: 5, lineHeight: 1.5 }}>
             Imported as{" "}
             <span style={{ fontFamily: "JetBrains Mono", fontWeight: 700, color: "#C2410C", background: "#FFF7ED", padding: "1px 6px", border: "1px solid #FED7AA" }}>
               {importedName}
             </span>
-            {" "}— select the matching system medicine below.
+            {" "}— select the matching system product below.
           </div>
         </div>
 
@@ -1138,14 +1303,14 @@ export function MedicineMapModal({
         <div style={{ flex: 1, overflowY: "auto" }}>
           {suggestions.length === 0 ? (
             <div style={{ padding: "32px 20px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>
-              No medicines found for &ldquo;{search}&rdquo;
-              <div style={{ marginTop: 10, fontSize: 12 }}>Use <strong>Create New Medicine</strong> below to add it to the master.</div>
+              No products found for &ldquo;{search}&rdquo;
+              <div style={{ marginTop: 10, fontSize: 12 }}>Use <strong>Create New Product</strong> below to add it to the master.</div>
             </div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#F8FAFC", position: "sticky", top: 0, zIndex: 1 }}>
-                  {["Medicine Name", "Composition", "Pack", "MRP", ""].map(h => (
+                  {["Product Name", "Composition", "Pack", "MRP", ""].map(h => (
                     <th key={h} style={{ padding: "8px 14px", textAlign: h === "MRP" ? "right" : "left", fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.07em", borderBottom: "1px solid #E8ECF4", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -1190,7 +1355,7 @@ export function MedicineMapModal({
             onClick={onCreateNew}
             style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #1B6CA8", background: "#EFF6FF", fontSize: 12, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", fontWeight: 600 }}
           >
-            + Create New Medicine
+            + Create New Product
           </button>
           <button
             onClick={onClose}
@@ -1222,7 +1387,7 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
   const q = (lineSearch ?? "").trim().toLowerCase();
   const visibleItems = q
     ? items.filter(i =>
-        i.medicineName.toLowerCase().includes(q) ||
+        i.productName.toLowerCase().includes(q) ||
         (i.importedName ?? "").toLowerCase().includes(q) ||
         i.batchNo.toLowerCase().includes(q)
       )
@@ -1234,7 +1399,7 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
       <table style={{ borderCollapse: "collapse", minWidth: 1300, width: "100%" }}>
         <thead>
           <tr>
-            <Th>Medicine</Th>
+            <Th>Product</Th>
             <Th>Batch #</Th>
             <Th>Exp</Th>
             <Th right>Pack</Th>
@@ -1257,7 +1422,7 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
                 {ms ? (
                   ms === "matched" ? (
                     <span style={{ fontSize: 13, fontWeight: 500, color: "#1A2436", fontFamily: "Inter" }}>
-                      {item.medicineName}
+                      {item.productName}
                     </span>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -1268,15 +1433,15 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
                         {item.importedName}
                       </span>
                       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        {ms === "fuzzy" && item.medicineName && (
+                        {ms === "fuzzy" && item.productName && (
                           <span style={{ fontSize: 11, color: "#6B7280", fontFamily: "Inter" }}>
-                            → {item.medicineName}
+                            → {item.productName}
                           </span>
                         )}
                         {ms === "unmatched" && (
                           <span style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter" }}>No match found</span>
                         )}
-                        {ms === "fuzzy" && item.medicineName && (
+                        {ms === "fuzzy" && item.productName && (
                           <button
                             onClick={() => onAccept?.(item.id)}
                             title="Accept suggestion"
@@ -1289,7 +1454,7 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
                         )}
                         <button
                           onClick={() => onMap?.(item.id)}
-                          title="Map to system medicine"
+                          title="Map to system product"
                           style={{ border: "none", background: "transparent", cursor: "pointer", padding: "1px 2px", display: "inline-flex", alignItems: "center" }}
                         >
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1303,11 +1468,11 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
                     </div>
                   )
                 ) : (
-                  <MedicineNameCell
-                    value={item.medicineName}
+                  <ProductNameCell
+                    value={item.productName}
                     alloc={alloc}
                     onSelect={(name, batch) => {
-                      onChange(item.id, "medicineName", name);
+                      onChange(item.id, "productName", name);
                       onChange(item.id, "batchNo", batch.id);
                       onChange(item.id, "mfgDate", batch.mfgDate);
                       onChange(item.id, "expDate", batch.expDate);
@@ -1322,8 +1487,7 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
                   style={{ width: 100, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: "#1A2436" }} />
               </td>
               <td style={{ padding: "6px 10px", textAlign: "left" }}>
-                <input type="date" value={item.expDate} onChange={e => onChange(item.id, "expDate", e.target.value)}
-                  style={{ width: 130, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: item.expDate && item.expDate < "2026-12-31" ? "#E65100" : "#1A2436" }} />
+                <DatePicker value={item.expDate} onChange={v => onChange(item.id, "expDate", v)} style={{ width: 130 }} inputStyle={{ padding: "4px 6px", fontSize: 11 }} />
               </td>
               <td style={{ padding: "6px 10px", textAlign: "right" }}>
                 <input type="number" value={item.packSize || ""} onChange={e => onChange(item.id, "packSize", parseFloat(e.target.value) || 0)}
@@ -1354,10 +1518,10 @@ export function PurchaseLineItemsTable({ items, alloc, onChange, onDelete, onMap
                   style={inputStyle(54)} />
               </td>
               <td style={{ padding: "6px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#1A2436", whiteSpace: "nowrap" }}>
-                {item.medicineName ? money(calcLineAmount(item)) : "—"}
+                {item.productName ? money(calcLineAmount(item)) : "—"}
               </td>
               <td style={{ padding: "6px 10px", textAlign: "center" }}>
-                {item.medicineName && (
+                {item.productName && (
                     <button onClick={() => onDelete(item.id)} title="Remove"
                       style={{ border: "none", background: "transparent", cursor: "pointer", color: "#C62828", fontSize: 16, padding: "2px 4px" }}>×</button>
                   )}
@@ -1684,10 +1848,20 @@ export function DistributorDrawer({ supplierName, onClose, onEdit }: { supplierN
   );
 }
 
-export function POLineSearch({ onSelect, onAddMedicine }: { onSelect: (m: MedCatalogItem) => void; onAddMedicine?: (query: string) => void }) {
+export function POLineSearch({ onSelect, onAddProduct }: { onSelect: (m: MedCatalogItem) => void; onAddProduct?: (query: string) => void }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "F2") { e.preventDefault(); inputRef.current?.focus(); setOpen(true); setFocused(true); }
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, []);
 
   const results = query.trim().length > 0
     ? PO_MED_CATALOG.filter(m =>
@@ -1704,21 +1878,32 @@ export function POLineSearch({ onSelect, onAddMedicine }: { onSelect: (m: MedCat
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
-      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style={{ position: "absolute", left: 7, color: "#9CA3AF", pointerEvents: "none", flexShrink: 0 }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 6,
+        border: focused ? "1px solid #1B6CA8" : "1px solid transparent",
+        borderRadius: 6,
+        padding: "3px 6px",
+        background: focused ? "#fff" : "transparent",
+        transition: "border-color 0.15s, background 0.15s",
+      }}>
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0, opacity: 0.45 }}>
           <circle cx="8.5" cy="8.5" r="5.5" stroke="#9CA3AF" strokeWidth="1.8" />
           <path d="M13 13l3 3" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
         <input
+          ref={inputRef}
           type="text"
           value={query}
-          placeholder="Search medicine, generic name..."
+          placeholder="Type to add product,"
           onChange={e => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
-          style={{ width: "100%", padding: "6px 8px 6px 26px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "Inter", outline: "none", background: "#fff" }}
+          onFocus={() => { setOpen(true); setFocused(true); }}
+          onBlur={() => { setTimeout(() => setOpen(false), 150); setFocused(false); }}
+          style={{ flex: 1, border: "none", background: "transparent", fontSize: 12, fontFamily: "Inter", outline: "none", color: "#1A2436", minWidth: 0 }}
           onMouseDown={e => e.stopPropagation()}
         />
+        {!focused && !query && (
+          <span style={{ fontSize: 10, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#9CA3AF", background: "#F0F3F7", border: "1px solid #E4E7EF", borderRadius: 3, padding: "1px 5px", flexShrink: 0, lineHeight: "16px" }}>F2</span>
+        )}
       </div>
       {open && (
         <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 200, background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", minWidth: 640, maxHeight: 260, overflowY: "auto" }}
@@ -1736,12 +1921,12 @@ export function POLineSearch({ onSelect, onAddMedicine }: { onSelect: (m: MedCat
                 <tr>
                   <td colSpan={5} style={{ padding: "14px 16px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 12, color: "#9CA3AF" }}>No medicines found for "{query}"</span>
+                      <span style={{ fontSize: 12, color: "#9CA3AF" }}>No products found for "{query}"</span>
                       <button
                         onMouseDown={e => e.preventDefault()}
-                        onClick={() => { setOpen(false); onAddMedicine?.(query); }}
+                        onClick={() => { setOpen(false); onAddProduct?.(query); }}
                         style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#1B6CA8", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
-                        <span style={{ fontSize: 15, lineHeight: 1 }}>+</span> Add Medicine
+                        <span style={{ fontSize: 15, lineHeight: 1 }}>+</span> Add Product
                       </button>
                     </div>
                   </td>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { DatePicker } from "../shared/DatePicker";
 import { formatDMY, money } from "./purchasesData";
 import {
   Td, TableRow, FieldLabel, TextInput, DropdownSelect, PrimaryBtn, GhostBtn, Modal,
@@ -9,16 +10,15 @@ import { Pill } from "../shared/Pill";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
 import { useTableSort } from "../shared/useTableSort";
 import { DateRangePicker } from "../shared/DateRangePicker";
+import {
+  PAY_METHODS, PAYMENT_TYPES, ADJ_TYPES, HOLD_TYPES, REVERSAL_REASONS, BANK_NAMES,
+} from "../../constants/purchaseLOV";
+import { MSG_HOLD_RESOLVED, MSG_HOLD_NOT_RESOLVED } from "../../constants/purchaseMessages";
+import { createPayment } from "../../lib/purchaseApi";
+import { suppliers } from "../../data/mockData";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PAY_TODAY = "2026-09-15";
-const PAY_METHODS = ["Cash", "UPI", "Bank Transfer", "Cheque", "Card", "Other"];
-const PAYMENT_TYPES = ["Invoice Payment", "Multiple Invoice Payment", "Advance Payment", "On Account"];
-const ADJ_TYPES = ["Purchase Return", "Credit Note", "Expiry Claim", "Scheme Claim", "Rate Difference", "Settlement Discount", "Other"];
-const HOLD_TYPES = ["Short Qty", "Rate Variance", "Expiry Issue", "Quality Issue", "Damaged", "Other"];
-const REVERSAL_REASONS = ["Wrong Amount", "Wrong Distributor", "Wrong Invoice", "Duplicate Payment", "Payment Method Error", "Other"];
-const BANK_NAMES = ["HDFC Bank", "SBI", "ICICI Bank", "Axis Bank", "Kotak Mahindra", "Yes Bank"];
 const DISTRIBUTOR_NAMES = ["MedLine Pharma", "GenPharm Ltd", "PharmaCo Inc", "BioPharm AG", "RespiCare Ltd"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -259,7 +259,7 @@ function PaymentMethodFields({ method, chequeNo, setChequeNo, chequeDate, setChe
   if (method === "Cheque") return (
     <div style={{ gridColumn: "span 2", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
       <div><FieldLabel>Cheque Number</FieldLabel><TextInput value={chequeNo} onChange={e => setChequeNo(e.target.value)} placeholder="Cheque number" /></div>
-      <div><FieldLabel>Cheque Date</FieldLabel><TextInput type="date" value={chequeDate} onChange={e => setChequeDate(e.target.value)} /></div>
+      <div><FieldLabel>Cheque Date</FieldLabel><DatePicker value={chequeDate} onChange={setChequeDate} /></div>
       <div><FieldLabel>Bank Name</FieldLabel><DropdownSelect value={bankName} onChange={setBankName} options={BANK_NAMES} placeholder="— Select bank —" /></div>
     </div>
   );
@@ -284,7 +284,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
   // Step 1 fields
   const [distributor, setDistributor] = useState(preselectedDistributor ?? "");
   const [paymentType, setPaymentType] = useState("Invoice Payment");
-  const [payDate, setPayDate] = useState(PAY_TODAY);
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("UPI");
   const [refUtr, setRefUtr] = useState("");
@@ -325,6 +325,8 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
   const totalAdj = adjustments.reduce((s, a) => s + (parseFloat(String(a.amount)) || 0), 0);
   const netPayable = outstanding - totalAdj;
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const dupCheck = PAYMENTS.find(p =>
     p.distributor === distributor &&
     p.amount === payAmt &&
@@ -335,14 +337,29 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
 
   const goToStep2 = () => { setAllocation(initAllocation); setStep(2); };
   const goToStep3 = () => setStep(3);
-  const postPayment = () => {
-    const success = Math.random() > 0.3;
-    if (success) {
+  const postPayment = async () => {
+    const distEntry = suppliers.find(s => s.name === distributor);
+    const ref = refUtr || chequeNo || "";
+    setIsSubmitting(true);
+    try {
+      await createPayment({
+        global_distributor_id: distEntry?.id ?? distributor,
+        distributor_name: distributor,
+        grn_number: allocation.length === 1 ? allocation[0].invoiceId : null,
+        payment_date: payDate,
+        amount: payAmt,
+        payment_mode: method,
+        bank_name: bankName || undefined,
+        reference_number: ref || undefined,
+        notes: remarks || undefined,
+      });
       onPost({ type: "success", message: `Payment of ${money(payAmt)} for ${distributor} posted successfully.` });
-    } else {
+    } catch {
       onPost({ type: "error", message: `Failed to post payment for ${distributor}. Please try again.` });
+    } finally {
+      setIsSubmitting(false);
+      onClose();
     }
-    onClose();
   };
 
   const modalWidth = step === 1 ? 640 : 720;
@@ -384,7 +401,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
                 )}
                 <div>
                   <FieldLabel>Payment Date</FieldLabel>
-                  <TextInput type="date" value={payDate} onChange={e => setPayDate(e.target.value)} />
+                  <DatePicker value={payDate} onChange={setPayDate} />
                 </div>
                 <div>
                   <FieldLabel>Payment Method</FieldLabel>
@@ -620,7 +637,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
                 <GhostBtn onClick={() => setStep(2)}>← Back</GhostBtn>
                 <div style={{ display: "flex", gap: 10 }}>
                   <GhostBtn onClick={onClose}>Cancel</GhostBtn>
-                  <PrimaryBtn onClick={postPayment}>Post Payment</PrimaryBtn>
+                  <PrimaryBtn onClick={postPayment} disabled={isSubmitting}>Post Payment</PrimaryBtn>
                 </div>
               </div>
             </div>
@@ -635,7 +652,7 @@ function RecordPaymentModal({ onClose, preselectedDistributor, onPost }: { onClo
 
 function RecordAdvanceModal({ onClose }: { onClose: () => void }) {
   const [distributor, setDistributor] = useState("");
-  const [payDate, setPayDate] = useState(PAY_TODAY);
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("UPI");
   const [refUtr, setRefUtr] = useState("");
@@ -654,7 +671,7 @@ function RecordAdvanceModal({ onClose }: { onClose: () => void }) {
           </div>
           <div>
             <FieldLabel>Payment Date</FieldLabel>
-            <TextInput type="date" value={payDate} onChange={e => setPayDate(e.target.value)} />
+            <DatePicker value={payDate} onChange={setPayDate} />
           </div>
           <div>
             <FieldLabel>Amount (₹)</FieldLabel>
@@ -1520,13 +1537,13 @@ function HoldsTab() {
             hold={viewHold}
             onClose={() => {
               setViewHold(null);
-              setToast({ type: "error", message: `Payment hold for ${viewHold.invoiceId} was not resolved.` });
+              setToast({ type: "error", message: MSG_HOLD_NOT_RESOLVED(viewHold.invoiceId) });
             }}
             onResolve={() => {
               const inv = viewHold.invoiceId;
               setHolds(prev => prev.map(h => h.id === viewHold.id ? { ...h, status: "Resolved" } : h));
               setViewHold(null);
-              setToast({ type: "success", message: `Payment hold for ${inv} resolved successfully.` });
+              setToast({ type: "success", message: MSG_HOLD_RESOLVED(inv) });
             }}
           />
         )}

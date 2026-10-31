@@ -1,4 +1,13 @@
 import { useState, useRef, useEffect } from "react";
+import { fetchDistributors, createDistributor, updateMyDistributorSettings, upsertMyDistributorPolicy, formToSettingsFields, settingsToForm } from "../lib/supplierApi";
+import {
+  fetchDistributorSummary, fetchDistributorOrders, fetchDistributorInvoices, fetchDistributorReturns,
+  fetchDistributorPayments, fetchDistributorAudit, fmtDate, EMPTY_SUMMARY,
+  ORDER_STATUS_FILTER, INVOICE_STATUS_FILTER, RETURN_STATUS_FILTER, PAYMENT_STATUS_FILTER, PAYMENT_MODE_FILTER,
+} from "../lib/distributorDetailApi";
+import type { DistributorSummary, OrderRow, InvoiceRow, ReturnRow, PaymentRow } from "../lib/distributorDetailApi";
+import { useTabData, useDebounced, periodBounds } from "../lib/useTabData";
+import { DatePicker } from "./shared/DatePicker";
 import type { PurchasesDeepLink } from "../App";
 import { Pill } from "./shared/Pill";
 import { Th } from "./shared/Th";
@@ -30,7 +39,7 @@ interface ContactPerson {
 
 interface MedExpiryRule {
   id: number;
-  medicine: string;
+  product: string;
   minShelfLife: string;
   returnAllowed: string;
   returnWindow: string;
@@ -89,69 +98,13 @@ interface DistributorRecord {
   outstandingLimit?: string;
   distributorNotes?: string;
   contacts?: ContactPerson[];
+  /** This pharmacy's saved settings row from the server (pharmacy_distributor_settings + children). */
+  pharmacySettings?: Record<string, unknown> | null;
 }
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
-const MOCK_DISTRIBUTORS: DistributorRecord[] = [
-  { id: "DIST-001", name: "MedLine Pharma", code: "ML-001", type: "Stockist", status: "Active", preferred: true, gstin: "27AABCM1234K1ZX", drugLicense: "MH/DL/2024/00892", drugLicenseType: "Form 20", city: "Mumbai", state: "Maharashtra", contactPerson: "Rajesh Kumar", mobile: "9820044321", paymentTerms: "Credit 30 Days", creditLimit: 200000, creditEnabled: true, expiryReturn: true, balance: -34200, email: "orders@medlinepharma.com", addrLine1: "Shop 12, Pharmacy Lane", area: "Dadar", district: "Mumbai City", pin: "400014", gstType: "Regular", pan: "AABCM1234K", defaultDiscount: "10", defaultScheme: "9+1", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "90 Days", returnFreight: "Distributor", nearExpiryReturn: true, expiredReturn: false, creditNoteExpected: true, replacementAllowed: false, orderMethod: "WhatsApp", expectedDelivery: "Next Day", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"], bankName: "HDFC Bank", outstandingLimit: "150000", minOrderValue: "1000", contacts: [{ id: 1, name: "Rajesh Kumar", designation: "Sales Manager", mobile: "9820044321", email: "rajesh@medlinepharma.com", whatsapp: "9820044321", isPrimary: true }] },
-  { id: "DIST-002", name: "GenPharm Ltd", code: "GP-002", type: "Distributor", status: "Active", preferred: true, gstin: "27AACCG5678L2ZY", drugLicense: "MH/DL/2023/01445", drugLicenseType: "Form 21", city: "Pune", state: "Maharashtra", contactPerson: "Anita Sharma", mobile: "9823456789", paymentTerms: "Credit 15 Days", creditLimit: 100000, creditEnabled: true, expiryReturn: true, balance: 0, email: "accounts@genpharm.co.in", addrLine1: "Plot 45, Industrial Area", pin: "411001", gstType: "Regular", defaultDiscount: "8", defaultFreight: "Extra", expiryPolicy: "Selected Products", minShelfLife: "3 Months", expiryReturnWindow: "60 Days", orderMethod: "Email", expectedDelivery: "Next Day", deliveryDays: ["Monday","Wednesday","Friday"], bankName: "ICICI Bank", contacts: [{ id: 1, name: "Anita Sharma", designation: "Key Account Manager", mobile: "9823456789", email: "anita@genpharm.co.in", whatsapp: "9823456789", isPrimary: true }] },
-  { id: "DIST-003", name: "PharmaCo Inc", code: "PC-003", type: "Super Stockist", status: "Active", preferred: false, gstin: "29ABCPH9012M3ZW", drugLicense: "KA/DL/2024/00234", drugLicenseType: "Form 20B", city: "Bengaluru", state: "Karnataka", contactPerson: "Suresh Nair", mobile: "9945678901", paymentTerms: "Credit 45 Days", creditLimit: 500000, creditEnabled: true, expiryReturn: false, balance: -18500, email: "suresh@pharmacoinc.com", addrLine1: "No. 78, MG Road", pin: "560001", gstType: "Regular", defaultDiscount: "12", defaultFreight: "Included", expiryPolicy: "No Return", orderMethod: "Portal", expectedDelivery: "2 Days", deliveryDays: ["Tuesday","Thursday","Saturday"], bankName: "Axis Bank", outstandingLimit: "400000" },
-  { id: "DIST-004", name: "BioPharm AG", code: "BP-004", type: "C&F", status: "Active", preferred: true, gstin: "07AABCB3456N4ZV", drugLicense: "DL/DL/2024/00567", drugLicenseType: "Form 21B", city: "Delhi", state: "Delhi", contactPerson: "Priya Mehta", mobile: "9811234567", paymentTerms: "Credit 30 Days", creditLimit: 300000, creditEnabled: true, expiryReturn: true, balance: 0, email: "priya@biopharm.in", addrLine1: "A-12, Karol Bagh", pin: "110005", gstType: "Regular", defaultDiscount: "9", defaultScheme: "9+1", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", returnFreight: "Shared", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "WhatsApp", expectedDelivery: "Same Day", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"] },
-  { id: "DIST-005", name: "RespiCare Ltd", code: "RC-005", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "24AABCR7890O5ZU", drugLicense: "GJ/DL/2023/00789", drugLicenseType: "Form 20", city: "Ahmedabad", state: "Gujarat", contactPerson: "Vikram Shah", mobile: "9876543210", paymentTerms: "Cash on Delivery", creditLimit: 0, creditEnabled: false, expiryReturn: true, balance: -6200, email: "vikram@respicare.com", addrLine1: "Opp. Civil Hospital", pin: "380001", gstType: "Unregistered", expiryPolicy: "All Eligible Products", minShelfLife: "3 Months", orderMethod: "Phone", expectedDelivery: "3 Days", deliveryDays: ["Monday","Wednesday","Friday"] },
-  { id: "DIST-006", name: "Apex Medicals", code: "AM-006", type: "Stockist", status: "Inactive", preferred: false, gstin: "33AABCA2345P6ZT", drugLicense: "TN/DL/2022/01234", drugLicenseType: "Form 20", city: "Chennai", state: "Tamil Nadu", contactPerson: "Karthik Rajan", mobile: "9791234567", paymentTerms: "Credit 30 Days", creditLimit: 80000, creditEnabled: true, expiryReturn: false, balance: 0, email: "karthik@apexmedicals.com", addrLine1: "23 Anna Salai", pin: "600002", gstType: "Regular", expiryPolicy: "No Return", orderMethod: "Email", expectedDelivery: "2 Days", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"] },
-  { id: "DIST-007", name: "HealthFirst Pharma", code: "HF-007", type: "Distributor", status: "Draft", preferred: false, gstin: "", drugLicense: "MH/DL/2025/00001", drugLicenseType: "Form 21", city: "Nashik", state: "Maharashtra", contactPerson: "Deepak Patil", mobile: "9823300001", paymentTerms: "Credit 30 Days", creditLimit: 0, creditEnabled: false, expiryReturn: false, balance: 0 },
-  { id: "DIST-008", name: "MedLife Pharma", code: "ML-008", type: "Stockist", status: "Active", preferred: true, gstin: "27AABCM8765K1ZP", drugLicense: "MH/DL/2024/00912", drugLicenseType: "Form 20", city: "Mumbai", state: "Maharashtra", contactPerson: "Nitin Joshi", mobile: "9820011234", paymentTerms: "Credit 30 Days", creditLimit: 200000, creditEnabled: true, expiryReturn: true, balance: -12400, email: "medlife@pharma.in", addrLine1: "Block 7, Pharma Hub", area: "Andheri", district: "Mumbai City", pin: "400053", gstType: "Regular", pan: "AABCM8765K", defaultDiscount: "9", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "90 Days", returnFreight: "Distributor", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "WhatsApp", expectedDelivery: "Next Day", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"], bankName: "HDFC Bank", contacts: [{ id: 1, name: "Nitin Joshi", designation: "Sales Manager", mobile: "9820011234", email: "nitin@medlifepharma.in", whatsapp: "9820011234", isPrimary: true }] },
-  { id: "DIST-009", name: "Sun Pharma", code: "SP-009", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "24AAACS1234F1ZQ", drugLicense: "GJ/DL/2024/00456", drugLicenseType: "Form 21", city: "Vadodara", state: "Gujarat", contactPerson: "Harish Patel", mobile: "9898765432", paymentTerms: "Credit 21 Days", creditLimit: 500000, creditEnabled: true, expiryReturn: true, balance: -28000, email: "sun@pharma.in", addrLine1: "Sun House, Industrial Estate", pin: "390007", gstType: "Regular", pan: "AAACS1234F", defaultDiscount: "11", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "60 Days", orderMethod: "Portal", expectedDelivery: "2 Days", deliveryDays: ["Monday","Wednesday","Friday"], bankName: "Kotak Mahindra Bank", contacts: [{ id: 1, name: "Harish Patel", designation: "Regional Manager", mobile: "9898765432", email: "harish@sunpharma.in", whatsapp: "9898765432", isPrimary: true }] },
-  { id: "DIST-010", name: "Cipla Ltd", code: "CL-010", type: "Manufacturer Direct", status: "Active", preferred: true, gstin: "27AAACI9876B1ZR", drugLicense: "MH/DL/2024/01200", drugLicenseType: "Form 21B", city: "Mumbai", state: "Maharashtra", contactPerson: "Sneha Rao", mobile: "9833456789", paymentTerms: "Credit 30 Days", creditLimit: 600000, creditEnabled: true, expiryReturn: true, balance: 0, email: "cipla@pharma.in", addrLine1: "Cipla House, Peninsula Business Park", area: "Lower Parel", district: "Mumbai City", pin: "400013", gstType: "Regular", pan: "AAACI9876B", defaultDiscount: "10", defaultScheme: "9+1", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "90 Days", returnFreight: "Distributor", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "Portal", expectedDelivery: "Next Day", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"], bankName: "HDFC Bank", contacts: [{ id: 1, name: "Sneha Rao", designation: "Key Account Manager", mobile: "9833456789", email: "sneha@cipla.in", whatsapp: "9833456789", isPrimary: true }] },
-  { id: "DIST-011", name: "Zydus Cadila", code: "ZC-011", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "24AAACZ4567G1ZS", drugLicense: "GJ/DL/2023/00901", drugLicenseType: "Form 20", city: "Ahmedabad", state: "Gujarat", contactPerson: "Ramesh Bhatt", mobile: "9879012345", paymentTerms: "Credit 30 Days", creditLimit: 400000, creditEnabled: true, expiryReturn: true, balance: -9800, email: "zydus@cadila.in", addrLine1: "Zydus Corporate Park, Satellite", pin: "380015", gstType: "Regular", pan: "AAACZ4567G", defaultDiscount: "8", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", orderMethod: "Email", expectedDelivery: "2 Days", deliveryDays: ["Tuesday","Thursday","Saturday"], bankName: "Axis Bank", contacts: [{ id: 1, name: "Ramesh Bhatt", designation: "Sales Executive", mobile: "9879012345", email: "ramesh@zydus.in", whatsapp: "9879012345", isPrimary: true }] },
-  { id: "DIST-012", name: "Abbott India", code: "AI-012", type: "Distributor", status: "Active", preferred: false, gstin: "27AAACA2345H1ZT", drugLicense: "MH/DL/2024/00678", drugLicenseType: "Form 21", city: "Mumbai", state: "Maharashtra", contactPerson: "Priti Desai", mobile: "9821567890", paymentTerms: "Credit 45 Days", creditLimit: 350000, creditEnabled: true, expiryReturn: true, balance: 0, email: "abbott@india.in", addrLine1: "Abbott India Ltd, Western Express Highway", area: "Goregaon", district: "Mumbai City", pin: "400063", gstType: "Regular", defaultDiscount: "7", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "3 Months", orderMethod: "Portal", expectedDelivery: "2 Days", deliveryDays: ["Monday","Wednesday","Friday"], bankName: "Citibank", contacts: [{ id: 1, name: "Priti Desai", designation: "Account Manager", mobile: "9821567890", email: "priti@abbott.in", whatsapp: "9821567890", isPrimary: true }] },
-  { id: "DIST-013", name: "AstraZeneca", code: "AZ-013", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "07AAACA9012I1ZU", drugLicense: "DL/DL/2024/00890", drugLicenseType: "Form 21B", city: "Delhi", state: "Delhi", contactPerson: "Sanjeev Kumar", mobile: "9811098765", paymentTerms: "Credit 30 Days", creditLimit: 500000, creditEnabled: true, expiryReturn: false, balance: -5400, email: "az@pharma.in", addrLine1: "AstraZeneca India, Elegance Tower", pin: "110019", gstType: "Regular", defaultDiscount: "6", defaultFreight: "Included", expiryPolicy: "No Return", orderMethod: "Email", expectedDelivery: "3 Days", deliveryDays: ["Tuesday","Friday"], bankName: "HSBC Bank", contacts: [{ id: 1, name: "Sanjeev Kumar", designation: "Zonal Manager", mobile: "9811098765", email: "sanjeev@astrazeneca.in", whatsapp: "9811098765", isPrimary: true }] },
-  { id: "DIST-014", name: "GSK Pharma", code: "GK-014", type: "Manufacturer Direct", status: "Active", preferred: true, gstin: "29AAACG6789J1ZV", drugLicense: "KA/DL/2024/00567", drugLicenseType: "Form 20", city: "Bengaluru", state: "Karnataka", contactPerson: "Anand Nair", mobile: "9945112233", paymentTerms: "Credit 30 Days", creditLimit: 400000, creditEnabled: true, expiryReturn: true, balance: 0, email: "gsk@pharma.in", addrLine1: "GSK House, Whitefield", pin: "560066", gstType: "Regular", pan: "AAACG6789J", defaultDiscount: "9", defaultScheme: "9+1", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "90 Days", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "WhatsApp", expectedDelivery: "Next Day", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"], bankName: "Standard Chartered", contacts: [{ id: 1, name: "Anand Nair", designation: "Sales Manager", mobile: "9945112233", email: "anand@gsk.in", whatsapp: "9945112233", isPrimary: true }] },
-  { id: "DIST-015", name: "Lupin Ltd", code: "LL-015", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "27AAACL3456K1ZW", drugLicense: "MH/DL/2023/01100", drugLicenseType: "Form 20", city: "Mumbai", state: "Maharashtra", contactPerson: "Rekha Sharma", mobile: "9820223344", paymentTerms: "Credit 21 Days", creditLimit: 300000, creditEnabled: true, expiryReturn: true, balance: -7200, email: "lupin@pharma.in", addrLine1: "Lupin Research Park, Andheri", pin: "400072", gstType: "Regular", defaultDiscount: "10", defaultFreight: "Extra", expiryPolicy: "Selected Products", minShelfLife: "3 Months", orderMethod: "WhatsApp", expectedDelivery: "Next Day", deliveryDays: ["Monday","Wednesday","Friday"], bankName: "Axis Bank", contacts: [{ id: 1, name: "Rekha Sharma", designation: "Sales Representative", mobile: "9820223344", email: "rekha@lupinpharma.in", whatsapp: "9820223344", isPrimary: true }] },
-  { id: "DIST-016", name: "Novo Nordisk Ltd", code: "NN-016", type: "Manufacturer Direct", status: "Active", preferred: true, gstin: "07AAACN7890L1ZX", drugLicense: "DL/DL/2024/01234", drugLicenseType: "Form 21B", city: "Delhi", state: "Delhi", contactPerson: "Dr. Amit Verma", mobile: "9810345678", paymentTerms: "Credit 30 Days", creditLimit: 800000, creditEnabled: true, expiryReturn: true, balance: 0, email: "novo@nordisk.in", addrLine1: "Novo Nordisk House, DLF Cyber City", pin: "122002", gstType: "Regular", pan: "AAACN7890L", defaultDiscount: "5", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "12 Months", expiryReturnWindow: "180 Days", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "Portal", expectedDelivery: "2 Days", deliveryDays: ["Monday","Tuesday","Wednesday","Thursday","Friday"], bankName: "Citibank", contacts: [{ id: 1, name: "Dr. Amit Verma", designation: "Medical Affairs Manager", mobile: "9810345678", email: "amit@novonordisk.in", whatsapp: "9810345678", isPrimary: true }] },
-  { id: "DIST-017", name: "Pfizer India", code: "PF-017", type: "Manufacturer Direct", status: "Active", preferred: false, gstin: "27AAACP1234M1ZY", drugLicense: "MH/DL/2024/01450", drugLicenseType: "Form 21", city: "Mumbai", state: "Maharashtra", contactPerson: "Sanjay Mehta", mobile: "9820456789", paymentTerms: "Credit 30 Days", creditLimit: 500000, creditEnabled: true, expiryReturn: true, balance: -4600, email: "pfizer@india.in", addrLine1: "Pfizer Centre, Parel", area: "Parel", district: "Mumbai City", pin: "400012", gstType: "Regular", pan: "AAACP1234M", defaultDiscount: "7", defaultFreight: "Included", expiryPolicy: "All Eligible Products", minShelfLife: "6 Months", expiryReturnWindow: "90 Days", nearExpiryReturn: true, creditNoteExpected: true, orderMethod: "Portal", expectedDelivery: "2 Days", deliveryDays: ["Tuesday","Thursday"], bankName: "HDFC Bank", contacts: [{ id: 1, name: "Sanjay Mehta", designation: "Key Account Manager", mobile: "9820456789", email: "sanjay@pfizer.in", whatsapp: "9820456789", isPrimary: true }] },
-];
-
-// ─── Mock transaction history ─────────────────────────────────────────────────
-
-const MOCK_PO_HISTORY = [
-  { poNo: "PO-2026-0155", date: "18 Aug 2026", items: 9, amount: 3650, status: "Partial" },
-  { poNo: "PO-2026-0150", date: "26 Jul 2026", items: 8, amount: 2928, status: "Received" },
-  { poNo: "PO-2026-0147", date: "13 Jul 2026", items: 15, amount: 5200, status: "Received" },
-  { poNo: "PO-2026-0143", date: "16 Jun 2026", items: 7, amount: 2333, status: "Received" },
-  { poNo: "PO-2026-0141", date: "30 May 2026", items: 4, amount: 2393, status: "Cancelled" },
-];
-
-const MOCK_INVOICES = [
-  { invNo: "PINV-2026-0072", poRef: "PO-2026-0155", date: "18 Aug 2026", dueDate: "17 Sep 2026", items: 9, subtotal: 3120, gst: 273, total: 3394, paid: 0, balance: 3394, status: "Unpaid" },
-  { invNo: "PINV-2026-0067", poRef: "PO-2026-0150", date: "28 Jul 2026", dueDate: "27 Aug 2026", items: 8, subtotal: 2693, gst: 236, total: 2928, paid: 2928, balance: 0, status: "Paid" },
-  { invNo: "PINV-2026-0064", poRef: "PO-2026-0147", date: "15 Jul 2026", dueDate: "14 Aug 2026", items: 15, subtotal: 4782, gst: 418, total: 5200, paid: 5200, balance: 0, status: "Paid" },
-  { invNo: "PINV-2026-0060", poRef: "PO-2026-0143", date: "18 Jun 2026", dueDate: "18 Jul 2026", items: 7, subtotal: 2145, gst: 188, total: 2333, paid: 2333, balance: 0, status: "Paid" },
-  { invNo: "PINV-2026-0058", poRef: "PO-2026-0141", date: "02 Jun 2026", dueDate: "02 Jul 2026", items: 4, subtotal: 2200, gst: 193, total: 2393, paid: 0, balance: 2393, status: "Unpaid" },
-];
-
-const MOCK_RETURNS = [
-  { retNo: "PRN-2026-0014", invRef: "PINV-2026-0072", date: "19 Aug 2026", items: 2, reason: "Damaged on arrival", amount: 342, creditNote: "CN-2026-0009", status: "Credit Issued" },
-  { retNo: "PRN-2026-0013", invRef: "PINV-2026-0067", date: "14 Aug 2026", items: 1, reason: "Near-expiry batch", amount: 170, creditNote: "CN-2026-0008", status: "Credit Issued" },
-  { retNo: "PRN-2026-0011", invRef: "PINV-2026-0064", date: "30 Jul 2026", items: 2, reason: "Wrong quantity received", amount: 220, creditNote: "CN-2026-0007", status: "Credit Issued" },
-];
-
-const MOCK_PAYMENTS = [
-  { payNo: "PAY-2026-0044", date: "15 Sep 2026", invRef: "PINV-2026-0044", method: "UPI", amount: 25000, type: "Payment", status: "Cleared" },
-  { payNo: "PAY-2026-0043", date: "14 Sep 2026", invRef: "PINV-2026-0043", method: "Cash", amount: 12000, type: "Payment", status: "Cleared" },
-  { payNo: "PAY-2026-0041", date: "10 Sep 2026", invRef: "PINV-2026-0068", method: "Bank Transfer", amount: 18500, type: "Payment", status: "Cleared" },
-  { payNo: "PAY-2026-0039", date: "05 Sep 2026", invRef: "PINV-2026-0067", method: "Bank Transfer", amount: 9800, type: "Payment", status: "Cleared" },
-  { payNo: "PAY-2026-0038", date: "03 Sep 2026", invRef: "PINV-2026-0066", method: "Cheque", amount: 22000, type: "Payment", status: "Cleared" },
-];
-
-const MOCK_AUDIT = [
-  { ts: "14 Jun 2025, 10:42 AM", user: "Rahul M.", action: "Status changed", detail: "Inactive → Active" },
-  { ts: "12 Jun 2025, 03:15 PM", user: "Priya S.", action: "PO raised", detail: "PO-2025-0142 for ₹42,300" },
-  { ts: "05 Jun 2025, 11:00 AM", user: "Admin", action: "Credit limit updated", detail: "₹1,50,000 → ₹2,00,000" },
-  { ts: "28 May 2025, 09:30 AM", user: "Rahul M.", action: "Contact updated", detail: "Mobile number changed" },
-  { ts: "01 Jan 2025, 08:00 AM", user: "Admin", action: "Distributor created", detail: "Initial setup" },
-];
+const MOCK_DISTRIBUTORS: DistributorRecord[] = [];
 
 // ─── Validators ───────────────────────────────────────────────────────────────
 
@@ -550,6 +503,8 @@ function recordToForm(d: DistributorRecord): AddDistributorForm {
     deliveryDays: d.deliveryDays ?? ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
     bankName: d.bankName ?? "", upiId: d.upiId ?? "",
     distributorNotes: d.distributorNotes ?? "",
+    // Saved pharmacy settings are the source of truth; apply last so they are not overwritten by the defaults above.
+    ...(settingsToForm(d.pharmacySettings) as Partial<AddDistributorForm>),
   };
 }
 
@@ -624,7 +579,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
   }
 
   function addMedRule() {
-    setForm(f => ({ ...f, medExpiryRules: [...f.medExpiryRules, { id: nextRuleId, medicine: "", minShelfLife: "6 Months", returnAllowed: "Yes", returnWindow: "60 Days", resolution: "Credit Note", notes: "" }] }));
+    setForm(f => ({ ...f, medExpiryRules: [...f.medExpiryRules, { id: nextRuleId, product: "", minShelfLife: "6 Months", returnAllowed: "Yes", returnWindow: "60 Days", resolution: "Credit Note", notes: "" }] }));
     setNextRuleId(n => n + 1);
     setTouched(true);
   }
@@ -686,14 +641,93 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
     { label: "Internal Notes", ok: true },
   ];
 
-  function handleSave(asDraft = false) {
+  const [saving, setSaving] = useState(false);
+
+  function deliveryDaysFromLabel(label: string): { days: number; sameDay: boolean } {
+    if (label === "Same Day") return { days: 1, sameDay: true };
+    if (label === "Next Day") return { days: 1, sameDay: false };
+    const m = /^(\d+)/.exec(label);
+    return { days: m ? parseInt(m[1], 10) : 7, sameDay: false };
+  }
+
+  async function persist(): Promise<string> {
+    const { days, sameDay } = deliveryDaysFromLabel(form.expectedDelivery);
+    const credit = form.creditLimit ? parseFloat(form.creditLimit) : 0;
+    const terms = {
+      credit_limit: credit,
+      payment_terms: form.paymentTerms,
+      expected_delivery_days: days,
+      delivery_days: form.deliveryDays,
+      same_day_delivery: sameDay,
+      code: form.code.trim(),
+      preferred: form.preferred,
+      group_name: form.group,
+      ...formToSettingsFields(form as unknown as Record<string, unknown>),
+    };
+    const expiryAllowed = form.expiryPolicy !== "No Return";
+    if (initialData && /^DIST-\d+$/.test(initialData.id)) {
+      throw new Error("This record is local only and was never saved to the server.");
+    }
+    if (initialData) {
+      await updateMyDistributorSettings(initialData.id, terms);
+      await Promise.all([
+        upsertMyDistributorPolicy(initialData.id, "RETURN", { is_allowed: form.nearExpiryReturn }),
+        upsertMyDistributorPolicy(initialData.id, "DAMAGE_RETURN", { is_allowed: form.replacementAllowed }),
+        upsertMyDistributorPolicy(initialData.id, "EXPIRY_RETURN", {
+          is_allowed: expiryAllowed,
+          params: { period: form.expiryReturnWindow },
+        }),
+      ]);
+      return initialData.id;
+    }
+    const primary = form.contacts[0];
+    const res = await createDistributor({
+      name: form.name.trim(),
+      type: form.type,
+      account_status: form.status,
+      gst_number: form.gstin.trim().toUpperCase(),
+      drug_license_number: form.drugLicense.trim(),
+      pan: form.pan.trim().toUpperCase(),
+      contact_person: primary?.name ?? "",
+      email: form.email.trim(),
+      phone: form.companyPhone.trim(),
+      address: form.addrLine1.trim(),
+      address_line2: form.addrLine2.trim(),
+      city: form.city.trim(),
+      state: form.state,
+      pincode: form.pin.trim(),
+      ...terms,
+      return_allowed: form.nearExpiryReturn,
+      damage_return_allowed: form.replacementAllowed,
+      expiry_return_allowed: expiryAllowed,
+      expiry_return_period: form.expiryReturnWindow,
+    });
+    return res.distributor.id;
+  }
+
+  async function handleSave(asDraft = false) {
+    if (saving) return;
     if (asDraft && draftNameMissing) { setTouched(true); return; }
     if (!asDraft && hasErrors) {
       setTouched(true);
       showToast("Please fix the required fields before saving.", "error");
       return;
     }
-    const id = initialData?.id ?? `DIST-${String(Math.floor(Math.random() * 900) + 100).padStart(3, "0")}`;
+    let savedId: string | undefined;
+    if (!asDraft) {
+      setSaving(true);
+      try {
+        savedId = await persist();
+      } catch (err) {
+        const raw = err instanceof Error ? err.message : "";
+        const detail = /"detail"\s*:\s*"([^"]+)"/.exec(raw)?.[1] ?? raw.replace(/^API \d+:\s*/, "");
+        showToast(detail || "Failed to save distributor.", "error");
+        return;
+      } finally {
+        setSaving(false);
+      }
+    }
+    const id = savedId ?? initialData?.id ?? `DIST-${String(Math.floor(Math.random() * 900) + 100).padStart(3, "0")}`;
     const rec: DistributorRecord = {
       id, name: form.name, code: form.code, type: form.type,
       status: asDraft ? "Draft" : (form.status as "Active" | "Inactive"),
@@ -947,7 +981,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
                   <LocalDropdownSelect value={form.drugLicenseType} onChange={v => upd("drugLicenseType", v)} options={["Form 20", "Form 21", "Form 20B", "Form 21B", "Other"]} />
                 </FormField>
                 <FormField label="License Expiry Date">
-                  <PurchaseInput value={form.licenseExpiry} onChange={v => upd("licenseExpiry", v)} type="date" />
+                  <DatePicker value={form.licenseExpiry} onChange={v => upd("licenseExpiry", v)} />
                 </FormField>
                 <FormField label="FSSAI Number">
                   <PurchaseInput value={form.fssai} onChange={v => upd("fssai", v)} placeholder="If applicable" />
@@ -996,7 +1030,7 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
                 <FormField label="Product-wise Commercial Terms">
                   <Toggle value={form.productWiseTerms} onChange={v => upd("productWiseTerms", v)} />
                 </FormField>
-                <FormField label="Distributor-specific Medicine Pricing">
+                <FormField label="Distributor-specific Product Pricing">
                   <Toggle value={form.distributorPricing} onChange={v => upd("distributorPricing", v)} />
                 </FormField>
               </Grid2>
@@ -1030,17 +1064,17 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
               </div>
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>Medicine-Specific Expiry Rules</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>Product-Specific Expiry Rules</div>
                   <button onClick={addMedRule} style={{ padding: "5px 12px", border: "1px dashed #1B6CA8", background: "#EFF6FF", color: "#1B6CA8", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>
                     + Add Rule
                   </button>
                 </div>
                 {form.medExpiryRules.length === 0 ? (
-                  <div style={{ fontSize: 12, color: "#9CA3AF", fontStyle: "italic" as const, fontFamily: "Inter" }}>No medicine-specific rules added.</div>
+                  <div style={{ fontSize: 12, color: "#9CA3AF", fontStyle: "italic" as const, fontFamily: "Inter" }}>No product-specific rules added.</div>
                 ) : form.medExpiryRules.map(r => (
                   <div key={r.id} style={{ borderRadius: 6, border: "1px solid #E8ECF4", padding: "10px 12px", marginBottom: 8, background: "#FAFBFD" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr auto", gap: "8px 12px", alignItems: "end" }}>
-                      <FormField label="Medicine"><PurchaseInput value={r.medicine} onChange={v => updateMedRule(r.id, "medicine", v)} placeholder="Medicine name" /></FormField>
+                      <FormField label="Product"><PurchaseInput value={r.product} onChange={v => updateMedRule(r.id, "product", v)} placeholder="Product name" /></FormField>
                       <FormField label="Min Shelf Life"><LocalDropdownSelect value={r.minShelfLife} onChange={v => updateMedRule(r.id, "minShelfLife", v)} options={["3 Months", "6 Months", "9 Months", "12 Months"]} /></FormField>
                       <FormField label="Return Allowed"><LocalDropdownSelect value={r.returnAllowed} onChange={v => updateMedRule(r.id, "returnAllowed", v)} options={["Yes", "No"]} /></FormField>
                       <FormField label="Return Window"><LocalDropdownSelect value={r.returnWindow} onChange={v => updateMedRule(r.id, "returnWindow", v)} options={["30 Days", "60 Days", "90 Days"]} /></FormField>
@@ -1265,42 +1299,6 @@ function AddDistributorPage({ onBack, onSaved, existingDistributors, initialData
 
 type DateRange = "daily" | "weekly" | "monthly" | "all";
 
-const MONTHS: Record<string, number> = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
-
-function parseDate(s: string): Date {
-  // Handles "12 Jun 2025" format
-  const parts = s.trim().split(" ");
-  if (parts.length === 3) {
-    const d = parseInt(parts[0], 10);
-    const m = MONTHS[parts[1]] ?? 0;
-    const y = parseInt(parts[2], 10);
-    return new Date(y, m, d);
-  }
-  return new Date(s);
-}
-
-function getDateBounds(range: DateRange, _customFrom: string, _customTo: string): { from: Date; to: Date } {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-  if (range === "daily") return { from: today, to: tomorrow };
-  if (range === "weekly") {
-    const mon = new Date(today); mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-    const sun = new Date(mon); sun.setDate(mon.getDate() + 7);
-    return { from: mon, to: sun };
-  }
-  if (range === "monthly") {
-    return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: new Date(now.getFullYear(), now.getMonth() + 1, 1) };
-  }
-  // "all" — show everything
-  return { from: new Date(2000, 0, 1), to: new Date(2099, 0, 1) };
-}
-
-function inRange(dateStr: string, from: Date, to: Date): boolean {
-  const d = parseDate(dateStr);
-  return d >= from && d < to;
-}
-
 // ── Shared table helpers ─────────────────────────────────────────────────────
 
 function TH({ children, right }: { children: React.ReactNode; right?: boolean }) {
@@ -1505,7 +1503,7 @@ function PlaceOrderModal({ distributor, onClose, onDone }: {
                     </svg>
                   ),
                   title: "Add to Existing PO",
-                  desc: "Append a medicine to an open order",
+                  desc: "Append a product to an open order",
                   action: () => setStep("existing"),
                 },
                 {
@@ -1582,11 +1580,11 @@ function PlaceOrderModal({ distributor, onClose, onDone }: {
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#1A2436", fontFamily: "Inter", marginBottom: 12 }}>Add Product to {selectedPoId}</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 10, alignItems: "end" }}>
                     <div>
-                      <label style={labelStyle}>Medicine</label>
+                      <label style={labelStyle}>Product</label>
                       <div style={{ position: "relative" }}>
                         <input value={medSearch} onChange={e => { setMedSearch(e.target.value); setMedOpen(true); setRate(""); }}
                           onFocus={() => setMedOpen(true)}
-                          placeholder="Search medicine…"
+                          placeholder="Search product…"
                           style={fieldStyle} />
                         {medOpen && medOptions.length > 0 && (
                           <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.10)", zIndex: 300, maxHeight: 180, overflowY: "auto" }}>
@@ -1625,11 +1623,11 @@ function PlaceOrderModal({ distributor, onClose, onDone }: {
                 <input value={distributor.name} readOnly style={{ ...fieldStyle, background: "#F8FAFC", color: "#9CA3AF" }} />
               </div>
               <div>
-                <label style={labelStyle}>Medicine</label>
+                <label style={labelStyle}>Product</label>
                 <div style={{ position: "relative" }}>
                   <input value={medSearch} onChange={e => { setMedSearch(e.target.value); setMedOpen(true); setRate(""); }}
                     onFocus={() => setMedOpen(true)}
-                    placeholder="Search medicine…"
+                    placeholder="Search product…"
                     style={fieldStyle} />
                   {medOpen && medOptions.length > 0 && (
                     <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.10)", zIndex: 300, maxHeight: 180, overflowY: "auto" }}>
@@ -1659,7 +1657,7 @@ function PlaceOrderModal({ distributor, onClose, onDone }: {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
                   <label style={labelStyle}>Expected Delivery</label>
-                  <input type="date" value={delivery} onChange={e => setDelivery(e.target.value)} style={fieldStyle} />
+                  <DatePicker value={delivery} onChange={setDelivery} />
                 </div>
                 <div>
                   <label style={labelStyle}>Payment Terms</label>
@@ -1703,6 +1701,46 @@ function PlaceOrderModal({ distributor, onClose, onDone }: {
 
 // ─── Distributor Detail Page ──────────────────────────────────────────────────
 
+// ── Per-tab loading / error / pager helpers ────────────────────────────────────
+
+function TabState({ t, colSpan, empty }: { t: { rows: unknown[]; loading: boolean; error: string; reload: () => void }; colSpan: number; empty: string }) {
+  const box = { padding: "32px", textAlign: "center" as const, fontSize: 13, fontFamily: "Inter" };
+  if (t.error) {
+    return (
+      <div style={{ ...box, color: "#C62828" }}>
+        Could not load data: {t.error}
+        <button onClick={t.reload} style={{ marginLeft: 10, padding: "3px 10px", border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", fontSize: 12, color: "#1B6CA8" }}>Retry</button>
+      </div>
+    );
+  }
+  if (t.loading && t.rows.length === 0) return <div style={{ ...box, color: "#9CA3AF" }} data-colspan={colSpan}>Loading…</div>;
+  if (!t.loading && t.rows.length === 0) return <div style={{ ...box, color: "#9CA3AF" }}>{empty}</div>;
+  return null;
+}
+
+function TabPager({ total, page, pageSize, onPage }: { total: number; page: number; pageSize: number; onPage: (p: number) => void }) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  if (total <= pageSize) return null;
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+  const btn = (label: string, target: number, disabled: boolean) => (
+    <button key={label} onClick={() => onPage(target)} disabled={disabled}
+      style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: disabled ? "default" : "pointer", color: disabled ? "#C8CDD8" : "#1A2436", fontSize: 12, fontFamily: "Inter", minWidth: 28 }}>
+      {label}
+    </button>
+  );
+  return (
+    <div style={{ padding: "8px 14px", borderTop: "1px solid #EEF1F6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FAFBFD", fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>
+      <span>{start}–{end} of {total}</span>
+      <span style={{ display: "flex", gap: 4, alignItems: "center" }}>
+        {btn("‹", page - 1, page <= 1)}
+        <span style={{ padding: "0 8px" }}>Page {page} of {pages}</span>
+        {btn("›", page + 1, page >= pages)}
+      </span>
+    </div>
+  );
+}
+
 function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchases, initialTab, showToast }: {
   distributor: DistributorRecord;
   onBack: () => void;
@@ -1712,31 +1750,77 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
   showToast?: (message: string, type: "success" | "error") => void;
 }) {
   const [tab, setTab] = useState<DetailTab>(initialTab ?? "overview");
+  const dId = distributor.id;
 
-  // ── per-tab filter state ────────────────────────────────────────────────
+  // A tab is fetched the first time it is shown and then kept; switching back does not re-request.
+  const [visited, setVisited] = useState<Set<DetailTab>>(() => new Set([initialTab ?? "overview"]));
+  useEffect(() => { setVisited(v => (v.has(tab) ? v : new Set(v).add(tab))); }, [tab]);
+
+  // ── KPI strip: one small request when the distributor is opened ───────────
+  const [summary, setSummary] = useState<DistributorSummary>(EMPTY_SUMMARY);
+  const [summaryState, setSummaryState] = useState<"loading" | "ready" | "error">("loading");
+  useEffect(() => {
+    let live = true;
+    setSummaryState("loading");
+    fetchDistributorSummary(dId)
+      .then(s => { if (live) { setSummary(s); setSummaryState("ready"); } })
+      .catch(() => { if (live) setSummaryState("error"); });
+    return () => { live = false; };
+  }, [dId]);
+
+  // ── per-tab filter + page state (filters run on the server) ───────────────
+  const PAGE_SIZE = 10;
   const [ordDateRange, setOrdDateRange] = useState<DateRange>("all");
   const [ordSearch, setOrdSearch] = useState("");
   const [ordStatus, setOrdStatus] = useState("All");
+  const [ordPage, setOrdPage] = useState(1);
 
   const [invDateRange, setInvDateRange] = useState<DateRange>("all");
   const [invSearch, setInvSearch] = useState("");
   const [invStatus, setInvStatus] = useState("All");
+  const [invPage, setInvPage] = useState(1);
 
   const [retDateRange, setRetDateRange] = useState<DateRange>("all");
   const [retSearch, setRetSearch] = useState("");
   const [retStatus, setRetStatus] = useState("All");
+  const [retPage, setRetPage] = useState(1);
 
   const [payDateRange, setPayDateRange] = useState<DateRange>("all");
   const [paySearch, setPaySearch] = useState("");
   const [payStatus, setPayStatus] = useState("All");
   const [payMethod, setPayMethod] = useState("All");
+  const [payPage, setPayPage] = useState(1);
+
+  const [auditPage, setAuditPage] = useState(1);
+
+  const dOrdSearch = useDebounced(ordSearch);
+  const dInvSearch = useDebounced(invSearch);
+  const dRetSearch = useDebounced(retSearch);
+  const dPaySearch = useDebounced(paySearch);
+
+  // Any filter change returns to page 1
+  useEffect(() => { setOrdPage(1); }, [dOrdSearch, ordStatus, ordDateRange]);
+  useEffect(() => { setInvPage(1); }, [dInvSearch, invStatus, invDateRange]);
+  useEffect(() => { setRetPage(1); }, [dRetSearch, retStatus, retDateRange]);
+  useEffect(() => { setPayPage(1); }, [dPaySearch, payStatus, payMethod, payDateRange]);
+
+  const ordQ = { page: ordPage, pageSize: PAGE_SIZE, search: dOrdSearch, status: ORDER_STATUS_FILTER[ordStatus], ...periodBounds(ordDateRange) };
+  const invQ = { page: invPage, pageSize: PAGE_SIZE, search: dInvSearch, status: INVOICE_STATUS_FILTER[invStatus], ...periodBounds(invDateRange) };
+  const retQ = { page: retPage, pageSize: PAGE_SIZE, search: dRetSearch, status: RETURN_STATUS_FILTER[retStatus], ...periodBounds(retDateRange) };
+  const payQ = { page: payPage, pageSize: PAGE_SIZE, search: dPaySearch, status: PAYMENT_STATUS_FILTER[payStatus], paymentMode: PAYMENT_MODE_FILTER[payMethod], ...periodBounds(payDateRange) };
+
+  const orders = useTabData<OrderRow>(visited.has("orders"), `${dId}|${JSON.stringify(ordQ)}`, () => fetchDistributorOrders(dId, ordQ));
+  const invoices = useTabData<InvoiceRow>(visited.has("invoices"), `${dId}|${JSON.stringify(invQ)}`, () => fetchDistributorInvoices(dId, invQ));
+  const returns = useTabData<ReturnRow>(visited.has("returns"), `${dId}|${JSON.stringify(retQ)}`, () => fetchDistributorReturns(dId, retQ));
+  const payments = useTabData<PaymentRow>(visited.has("payments"), `${dId}|${JSON.stringify(payQ)}`, () => fetchDistributorPayments(dId, payQ));
+  const audit = useTabData(visited.has("audit"), `${dId}|${auditPage}`, () => fetchDistributorAudit(dId, auditPage, 25));
 
   // ── detail modal state ───────────────────────────────────────────────────
   type ModalRecord =
-    | { kind: "order"; data: typeof MOCK_PO_HISTORY[0] }
-    | { kind: "invoice"; data: typeof MOCK_INVOICES[0] }
-    | { kind: "return"; data: typeof MOCK_RETURNS[0] }
-    | { kind: "payment"; data: typeof MOCK_PAYMENTS[0] };
+    | { kind: "order"; data: OrderRow }
+    | { kind: "invoice"; data: InvoiceRow }
+    | { kind: "return"; data: ReturnRow }
+    | { kind: "payment"; data: PaymentRow };
   const [modal, setModal] = useState<ModalRecord | null>(null);
   const tabs: { id: DetailTab; label: string }[] = [
     { id: "overview", label: "Overview" },
@@ -1749,50 +1833,15 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
     { id: "audit", label: "Audit History" },
   ];
 
-  const allPOs = MOCK_PO_HISTORY;
-  const allInvoices = MOCK_INVOICES;
-  const allReturns = MOCK_RETURNS;
-  const allPayments = MOCK_PAYMENTS;
-  const auditLog = MOCK_AUDIT;
-
-  // ── filtered datasets ───────────────────────────────────────────────────
-  const ordBounds = getDateBounds(ordDateRange, "", "");
-  const filteredOrders = allPOs.filter(p =>
-    inRange(p.date, ordBounds.from, ordBounds.to) &&
-    (ordStatus === "All" || p.status === ordStatus) &&
-    (!ordSearch || p.poNo.toLowerCase().includes(ordSearch.toLowerCase()))
-  );
-
-  const invBounds = getDateBounds(invDateRange, "", "");
-  const filteredInvoices = allInvoices.filter(i =>
-    inRange(i.date, invBounds.from, invBounds.to) &&
-    (invStatus === "All" || i.status === invStatus) &&
-    (!invSearch || i.invNo.toLowerCase().includes(invSearch.toLowerCase()) || i.poRef.toLowerCase().includes(invSearch.toLowerCase()))
-  );
-
-  const retBounds = getDateBounds(retDateRange, "", "");
-  const filteredReturns = allReturns.filter(r =>
-    inRange(r.date, retBounds.from, retBounds.to) &&
-    (retStatus === "All" || r.status === retStatus) &&
-    (!retSearch || r.retNo.toLowerCase().includes(retSearch.toLowerCase()) || r.invRef.toLowerCase().includes(retSearch.toLowerCase()) || r.reason.toLowerCase().includes(retSearch.toLowerCase()))
-  );
-
-  const payBounds = getDateBounds(payDateRange, "", "");
-  const filteredPayments = allPayments.filter(p =>
-    inRange(p.date, payBounds.from, payBounds.to) &&
-    (payStatus === "All" || p.status === payStatus) &&
-    (payMethod === "All" || p.method === payMethod) &&
-    (!paySearch || p.payNo.toLowerCase().includes(paySearch.toLowerCase()) || p.invRef.toLowerCase().includes(paySearch.toLowerCase()))
-  );
-
-  // ── aggregates (based on ALL data for top KPIs; filtered for tab KPIs) ──
-  const totalPOs = allPOs.length;
-  const totalInvoiced = allInvoices.reduce((s, i) => s + i.total, 0);
-  const totalPaid = allInvoices.reduce((s, i) => s + i.paid, 0);
-  const totalUnpaid = allInvoices.reduce((s, i) => s + i.balance, 0);
-  const totalReturns = allReturns.reduce((s, r) => s + r.amount, 0);
-  const totalPayments = allPayments.reduce((s, p) => s + p.amount, 0);
-  const lastPO = allPOs[0];
+  // KPI values come from the server summary (they cover every record, not just the visible page)
+  const totalPOs = summary.totalPOs;
+  const totalInvoiced = summary.totalInvoiced;
+  const totalPaid = summary.totalPaid;
+  const totalUnpaid = summary.outstanding;
+  const totalReturns = summary.totalReturns;
+  const totalPayments = summary.totalPayments;
+  const lastPODate = summary.lastPODate ? fmtDate(summary.lastPODate) : "—";
+  const kpi = (v: string) => (summaryState === "loading" ? "…" : summaryState === "error" ? "—" : v);
 
   return (
     <div style={SP.overlay}>
@@ -1850,7 +1899,6 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
           <ModalField label="Payment Date" value={modal.data.date} />
           <ModalField label="Invoice Reference" value={modal.data.invRef} mono />
           <ModalField label="Payment Method" value={modal.data.method} />
-          <ModalField label="Payment Type" value={modal.data.type} />
           <ModalField label="Amount" value={`₹${modal.data.amount.toLocaleString("en-IN")}`} />
           <ModalField label="Status" value={modal.data.status} />
           <div style={{ marginTop: 16, padding: "10px 14px", background: "#EFF6FF", border: "1px solid #BFDBFE", fontSize: 12, color: "#1B6CA8", fontFamily: "Inter" }}>
@@ -1893,14 +1941,14 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
         {/* KPI strip */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 16 }}>
           {[
-            { label: "Total POs", value: String(totalPOs), color: "#1B6CA8" },
-            { label: "Total Invoiced", value: `₹${totalInvoiced.toLocaleString("en-IN")}`, color: "#1A2436" },
-            { label: "Total Paid", value: `₹${totalPaid.toLocaleString("en-IN")}`, color: "#2E7D32" },
-            { label: "Outstanding", value: totalUnpaid > 0 ? `₹${totalUnpaid.toLocaleString("en-IN")}` : "Nil", color: totalUnpaid > 0 ? "#C62828" : "#2E7D32" },
+            { label: "Total POs", value: kpi(String(totalPOs)), color: "#1B6CA8" },
+            { label: "Total Invoiced", value: kpi(`₹${totalInvoiced.toLocaleString("en-IN")}`), color: "#1A2436" },
+            { label: "Total Paid", value: kpi(`₹${totalPaid.toLocaleString("en-IN")}`), color: "#2E7D32" },
+            { label: "Outstanding", value: kpi(totalUnpaid > 0 ? `₹${totalUnpaid.toLocaleString("en-IN")}` : "Nil"), color: totalUnpaid > 0 ? "#C62828" : "#2E7D32" },
             { label: "Credit Limit", value: distributor.creditLimit > 0 ? `₹${distributor.creditLimit.toLocaleString("en-IN")}` : "None", color: "#1A2436" },
-            { label: "Total Returns", value: `₹${totalReturns.toLocaleString("en-IN")}`, color: "#E65100" },
-            { label: "Total Payments", value: `₹${totalPayments.toLocaleString("en-IN")}`, color: "#1B6CA8" },
-            { label: "Last PO", value: lastPO?.date ?? "—", color: "#6B7280" },
+            { label: "Total Returns", value: kpi(`₹${totalReturns.toLocaleString("en-IN")}`), color: "#E65100" },
+            { label: "Total Payments", value: kpi(`₹${totalPayments.toLocaleString("en-IN")}`), color: "#1B6CA8" },
+            { label: "Last PO", value: kpi(lastPODate), color: "#6B7280" },
           ].map(k => (
             <div key={k.label} style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", padding: "12px 16px" }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: k.color, fontFamily: "Outfit", lineHeight: 1 }}>{k.value}</div>
@@ -1973,11 +2021,11 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                   {[
                     { label: "Payment Terms", value: distributor.paymentTerms },
                     { label: "Credit Limit", value: distributor.creditLimit > 0 ? `₹${distributor.creditLimit.toLocaleString("en-IN")}` : "None" },
-                    { label: "Outstanding", value: distributor.balance < 0 ? `₹${Math.abs(distributor.balance).toLocaleString("en-IN")}` : "Nil" },
+                    { label: "Outstanding", value: kpi(totalUnpaid > 0 ? `₹${totalUnpaid.toLocaleString("en-IN")}` : "Nil") },
                     { label: "Order Method", value: distributor.orderMethod ?? "—" },
                     { label: "Delivery", value: distributor.expectedDelivery ?? "—" },
                     { label: "Expiry Return", value: distributor.expiryReturn ? "Supported" : "Not Supported" },
-                    { label: "Last PO", value: lastPO ? `${lastPO.poNo} · ${lastPO.date}` : "—" },
+                    { label: "Last PO", value: kpi(lastPODate) },
                   ].map(r => (
                     <div key={r.label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #F4F6FA" }}>
                       <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, fontFamily: "Inter" }}>{r.label}</span>
@@ -2049,8 +2097,8 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
 
         {/* ── Purchase Orders tab ── */}
         {tab === "orders" && (() => {
-          const fOrdTotal = filteredOrders.reduce((s, p) => s + p.amount, 0);
           const rowStyle = { borderBottom: "1px solid #F4F6FA", cursor: "pointer" as const };
+          const pageTotal = orders.rows.reduce((s, p) => s + p.amount, 0);
           return (
             <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
               <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2058,22 +2106,22 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                   <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Purchase Orders</div>
                   <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2, fontFamily: "Inter" }}>All POs raised with {distributor.name}</div>
                 </div>
-                <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{filteredOrders.length} records · ₹{fOrdTotal.toLocaleString("en-IN")}</div>
+                <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{orders.total} records</div>
               </div>
               <HistoryFilterBar
                 dateRange={ordDateRange} setDateRange={setOrdDateRange}
                 search={ordSearch} setSearch={setOrdSearch} searchPlaceholder="Search PO number…"
                 statusFilter={ordStatus} setStatusFilter={setOrdStatus}
-                statusOptions={["Received", "Partial", "Cancelled"]}
+                statusOptions={Object.keys(ORDER_STATUS_FILTER)}
               />
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <TabState t={orders} colSpan={6} empty="No purchase orders found." />
+              {!orders.error && (
+              <table style={{ width: "100%", borderCollapse: "collapse", opacity: orders.loading ? 0.55 : 1 }}>
                 <thead><tr>
                   <TH>PO Number</TH><TH>Date</TH><TH>Items</TH><TH right>Amount</TH><TH>Status</TH><TH>Action</TH>
                 </tr></thead>
                 <tbody>
-                  {filteredOrders.length === 0
-                    ? <tr><td colSpan={6} style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No purchase orders in this period.</td></tr>
-                    : filteredOrders.map(po => (
+                  {orders.rows.map(po => (
                       <tr key={po.poNo} style={rowStyle}
                         onMouseEnter={e => (e.currentTarget.style.background = "#F7F9FC")}
                         onMouseLeave={e => (e.currentTarget.style.background = "")}>
@@ -2082,7 +2130,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                         <td style={{ padding: "11px 12px", fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{po.items}</td>
                         <td style={{ padding: "11px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", fontWeight: 700, textAlign: "right" as const }}>₹{po.amount.toLocaleString("en-IN")}</td>
                         <td style={{ padding: "11px 12px" }}>
-                          <Pill label={po.status} color={po.status === "Received" ? "#2E7D32" : po.status === "Partial" ? "#E65100" : "#9CA3AF"} bg={po.status === "Received" ? "#E8F5E9" : po.status === "Partial" ? "#FFF3E0" : "#F5F5F5"} />
+                          <Pill label={po.status} color={po.status === "Completed" ? "#2E7D32" : po.status === "Partially Received" || po.status === "Pending" ? "#E65100" : "#9CA3AF"} bg={po.status === "Completed" ? "#E8F5E9" : po.status === "Partially Received" || po.status === "Pending" ? "#FFF3E0" : "#F5F5F5"} />
                         </td>
                         <td style={{ padding: "11px 12px" }}>
                           <button onClick={() => onNavigatePurchases ? onNavigatePurchases({ tab: "orders", id: po.poNo }) : setModal({ kind: "order", data: po })}
@@ -2091,24 +2139,27 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                       </tr>
                     ))}
                 </tbody>
+                {orders.rows.length > 0 && (
                 <tfoot>
                   <tr style={{ background: "#F8FAFC", borderTop: "2px solid #E8ECF4" }}>
-                    <td colSpan={3} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, fontFamily: "Inter", color: "#1A2436" }}>Period Total ({filteredOrders.length} POs)</td>
-                    <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", fontWeight: 800, textAlign: "right" as const }}>₹{fOrdTotal.toLocaleString("en-IN")}</td>
+                    <td colSpan={3} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, fontFamily: "Inter", color: "#1A2436" }}>This page ({orders.rows.length} of {orders.total})</td>
+                    <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", fontWeight: 800, textAlign: "right" as const }}>₹{pageTotal.toLocaleString("en-IN")}</td>
                     <td colSpan={2} />
                   </tr>
                 </tfoot>
+                )}
               </table>
+              )}
+              <TabPager total={orders.total} page={ordPage} pageSize={PAGE_SIZE} onPage={setOrdPage} />
             </div>
           );
         })()}
 
         {/* ── Invoices tab ── */}
         {tab === "invoices" && (() => {
-          const fInvTotal = filteredInvoices.reduce((s, i) => s + i.total, 0);
-          const fInvPaid = filteredInvoices.reduce((s, i) => s + i.paid, 0);
-          const fInvBal = filteredInvoices.reduce((s, i) => s + i.balance, 0);
           const rowStyle = { borderBottom: "1px solid #F4F6FA", cursor: "pointer" as const };
+          const pg = invoices.rows;
+          const sum = (f: (i: InvoiceRow) => number) => pg.reduce((s, i) => s + f(i), 0);
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
@@ -2117,9 +2168,9 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                     <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Purchase Invoices</div>
                     <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2, fontFamily: "Inter" }}>All invoices received from {distributor.name}</div>
                   </div>
-                  {fInvBal > 0 && (
+                  {totalUnpaid > 0 && (
                     <div style={{ fontSize: 12, fontWeight: 700, color: "#C62828", background: "#FFEBEE", border: "1px solid #FFCDD2", padding: "4px 12px", fontFamily: "Inter" }}>
-                      Outstanding: ₹{fInvBal.toLocaleString("en-IN")}
+                      Outstanding: ₹{totalUnpaid.toLocaleString("en-IN")}
                     </div>
                   )}
                 </div>
@@ -2127,18 +2178,18 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                   dateRange={invDateRange} setDateRange={setInvDateRange}
                   search={invSearch} setSearch={setInvSearch} searchPlaceholder="Search invoice or PO no…"
                   statusFilter={invStatus} setStatusFilter={setInvStatus}
-                  statusOptions={["Paid", "Unpaid", "Part Paid"]}
+                  statusOptions={Object.keys(INVOICE_STATUS_FILTER)}
                 />
-                <div style={{ overflowX: "auto" as const }}>
+                <TabState t={invoices} colSpan={11} empty="No invoices found." />
+                {!invoices.error && (
+                <div style={{ overflowX: "auto" as const, opacity: invoices.loading ? 0.55 : 1 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead><tr>
                       <TH>Invoice No.</TH><TH>PO Ref</TH><TH>Date</TH><TH>Due Date</TH>
                       <TH right>Subtotal</TH><TH right>GST</TH><TH right>Total</TH><TH right>Paid</TH><TH right>Balance</TH><TH>Status</TH><TH>Action</TH>
                     </tr></thead>
                     <tbody>
-                      {filteredInvoices.length === 0
-                        ? <tr><td colSpan={11} style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No invoices in this period.</td></tr>
-                        : filteredInvoices.map(inv => {
+                      {pg.map(inv => {
                           const sColor = inv.status === "Paid" ? "#2E7D32" : inv.status === "Unpaid" ? "#C62828" : "#E65100";
                           const sBg = inv.status === "Paid" ? "#E8F5E9" : inv.status === "Unpaid" ? "#FFEBEE" : "#FFF3E0";
                           return (
@@ -2165,21 +2216,25 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                           );
                         })}
                     </tbody>
+                    {pg.length > 0 && (
                     <tfoot>
                       <tr style={{ background: "#F8FAFC", borderTop: "2px solid #E8ECF4" }}>
-                        <td colSpan={4} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, fontFamily: "Inter", color: "#1A2436" }}>Period Totals ({filteredInvoices.length})</td>
-                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280", fontWeight: 600, textAlign: "right" as const }}>₹{filteredInvoices.reduce((s, i) => s + i.subtotal, 0).toLocaleString("en-IN")}</td>
-                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280", fontWeight: 600, textAlign: "right" as const }}>₹{filteredInvoices.reduce((s, i) => s + i.gst, 0).toLocaleString("en-IN")}</td>
-                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", fontWeight: 800, textAlign: "right" as const }}>₹{fInvTotal.toLocaleString("en-IN")}</td>
-                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#2E7D32", fontWeight: 700, textAlign: "right" as const }}>₹{fInvPaid.toLocaleString("en-IN")}</td>
-                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: fInvBal > 0 ? "#C62828" : "#9CA3AF", fontWeight: 700, textAlign: "right" as const }}>
-                          {fInvBal > 0 ? `₹${fInvBal.toLocaleString("en-IN")}` : "—"}
+                        <td colSpan={4} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, fontFamily: "Inter", color: "#1A2436" }}>This page ({pg.length} of {invoices.total})</td>
+                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280", fontWeight: 600, textAlign: "right" as const }}>₹{sum(i => i.subtotal).toLocaleString("en-IN")}</td>
+                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280", fontWeight: 600, textAlign: "right" as const }}>₹{sum(i => i.gst).toLocaleString("en-IN")}</td>
+                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", fontWeight: 800, textAlign: "right" as const }}>₹{sum(i => i.total).toLocaleString("en-IN")}</td>
+                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#2E7D32", fontWeight: 700, textAlign: "right" as const }}>₹{sum(i => i.paid).toLocaleString("en-IN")}</td>
+                        <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: sum(i => i.balance) > 0 ? "#C62828" : "#9CA3AF", fontWeight: 700, textAlign: "right" as const }}>
+                          {sum(i => i.balance) > 0 ? `₹${sum(i => i.balance).toLocaleString("en-IN")}` : "—"}
                         </td>
                         <td colSpan={2} />
                       </tr>
                     </tfoot>
+                    )}
                   </table>
                 </div>
+                )}
+                <TabPager total={invoices.total} page={invPage} pageSize={PAGE_SIZE} onPage={setInvPage} />
               </div>
             </div>
           );
@@ -2187,8 +2242,8 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
 
         {/* ── Returns tab ── */}
         {tab === "returns" && (() => {
-          const fRetTotal = filteredReturns.reduce((s, r) => s + r.amount, 0);
           const rowStyle = { borderBottom: "1px solid #F4F6FA", cursor: "pointer" as const };
+          const pageTotal = returns.rows.reduce((s, r) => s + r.amount, 0);
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
@@ -2200,18 +2255,19 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                   dateRange={retDateRange} setDateRange={setRetDateRange}
                   search={retSearch} setSearch={setRetSearch} searchPlaceholder="Search return no, invoice, reason…"
                   statusFilter={retStatus} setStatusFilter={setRetStatus}
-                  statusOptions={["Credit Issued", "Pending"]}
+                  statusOptions={Object.keys(RETURN_STATUS_FILTER)}
                 />
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <TabState t={returns} colSpan={9} empty="No returns found." />
+                {!returns.error && (
+                <table style={{ width: "100%", borderCollapse: "collapse", opacity: returns.loading ? 0.55 : 1 }}>
                   <thead><tr>
                     <TH>Return No.</TH><TH>Invoice Ref</TH><TH>Date</TH><TH>Items</TH><TH>Reason</TH><TH right>Amount</TH><TH>Credit Note</TH><TH>Status</TH><TH>Action</TH>
                   </tr></thead>
                   <tbody>
-                    {filteredReturns.length === 0
-                      ? <tr><td colSpan={9} style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No returns in this period.</td></tr>
-                      : filteredReturns.map(ret => {
-                        const sColor = ret.status === "Credit Issued" ? "#2E7D32" : "#E65100";
-                        const sBg = ret.status === "Credit Issued" ? "#E8F5E9" : "#FFF3E0";
+                    {returns.rows.map(ret => {
+                        const ok = ret.status === "Credit Issued";
+                        const sColor = ok ? "#2E7D32" : ret.status === "Cancelled" ? "#9CA3AF" : "#E65100";
+                        const sBg = ok ? "#E8F5E9" : ret.status === "Cancelled" ? "#F5F5F5" : "#FFF3E0";
                         return (
                           <tr key={ret.retNo} style={rowStyle}
                             onMouseEnter={e => (e.currentTarget.style.background = "#F7F9FC")}
@@ -2220,7 +2276,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                             <td style={{ padding: "10px 12px", fontSize: 11, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{ret.invRef}</td>
                             <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "Inter", color: "#1A2436" }}>{ret.date}</td>
                             <td style={{ padding: "10px 12px", fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{ret.items}</td>
-                            <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "Inter", color: "#1A2436" }}>{ret.reason}</td>
+                            <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "Inter", color: "#1A2436" }}>{ret.reason || "—"}</td>
                             <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#E65100", fontWeight: 700, textAlign: "right" as const }}>₹{ret.amount.toLocaleString("en-IN")}</td>
                             <td style={{ padding: "10px 12px", fontSize: 11, fontFamily: "JetBrains Mono", color: ret.creditNote ? "#2E7D32" : "#9CA3AF" }}>{ret.creditNote || "—"}</td>
                             <td style={{ padding: "10px 12px" }}><Pill label={ret.status} color={sColor} bg={sBg} /></td>
@@ -2232,14 +2288,18 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                         );
                       })}
                   </tbody>
+                  {returns.rows.length > 0 && (
                   <tfoot>
                     <tr style={{ background: "#F8FAFC", borderTop: "2px solid #E8ECF4" }}>
-                      <td colSpan={5} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, fontFamily: "Inter", color: "#1A2436" }}>Period Total ({filteredReturns.length} returns)</td>
-                      <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#E65100", fontWeight: 800, textAlign: "right" as const }}>₹{fRetTotal.toLocaleString("en-IN")}</td>
+                      <td colSpan={5} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, fontFamily: "Inter", color: "#1A2436" }}>This page ({returns.rows.length} of {returns.total})</td>
+                      <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#E65100", fontWeight: 800, textAlign: "right" as const }}>₹{pageTotal.toLocaleString("en-IN")}</td>
                       <td colSpan={3} />
                     </tr>
                   </tfoot>
+                  )}
                 </table>
+                )}
+                <TabPager total={returns.total} page={retPage} pageSize={PAGE_SIZE} onPage={setRetPage} />
               </div>
             </div>
           );
@@ -2247,9 +2307,9 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
 
         {/* ── Payments tab ── */}
         {tab === "payments" && (() => {
-          const fPayTotal = filteredPayments.reduce((s, p) => s + p.amount, 0);
           const rowStyle = { borderBottom: "1px solid #F4F6FA", cursor: "pointer" as const };
-          const payMethods = ["Bank Transfer", "UPI", "Cheque", "Cash", "RTGS"];
+          const pageTotal = payments.rows.reduce((s, p) => s + p.amount, 0);
+          const payMethods = Object.keys(PAYMENT_MODE_FILTER);
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {totalUnpaid > 0 && (
@@ -2267,13 +2327,13 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                     <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Payment History</div>
                     <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2, fontFamily: "Inter" }}>All payments made to {distributor.name}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{filteredPayments.length} records · ₹{fPayTotal.toLocaleString("en-IN")}</div>
+                  <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{payments.total} records</div>
                 </div>
                 <HistoryFilterBar
                   dateRange={payDateRange} setDateRange={setPayDateRange}
                   search={paySearch} setSearch={setPaySearch} searchPlaceholder="Search payment no, invoice…"
                   statusFilter={payStatus} setStatusFilter={setPayStatus}
-                  statusOptions={["Cleared", "Adjusted", "Pending"]}
+                  statusOptions={Object.keys(PAYMENT_STATUS_FILTER)}
                   extra={
                     <div style={{ position: "relative" }}>
                       <select value={payMethod} onChange={e => setPayMethod(e.target.value)}
@@ -2284,14 +2344,14 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                     </div>
                   }
                 />
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <TabState t={payments} colSpan={7} empty="No payments found." />
+                {!payments.error && (
+                <table style={{ width: "100%", borderCollapse: "collapse", opacity: payments.loading ? 0.55 : 1 }}>
                   <thead><tr>
-                    <TH>Payment No.</TH><TH>Date</TH><TH>Invoice Ref</TH><TH>Method</TH><TH>Type</TH><TH right>Amount</TH><TH>Status</TH><TH>Action</TH>
+                    <TH>Payment No.</TH><TH>Date</TH><TH>Invoice Ref</TH><TH>Method</TH><TH right>Amount</TH><TH>Status</TH><TH>Action</TH>
                   </tr></thead>
                   <tbody>
-                    {filteredPayments.length === 0
-                      ? <tr><td colSpan={8} style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No payments in this period.</td></tr>
-                      : filteredPayments.map(pay => {
+                    {payments.rows.map(pay => {
                         const sColor = pay.status === "Cleared" ? "#2E7D32" : pay.status === "Adjusted" ? "#1B6CA8" : "#E65100";
                         const sBg = pay.status === "Cleared" ? "#E8F5E9" : pay.status === "Adjusted" ? "#EFF6FF" : "#FFF3E0";
                         return (
@@ -2302,9 +2362,6 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                             <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "Inter", color: "#1A2436" }}>{pay.date}</td>
                             <td style={{ padding: "10px 12px", fontSize: 11, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{pay.invRef}</td>
                             <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "Inter", color: "#1A2436" }}>{pay.method}</td>
-                            <td style={{ padding: "10px 12px" }}>
-                              <span style={{ fontSize: 11, fontFamily: "Inter", fontWeight: 600, color: pay.type === "Advance" ? "#1B6CA8" : pay.type === "Part Payment" ? "#E65100" : "#6B7280" }}>{pay.type}</span>
-                            </td>
                             <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#2E7D32", fontWeight: 700, textAlign: "right" as const }}>₹{pay.amount.toLocaleString("en-IN")}</td>
                             <td style={{ padding: "10px 12px" }}><Pill label={pay.status} color={sColor} bg={sBg} /></td>
                             <td style={{ padding: "10px 12px" }}>
@@ -2315,17 +2372,21 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                         );
                       })}
                   </tbody>
+                  {payments.rows.length > 0 && (
                   <tfoot>
                     <tr style={{ background: "#F8FAFC", borderTop: "2px solid #E8ECF4" }}>
-                      <td colSpan={5} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, fontFamily: "Inter", color: "#1A2436" }}>Period Total ({filteredPayments.length})</td>
-                      <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#2E7D32", fontWeight: 800, textAlign: "right" as const }}>₹{fPayTotal.toLocaleString("en-IN")}</td>
+                      <td colSpan={4} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, fontFamily: "Inter", color: "#1A2436" }}>This page ({payments.rows.length} of {payments.total})</td>
+                      <td style={{ padding: "10px 12px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#2E7D32", fontWeight: 800, textAlign: "right" as const }}>₹{pageTotal.toLocaleString("en-IN")}</td>
                       <td colSpan={2} />
                     </tr>
                   </tfoot>
+                  )}
                 </table>
+                )}
+                <TabPager total={payments.total} page={payPage} pageSize={PAGE_SIZE} onPage={setPayPage} />
               </div>
 
-              {/* Ledger balance summary */}
+              {/* Ledger balance summary — from the server summary */}
               <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
                 <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
                   <div style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Account Balance Summary</div>
@@ -2341,7 +2402,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                     <div key={r.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: i < 4 ? "1px solid #F4F6FA" : "none", borderTop: (i === 2 || i === 4) ? "2px solid #E8ECF4" : "none" }}>
                       <span style={{ fontSize: 13, color: "#6B7280", fontFamily: "Inter", fontWeight: r.bold ? 700 : 400 }}>{r.label}</span>
                       <span style={{ fontSize: 13, fontFamily: "JetBrains Mono", color: r.color, fontWeight: r.bold ? 800 : 600 }}>
-                        {(r as {minus?: boolean}).minus ? "– " : ""}₹{r.value.toLocaleString("en-IN")}
+                        {summaryState === "ready" ? `${(r as {minus?: boolean}).minus ? "– " : ""}₹${r.value.toLocaleString("en-IN")}` : kpi("")}
                       </span>
                     </div>
                   ))}
@@ -2358,9 +2419,21 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
               <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Audit History</div>
               <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2, fontFamily: "Inter" }}>All changes and actions recorded for this distributor</div>
             </div>
-            <div style={{ padding: "4px 0" }}>
-              {auditLog.map((entry, i) => (
-                <div key={i} style={{ display: "flex", gap: 16, padding: "12px 16px", borderBottom: "1px solid #F4F6FA", alignItems: "flex-start" }}>
+            <div style={{ padding: "4px 0", opacity: audit.loading ? 0.55 : 1 }}>
+              {audit.error && (
+                <div style={{ padding: "24px 16px", textAlign: "center", color: "#C62828", fontSize: 13, fontFamily: "Inter" }}>
+                  Could not load history: {audit.error}{" "}
+                  <button onClick={audit.reload} style={{ marginLeft: 8, padding: "3px 10px", border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", fontSize: 12, color: "#1B6CA8" }}>Retry</button>
+                </div>
+              )}
+              {!audit.error && audit.loading && audit.rows.length === 0 && (
+                <div style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>Loading history…</div>
+              )}
+              {!audit.error && !audit.loading && audit.rows.length === 0 && (
+                <div style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13, fontFamily: "Inter" }}>No history recorded for this distributor yet.</div>
+              )}
+              {audit.rows.map(entry => (
+                <div key={entry.id} style={{ display: "flex", gap: 16, padding: "12px 16px", borderBottom: "1px solid #F4F6FA", alignItems: "flex-start" }}>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#1B6CA8", flexShrink: 0, marginTop: 4 }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
@@ -2373,6 +2446,7 @@ function DistributorDetailPage({ distributor, onBack, onEdit, onNavigatePurchase
                 </div>
               ))}
             </div>
+            <TabPager total={audit.total} page={auditPage} pageSize={25} onPage={setAuditPage} />
           </div>
         )}
       </div>
@@ -2393,6 +2467,10 @@ export default function Suppliers({ onNavigatePurchases, editDistributor, onEdit
   const [selectedTab, setSelectedTab] = useState<DetailTab>("overview");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    fetchDistributors().then(d => setDistributors(d.items as DistributorRecord[])).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!editDistributor) return;
@@ -2431,6 +2509,8 @@ export default function Suppliers({ onNavigatePurchases, editDistributor, onEdit
       return [rec, ...prev];
     });
     setView("list");
+    // Reload from the server so the list (and Edit) show exactly what was stored.
+    if (!_asDraft) fetchDistributors().then(d => setDistributors(d.items as DistributorRecord[])).catch(() => {});
   }
 
   function handleBackFromAdd() {

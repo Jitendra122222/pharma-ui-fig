@@ -1,28 +1,20 @@
-export const drugs = [
-  { id: 1,  name: "Amoxicillin 500mg",  category: "Antibiotics",      manufacturer: "Cipla",               stock: 240,  minStock: 50,  unit: "Capsules", price: 0.85,  cost: 0.45,  expiry: "2026-08-15", supplier: "MedLine Pharma", location: "A1-02",   status: "In Stock",     batchId: "BT-2025-0118", lastMove: "2026-08-20", schedule: "H" as const },
-  { id: 2,  name: "Metformin 1000mg",   category: "Antidiabetics",    manufacturer: "Sun Pharma",          stock: 18,   minStock: 30,  unit: "Tablets",  price: 0.32,  cost: 0.18,  expiry: "2025-12-31", supplier: "GenPharm Ltd",   location: "B3-05",   status: "Low Stock",    batchId: "BT-2025-0117", lastMove: "2026-07-15" },
-  { id: 3,  name: "Lisinopril 10mg",    category: "Antihypertensives",manufacturer: "Abbott",              stock: 0,    minStock: 40,  unit: "Tablets",  price: 0.56,  cost: 0.28,  expiry: "2026-03-20", supplier: "PharmaCo Inc",   location: "B2-01",   status: "Out of Stock", batchId: "BT-2025-0112", lastMove: "2026-09-01" },
-  { id: 4,  name: "Atorvastatin 20mg",  category: "Statins",          manufacturer: "Pfizer",              stock: 312,  minStock: 60,  unit: "Tablets",  price: 0.78,  cost: 0.38,  expiry: "2027-01-10", supplier: "MedLine Pharma", location: "C1-04",   status: "In Stock",     batchId: "BT-2025-0115", lastMove: "2026-08-05" },
-  { id: 5,  name: "Omeprazole 20mg",    category: "Antacids",         manufacturer: "AstraZeneca",         stock: 145,  minStock: 50,  unit: "Capsules", price: 0.62,  cost: 0.31,  expiry: "2026-09-05", supplier: "BioPharm AG",    location: "A3-01",   status: "In Stock",     batchId: "BT-2025-0111", lastMove: "2026-09-10" },
-  { id: 6,  name: "Salbutamol Inhaler", category: "Bronchodilators",  manufacturer: "GSK",                 stock: 28,   minStock: 25,  unit: "Inhaler",  price: 8.50,  cost: 4.20,  expiry: "2026-06-30", supplier: "RespiCare Ltd",  location: "D1-01",   status: "In Stock",     batchId: "BT-2025-0110", lastMove: "2026-06-30" },
-  { id: 7,  name: "Paracetamol 500mg",  category: "Analgesics",       manufacturer: "GSK",                 stock: 1200, minStock: 200, unit: "Tablets",  price: 0.08,  cost: 0.04,  expiry: "2027-05-15", supplier: "GenPharm Ltd",   location: "A3-01",   status: "In Stock",     batchId: "BT-2025-0109", lastMove: "2026-09-15" },
-  { id: 8,  name: "Ciprofloxacin 500mg",category: "Antibiotics",      manufacturer: "Bayer",               stock: 12,   minStock: 40,  unit: "Tablets",  price: 1.20,  cost: 0.65,  expiry: "2025-11-20", supplier: "PharmaCo Inc",   location: "A1-02",   status: "Low Stock",    batchId: "BT-2025-0113", lastMove: "2026-08-18", schedule: "H" as const },
-  { id: 9,  name: "Amlodipine 5mg",     category: "Antihypertensives",manufacturer: "Abbott",              stock: 380,  minStock: 60,  unit: "Tablets",  price: 0.45,  cost: 0.22,  expiry: "2026-11-30", supplier: "MedLine Pharma", location: "B2-03",   status: "In Stock",     batchId: "BT-2025-0108", lastMove: "2026-09-05" },
-  { id: 10, name: "Insulin Glargine",   category: "Hormones",         manufacturer: "Novo Nordisk",        stock: 45,   minStock: 20,  unit: "Vial",     price: 42.00, cost: 28.00, expiry: "2025-10-15", supplier: "BioPharm AG",    location: "COLD-01", status: "In Stock",     batchId: "BT-2025-0116", lastMove: "2026-09-20" },
-  { id: 11, name: "Warfarin 5mg",       category: "Anticoagulants",   manufacturer: "Bristol-Myers Squibb",stock: 6,    minStock: 30,  unit: "Tablets",  price: 0.95,  cost: 0.52,  expiry: "2026-04-01", supplier: "PharmaCo Inc",   location: "B4-02",   status: "Low Stock",    batchId: "BT-2025-0114", lastMove: "2026-07-22", schedule: "H" as const },
-  { id: 12, name: "Sertraline 50mg",    category: "Antidepressants",  manufacturer: "Pfizer",              stock: 220,  minStock: 40,  unit: "Tablets",  price: 0.88,  cost: 0.44,  expiry: "2027-02-20", supplier: "MedLine Pharma", location: "C1-04",   status: "In Stock",     batchId: "BT-2025-0107", lastMove: "2026-08-30", schedule: "H" as const },
-];
+export interface InventoryProduct {
+  id: number; name: string; category: string; manufacturer: string;
+  stock: number; minStock: number; unit: string; price: number; cost: number;
+  expiry: string; supplier: string; location: string; status: string;
+  batchId: string; lastMove: string; schedule?: "H";
+}
+export const products: InventoryProduct[] = [];
 
-export const patients = [
-  { id: "P-001", name: "Margaret Thompson", dob: "1958-03-14", gender: "F", phone: "+1 (555) 201-4432", bloodGroup: "A+", allergies: ["Penicillin", "Sulfa"], lastVisit: "2025-07-12", prescriptions: 8, balance: 0.00 },
-  { id: "P-002", name: "Robert Kiefer", dob: "1972-11-28", gender: "M", phone: "+1 (555) 308-9921", bloodGroup: "O-", allergies: [], lastVisit: "2025-07-20", prescriptions: 3, balance: 14.50 },
-  { id: "P-003", name: "Amara Nwosu", dob: "1990-06-05", gender: "F", phone: "+1 (555) 441-7723", bloodGroup: "B+", allergies: ["Aspirin"], lastVisit: "2025-07-25", prescriptions: 2, balance: 0.00 },
-  { id: "P-004", name: "David Okafor", dob: "1965-09-17", gender: "M", phone: "+1 (555) 122-6644", bloodGroup: "AB+", allergies: ["Codeine"], lastVisit: "2025-07-18", prescriptions: 12, balance: 8.75 },
-  { id: "P-005", name: "Elena Vasquez", dob: "1983-02-22", gender: "F", phone: "+1 (555) 567-3312", bloodGroup: "O+", allergies: [], lastVisit: "2025-07-28", prescriptions: 5, balance: 0.00 },
-  { id: "P-006", name: "James Whitfield", dob: "1948-07-30", gender: "M", phone: "+1 (555) 789-0011", bloodGroup: "A-", allergies: ["Penicillin", "NSAIDs"], lastVisit: "2025-07-10", prescriptions: 15, balance: 32.00 },
-  { id: "P-007", name: "Sofia Lindqvist", dob: "2001-04-11", gender: "F", phone: "+1 (555) 334-8891", bloodGroup: "B-", allergies: [], lastVisit: "2025-07-22", prescriptions: 1, balance: 0.00 },
-  { id: "P-008", name: "Marcus Adeyemi", dob: "1977-12-03", gender: "M", phone: "+1 (555) 678-2209", bloodGroup: "O+", allergies: ["Morphine"], lastVisit: "2025-07-15", prescriptions: 6, balance: 0.00 },
-];
+export type PaymentTerms = "Cash Only" | "Net 15" | "Net 30" | "Net 60";
+
+export interface Patient {
+  id: string; name: string; dob: string; gender: string; phone: string;
+  bloodGroup: string; allergies: string[]; lastVisit: string; prescriptions: number;
+  balance: number; creditLimit: number; paymentTerms: PaymentTerms; creditEnabled: boolean;
+  conditions: string[]; currentMedications: string[];
+}
+export const patients: Patient[] = [];
 
 export const prescriptions = [
   { id: "RX-20250728-001", patient: "Margaret Thompson", patientId: "P-001", doctor: "Dr. Sarah Chen", date: "2025-07-28", status: "Dispensed", items: [{ drug: "Amoxicillin 500mg", qty: 21, days: 7 }, { drug: "Paracetamol 500mg", qty: 30, days: 10 }], total: 20.25 },
@@ -36,11 +28,11 @@ export const prescriptions = [
 ];
 
 export const suppliers = [
-  { id: "SUP-001", name: "MedLine Pharma", contact: "John Harrison", email: "orders@medlinepharma.com", phone: "+1 (800) 555-1200", address: "2400 Industrial Blvd, Chicago, IL 60601", products: 145, lastOrder: "2025-07-20", balance: -3420.00, status: "Active", rating: 4.8, notifyChannel: "Email" as const },
-  { id: "SUP-002", name: "GenPharm Ltd", contact: "Lisa Nakamura", email: "supply@genpharm.co", phone: "+1 (800) 555-3400", address: "88 Pharma Way, Boston, MA 02101", products: 82, lastOrder: "2025-07-15", balance: 0.00, status: "Active", rating: 4.5, notifyChannel: "WhatsApp" as const },
-  { id: "SUP-003", name: "PharmaCo Inc", contact: "Carlos Rivera", email: "b2b@pharmacoinc.com", phone: "+1 (800) 555-5600", address: "1200 Health Drive, Dallas, TX 75201", products: 210, lastOrder: "2025-07-22", balance: -1850.00, status: "Active", rating: 4.2, notifyChannel: "WhatsApp" as const },
-  { id: "SUP-004", name: "BioPharm AG", contact: "Inga Müller", email: "orders@biopharm.ag", phone: "+49 30 555 7800", address: "Hauptstraße 45, 10115 Berlin, Germany", products: 38, lastOrder: "2025-07-08", balance: 0.00, status: "Active", rating: 4.9, notifyChannel: "Email" as const },
-  { id: "SUP-005", name: "RespiCare Ltd", contact: "Priya Sharma", email: "sales@respicare.co.uk", phone: "+44 20 7946 0000", address: "12 Medical Quarter, London EC1A 1BB", products: 24, lastOrder: "2025-06-30", balance: -620.00, status: "Active", rating: 4.6, notifyChannel: "Email" as const },
+  { id: "22546341-f55e-4b88-818b-25bdfb119c53", name: "MedLine Pharma", contact: "John Harrison", email: "orders@medlinepharma.com", phone: "+1 (800) 555-1200", address: "2400 Industrial Blvd, Chicago, IL 60601", products: 145, lastOrder: "2025-07-20", balance: -3420.00, status: "Active", rating: 4.8, notifyChannel: "Email" as const },
+  { id: "d8a654cb-6ee4-49c6-8535-340db198a5ee", name: "GenPharm Ltd", contact: "Lisa Nakamura", email: "supply@genpharm.co", phone: "+1 (800) 555-3400", address: "88 Pharma Way, Boston, MA 02101", products: 82, lastOrder: "2025-07-15", balance: 0.00, status: "Active", rating: 4.5, notifyChannel: "WhatsApp" as const },
+  { id: "711ed9d9-2b63-4eed-86b4-4eb67644d68f", name: "PharmaCo Inc", contact: "Carlos Rivera", email: "b2b@pharmacoinc.com", phone: "+1 (800) 555-5600", address: "1200 Health Drive, Dallas, TX 75201", products: 210, lastOrder: "2025-07-22", balance: -1850.00, status: "Active", rating: 4.2, notifyChannel: "WhatsApp" as const },
+  { id: "fd9f298c-1fd4-47b2-8120-7099f784196f", name: "BioPharm AG", contact: "Inga Müller", email: "orders@biopharm.ag", phone: "+49 30 555 7800", address: "Hauptstraße 45, 10115 Berlin, Germany", products: 38, lastOrder: "2025-07-08", balance: 0.00, status: "Active", rating: 4.9, notifyChannel: "Email" as const },
+  { id: "e81914a4-96cb-4853-a58b-25215191bb60", name: "RespiCare Ltd", contact: "Priya Sharma", email: "sales@respicare.co.uk", phone: "+44 20 7946 0000", address: "12 Medical Quarter, London EC1A 1BB", products: 24, lastOrder: "2025-06-30", balance: -620.00, status: "Active", rating: 4.6, notifyChannel: "Email" as const },
 ];
 
 export const purchaseOrders = [

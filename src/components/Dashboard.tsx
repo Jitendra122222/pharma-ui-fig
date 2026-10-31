@@ -1,5 +1,5 @@
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { salesData, categoryData, recentTransactions, dailySalesData, drugs } from "../data/mockData";
+import { salesData, categoryData, recentTransactions, dailySalesData, products } from "../data/mockData";
 import { S, stockBadge } from "../styles/common";
 import { D } from "../styles/dashboard";
 
@@ -13,7 +13,7 @@ const KPI = ({ label, value, sub, color }: { label: string; value: string; sub: 
   </div>
 );
 
-const lowStockItems = drugs.filter(d => d.status === "Low Stock" || d.status === "Out of Stock");
+const lowStockItems = products.filter(d => d.status === "Low Stock" || d.status === "Out of Stock");
 
 export default function Dashboard() {
   return (

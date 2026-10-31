@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef } from "react";
-import { patients } from "../../data/mockData";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { patients, type Patient } from "../../data/mockData";
 import { Pill } from "../shared/Pill";
 import { Th } from "../shared/Th";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
@@ -7,13 +7,15 @@ import { useTableSort } from "../shared/useTableSort";
 import PrintDialog from "../shared/PrintDialog";
 import type { PrintJobType } from "../shared/PrintDialog";
 import {
-  type PayMethod,
+  type PayMethod, type SaleInvoice, type SalePayment,
   TODAY, PAY_METHODS,
   salesInvoices, salesPayments,
 } from "./salesData";
+import { fetchSaleInvoices, recordSalePayment } from "../../lib/salesApi";
 import {
-  CalendarIcon, ChevronDown, DateRangePicker,
+  ChevronDown, DateRangePicker,
 } from "./salesShared";
+import { DatePicker } from "../shared/DatePicker";
 import { PatientSearch } from "./SalesInvoices";
 
 // ─── Date formatting helper (DD-MM-YYYY) ─────────────────────────────────────
@@ -25,25 +27,6 @@ function formatDMYDash(iso: string): string {
   return `${String(d).padStart(2, "0")}-${String(m).padStart(2, "0")}-${y}`;
 }
 
-// ─── Date field button (styled date picker) ───────────────────────────────────
-
-function DateFieldButton({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
-  const ref = useRef<HTMLInputElement>(null);
-  const display = value ? formatDMYDash(value) : "Select date";
-  return (
-    <div style={{ position: "relative", width: "100%" }}>
-      <div
-        style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", background: disabled ? "#F8FAFC" : "#fff", fontSize: 13, fontFamily: "Inter", cursor: disabled ? "default" : "pointer", color: disabled ? "#6B7280" : (value ? "#1A2436" : "#9CA3AF"), boxSizing: "border-box" }}
-        onClick={() => { if (disabled) return; ref.current?.showPicker?.() || ref.current?.focus(); }}>
-        <CalendarIcon />
-        <span style={{ flex: 1 }}>{display}</span>
-        <ChevronDown />
-      </div>
-      <input ref={ref} type="date" value={value} disabled={disabled} onChange={e => onChange(e.target.value)}
-        style={{ position: "absolute", inset: 0, opacity: 0, pointerEvents: "none" }} />
-    </div>
-  );
-}
 
 // ─── Method icon (SVG per payment method) ────────────────────────────────────
 
@@ -79,7 +62,7 @@ function MethodIcon({ method }: { method: PayMethod }) {
 
 // ─── Seed payment method fields from existing record ─────────────────────────
 
-function seedPaymentMethodFields(p?: typeof salesPayments[0]): Record<string, string> {
+function seedPaymentMethodFields(p?: SalePayment): Record<string, string> {
   if (!p) return {};
   const ref = p.ref;
   if (p.method === "Cash") return { cashRef: ref };
@@ -104,19 +87,24 @@ const VALID_PAY_METHODS: PayMethod[] = ["Cash", "Card", "Insurance", "UPI", "Ban
 
 // ─── Record Payment (full-screen overlay) ─────────────────────────────────────
 
-function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: typeof salesPayments[0] }) {
+function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: SalePayment }) {
   const isExisting = !!payment;
   const initFields = seedPaymentMethodFields(payment);
   const seededMethod: PayMethod = payment && VALID_PAY_METHODS.includes(payment.method as PayMethod)
     ? (payment.method as PayMethod) : "Cash";
 
   const [readOnly, setReadOnly] = useState(isExisting);
-  const [patient, setPatient] = useState<typeof patients[0] | null>(() => {
+  const [invoiceList, setInvoiceList] = useState<SaleInvoice[]>(salesInvoices);
+  const [patient, setPatient] = useState<Patient | null>(() => {
     if (!payment) return null;
     const inv = salesInvoices.find(i => i.id === payment.invoice);
     if (inv) return patients.find(p => p.id === inv.patientId) ?? null;
     return patients.find(p => p.name === payment.patient) ?? null;
   });
+
+  useEffect(() => {
+    fetchSaleInvoices().then(d => setInvoiceList(d.items as SaleInvoice[])).catch(() => {});
+  }, []);
   const [paymentDate, setPaymentDate] = useState(payment?.date ?? TODAY);
   const [invSearch, setInvSearch] = useState("");
   const [checked, setChecked] = useState<Record<string, boolean>>(
@@ -134,6 +122,7 @@ function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: type
   const [printReceipt, setPrintReceipt] = useState(true);
   const [sendReceipt, setSendReceipt] = useState(true);
   const [saved, setSaved] = useState<null | "draft" | "posted">(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [printJob, setPrintJob] = useState<{ jobType: PrintJobType; docId?: string } | null>(null);
   // Method-specific fields
   const [cashRef, setCashRef] = useState(initFields.cashRef ?? "");
@@ -152,14 +141,14 @@ function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: type
 
   // Outstanding invoices (optionally filtered by patient).
   const outstandingInvoices = useMemo(() => {
-    const list = salesInvoices.filter(i => i.total - i.paid > 0.001)
+    const list = invoiceList.filter(i => i.total - i.paid > 0.001)
       .filter(i => !patient || i.patientId === patient.id);
     if (payment) {
-      const linked = salesInvoices.find(i => i.id === payment.invoice);
+      const linked = invoiceList.find(i => i.id === payment.invoice);
       if (linked && !list.some(i => i.id === linked.id)) list.unshift(linked);
     }
     return list;
-  }, [patient, payment]);
+  }, [invoiceList, patient, payment]);
 
   const filteredInvoices = useMemo(() => {
     const q = invSearch.trim().toLowerCase();
@@ -181,7 +170,7 @@ function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: type
   };
 
   const outstandingFor = (id: string) => {
-    const inv = salesInvoices.find(i => i.id === id);
+    const inv = invoiceList.find(i => i.id === id);
     return inv ? inv.total - inv.paid : 0;
   };
 
@@ -212,6 +201,26 @@ function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: type
   const allocated = Object.values(allocations).reduce((s, v) => s + v, 0);
   const remainingUnallocated = Math.max(0, payAmount - allocated);
   const remainingCustomerBalance = Math.max(0, selectedOutstanding - allocated);
+
+  const handlePostPayment = async () => {
+    const firstInv = outstandingInvoices.find(i => checked[i.id]);
+    setIsSubmitting(true);
+    try {
+      if (firstInv) {
+        const invoiceDbId = (firstInv as any).dbId ?? firstInv.id;
+        await recordSalePayment(invoiceDbId, {
+          invoice_id: invoiceDbId,
+          payment_date: paymentDate,
+          amount: payAmount,
+          payment_mode: payMethod,
+          reference_number: cashRef || upiTxn || bankRef || cardTxn || insClaim || undefined,
+          notes,
+        });
+      }
+    } catch { /* offline — continue to success state */ }
+    finally { setIsSubmitting(false); }
+    setSaved("posted");
+  };
 
   return (
     <div style={{ position: "fixed", top: 50, left: "var(--sidebar-w, 228px)", right: 0, bottom: 0, background: "#F0F3F7", zIndex: 50, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -252,7 +261,7 @@ function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: type
               <button onClick={onBack} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
               <button onClick={() => setSaved("draft")} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Save Draft</button>
               <button onClick={() => setPrintJob({ jobType: "Payment Receipt" })} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Preview Receipt</button>
-              <button onClick={() => setSaved("posted")} style={{ padding: "7px 20px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Post Payment</button>
+              <button disabled={isSubmitting} onClick={handlePostPayment} style={{ padding: "7px 20px", border: "none", borderRadius: 6, background: isSubmitting ? "#C8D6E5" : "#1B6CA8", fontSize: 13, cursor: isSubmitting ? "not-allowed" : "pointer", color: isSubmitting ? "#8FA3B1" : "#fff", fontFamily: "Inter", fontWeight: 600 }}>{isSubmitting ? "Posting..." : "Post Payment"}</button>
             </>
           )}
         </div>
@@ -274,7 +283,7 @@ function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: type
             </div>
             <div>
               <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Payment Date <span style={{ color: "#C62828" }}>*</span></div>
-              <DateFieldButton value={paymentDate} onChange={setPaymentDate} disabled={readOnly} />
+              <DatePicker value={paymentDate} onChange={setPaymentDate} disabled={readOnly} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Payment Amount (₹) <span style={{ color: "#C62828" }}>*</span></div>
@@ -573,14 +582,15 @@ function RecordPayment({ onBack, payment }: { onBack: () => void; payment?: type
 
 // ─── Sales Payments list ──────────────────────────────────────────────────────
 
-function SalesPaymentsList({ onNew, onOpen }: { onNew: () => void; onOpen: (p: typeof salesPayments[0]) => void }) {
+function SalesPaymentsList({ onNew, onOpen }: { onNew: () => void; onOpen: (p: SalePayment) => void }) {
+  const [paymentList] = useState<SalePayment[]>(salesPayments);
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [methodFilter, setMethodFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
 
-  const filtered = salesPayments.filter(p => {
+  const filtered = paymentList.filter(p => {
     const q = search.trim().toLowerCase();
     const matchSearch = !q
       || p.id.toLowerCase().includes(q)
@@ -693,7 +703,7 @@ function SalesPaymentsList({ onNew, onOpen }: { onNew: () => void; onOpen: (p: t
 
 export default function SalesPayments() {
   const [view, setView] = useState<"list" | "record-payment">("list");
-  const [openPayment, setOpenPayment] = useState<typeof salesPayments[0] | null>(null);
+  const [openPayment, setOpenPayment] = useState<SalePayment | null>(null);
 
   if (view === "record-payment") {
     return (

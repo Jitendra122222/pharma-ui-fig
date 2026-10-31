@@ -18,11 +18,15 @@ import {
   FieldLabel, DropdownSelect, TextInput, POLineSearch,
 } from "./purchasesShared";
 import NewPurchaseOrder from "./NewPurchaseOrder";
+import {
+  MSG_PO_REJECT_ALL, MSG_PO_SHORT_BOOK, MSG_PO_ACCEPT_ALL, MSG_PO_ACCEPT_NOTIFY, MSG_PO_NEGOTIATE,
+} from "../../constants/purchaseMessages";
+import { fetchPurchaseOrders, fetchPODetail } from "../../lib/purchaseApi";
 
 // ── Drawer mock data ──────────────────────────────────────────────────────────
 
 type ChangeDetail = {
-  medicine: string;
+  product: string;
   changeType: "Price" | "Scheme" | "Delivery";
   original: string;
   updated: string;
@@ -45,9 +49,9 @@ const PO_SUPPLIER_RESPONSE: Record<string, POSupplierResponse> = {
     receivedAt: "18 Aug 2026, 04:20 PM",
     priceChanges: 1, schemeChanges: 1, deliveryChanges: 1,
     changeDetails: [
-      { medicine: "Paracetamol 500mg", changeType: "Price",    original: "₹1.80",       updated: "₹1.95",       mrp: 3.50,  originalRate: 1.80, updatedRate: 1.95 },
-      { medicine: "Amoxicillin 500mg",  changeType: "Scheme",   original: "5+1",          updated: "4+1",         mrp: 10.00, originalScheme: "5+1", updatedScheme: "4+1", schemeRate: 5.20 },
-      { medicine: "All items",          changeType: "Delivery", original: "20 Aug 2026",  updated: "22 Aug 2026" },
+      { product: "Paracetamol 500mg", changeType: "Price",    original: "₹1.80",       updated: "₹1.95",       mrp: 3.50,  originalRate: 1.80, updatedRate: 1.95 },
+      { product: "Amoxicillin 500mg",  changeType: "Scheme",   original: "5+1",          updated: "4+1",         mrp: 10.00, originalScheme: "5+1", updatedScheme: "4+1", schemeRate: 5.20 },
+      { product: "All items",          changeType: "Delivery", original: "20 Aug 2026",  updated: "22 Aug 2026" },
     ],
   },
 };
@@ -177,19 +181,18 @@ function ItemsTab({ lines }: { lines: POLine[] }) {
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #EEF1F6" }}>
-            {(["Medicine", "Pack", "Qty", "Free", "Scheme", "Rate", "Total"] as const).map((h, i) => (
-              <th key={h} style={{ padding: "8px 10px", textAlign: i >= 2 && i !== 4 ? "right" : i === 4 ? "center" : "left", fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+            {(["Product", "Pack", "Qty", "Free", "Rate", "Total"] as const).map((h, i) => (
+              <th key={h} style={{ padding: "8px 10px", textAlign: i >= 2 ? "right" : "left", fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {lines.map((l, i) => (
             <tr key={l.id} style={{ borderBottom: "1px solid #F4F5F7", background: i % 2 === 0 ? "#fff" : "#FAFBFD" }}>
-              <td style={{ padding: "8px 10px", fontSize: 12, color: "#1A2436", fontWeight: 500, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.medicineName}</td>
+              <td style={{ padding: "8px 10px", fontSize: 12, color: "#1A2436", fontWeight: 500, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.productName}</td>
               <td style={{ padding: "8px 10px", fontSize: 11, fontFamily: "JetBrains Mono", color: "#6B7280", whiteSpace: "nowrap" }}>{l.pack}</td>
               <td style={{ padding: "8px 10px", textAlign: "right", fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 600, color: "#1A2436" }}>{l.orderQty}</td>
               <td style={{ padding: "8px 10px", textAlign: "right", fontFamily: "JetBrains Mono", fontSize: 12, color: l.freeQty > 0 ? "#2E7D32" : "#9CA3AF" }}>{l.freeQty > 0 ? `+${l.freeQty}` : "—"}</td>
-              <td style={{ padding: "8px 10px", textAlign: "center", fontFamily: "JetBrains Mono", fontSize: 11, color: "#6B7280" }}>{l.scheme || "—"}</td>
               <td style={{ padding: "8px 10px", textAlign: "right", fontFamily: "JetBrains Mono", fontSize: 12, color: "#1A2436" }}>{money(l.purchaseRate)}</td>
               <td style={{ padding: "8px 10px", textAlign: "right", fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700, color: "#1A2436" }}>{money(l.orderQty * l.purchaseRate)}</td>
             </tr>
@@ -197,7 +200,7 @@ function ItemsTab({ lines }: { lines: POLine[] }) {
         </tbody>
         <tfoot>
           <tr style={{ background: "#F8FAFC", borderTop: "2px solid #E8ECF4" }}>
-            <td colSpan={6} style={{ padding: "10px 10px", fontSize: 12, fontWeight: 600, color: "#6B7280" }}>{lines.length} items</td>
+            <td colSpan={5} style={{ padding: "10px 10px", fontSize: 12, fontWeight: 600, color: "#6B7280" }}>{lines.length} items</td>
             <td style={{ padding: "10px 10px", textAlign: "right", fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>{money(total)}</td>
           </tr>
         </tfoot>
@@ -273,7 +276,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
     <div style={{ display: "flex", gap: 10, padding: "14px 20px", borderTop: "1px solid #EEF1F6" }}>{children}</div>
   );
 
-  const medicinesToReject = response.changeDetails.filter(c => c.medicine !== "—" && c.medicine !== "All items").map(c => c.medicine);
+  const productsToReject = response.changeDetails.filter(c => c.product !== "—" && c.product !== "All items").map(c => c.product);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -295,7 +298,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
           <thead>
             <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #EEF1F6" }}>
-              {["Medicine", "Type", "Original (PO)", "Distributor", "Margin Before", "Margin After", "Diff"].map((h, i) => (
+              {["Product", "Type", "Original (PO)", "Distributor", "Margin Before", "Margin After", "Diff"].map((h, i) => (
                 <th key={h} style={{ padding: "8px 10px", textAlign: i >= 2 ? "right" : "left", fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
@@ -306,7 +309,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
               const diff = before != null && after != null ? +(after - before).toFixed(1) : null;
               return (
                 <tr key={i} style={{ borderBottom: "1px solid #F4F5F7" }}>
-                  <td style={{ padding: "9px 10px", fontSize: 12, color: "#1A2436", fontWeight: 500, whiteSpace: "nowrap" }}>{c.medicine}</td>
+                  <td style={{ padding: "9px 10px", fontSize: 12, color: "#1A2436", fontWeight: 500, whiteSpace: "nowrap" }}>{c.product}</td>
                   <td style={{ padding: "9px 10px" }}>{typeBadge(c.changeType)}</td>
                   <td style={{ padding: "9px 10px", textAlign: "right", fontFamily: "JetBrains Mono", fontSize: 12, color: "#9CA3AF", textDecoration: "line-through" }}>{c.original}</td>
                   <td style={{ padding: "9px 10px", textAlign: "right", fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700, color: c.changeType === "Price" ? "#C62828" : c.changeType === "Scheme" ? "#E65100" : "#1B6CA8" }}>{c.updated}</td>
@@ -337,11 +340,11 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
             <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.6, marginBottom: 16 }}>
               Rejecting all <strong style={{ color: "#1A2436" }}>{total}</strong> changes from <strong style={{ color: "#1A2436" }}>{order.supplier}</strong>. Your original PO terms and quantities will be maintained.
             </div>
-            {medicinesToReject.length > 0 && (
+            {productsToReject.length > 0 && (
               <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", marginBottom: 16 }}>
                 <div style={{ padding: "8px 14px", borderBottom: "1px solid #EEF1F6", fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase" }}>Affected items</div>
-                {medicinesToReject.map((m, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderBottom: i < medicinesToReject.length - 1 ? "1px solid #F4F5F7" : "none" }}>
+                {productsToReject.map((m, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderBottom: i < productsToReject.length - 1 ? "1px solid #F4F5F7" : "none" }}>
                     <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#C62828", flexShrink: 0 }} />
                     <span style={{ fontSize: 12, color: "#1A2436" }}>{m}</span>
                   </div>
@@ -355,8 +358,8 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
           </div>
           <ModalFooter>
             <GhostBtn onClick={() => setShowReject(false)}>Cancel</GhostBtn>
-            <GhostBtn onClick={() => { setShowReject(false); onToast("All items are rejected successfully."); }}>Reject Only</GhostBtn>
-            <div style={{ flex: 1 }}><PrimaryBtn onClick={() => { setShowReject(false); onToast("Successfully Added to Short Book."); }}>+ Short Book</PrimaryBtn></div>
+            <GhostBtn onClick={() => { setShowReject(false); onToast(MSG_PO_REJECT_ALL); }}>Reject Only</GhostBtn>
+            <div style={{ flex: 1 }}><PrimaryBtn onClick={() => { setShowReject(false); onToast(MSG_PO_SHORT_BOOK); }}>+ Short Book</PrimaryBtn></div>
           </ModalFooter>
         </ModalWrap>
       )}
@@ -381,7 +384,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
             <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", marginBottom: 16 }}>
               {response.changeDetails.map((c, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 14px", borderBottom: i < response.changeDetails.length - 1 ? "1px solid #F4F5F7" : "none" }}>
-                  <span style={{ fontSize: 12, color: "#6B7280" }}>{c.medicine} · {c.changeType}</span>
+                  <span style={{ fontSize: 12, color: "#6B7280" }}>{c.product} · {c.changeType}</span>
                   <span style={{ fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436", fontWeight: 600 }}>{c.updated}</span>
                 </div>
               ))}
@@ -393,8 +396,8 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
           </div>
           <ModalFooter>
             <GhostBtn onClick={() => setShowAccept(false)}>Cancel</GhostBtn>
-            <GhostBtn onClick={() => { setShowAccept(false); onToast("All changes accepted successfully."); }}>Accept Only</GhostBtn>
-            <div style={{ flex: 1 }}><PrimaryBtn onClick={() => { setShowAccept(false); onToast("Changes accepted and distributor notified successfully."); }}>Accept &amp; Notify Distributor</PrimaryBtn></div>
+            <GhostBtn onClick={() => { setShowAccept(false); onToast(MSG_PO_ACCEPT_ALL); }}>Accept Only</GhostBtn>
+            <div style={{ flex: 1 }}><PrimaryBtn onClick={() => { setShowAccept(false); onToast(MSG_PO_ACCEPT_NOTIFY); }}>Accept &amp; Notify Distributor</PrimaryBtn></div>
           </ModalFooter>
         </ModalWrap>
       )}
@@ -411,7 +414,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
                 <thead>
                   <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #EEF1F6" }}>
-                    {["Medicine", "Type", "Original (PO)", "Distributor", "Your Negotiate", "Margin"].map((h, i) => (
+                    {["Product", "Type", "Original (PO)", "Distributor", "Your Negotiate", "Margin"].map((h, i) => (
                       <th key={h} style={{ padding: "8px 10px", textAlign: i >= 2 ? "right" : "left", fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
@@ -424,7 +427,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
                     const diff = nm != null && distMargin != null ? +(nm - distMargin).toFixed(1) : null;
                     return (
                       <tr key={i} style={{ borderBottom: "1px solid #F4F5F7" }}>
-                        <td style={{ padding: "8px 10px", fontSize: 12, color: "#1A2436", fontWeight: 500, whiteSpace: "nowrap" }}>{c.medicine}</td>
+                        <td style={{ padding: "8px 10px", fontSize: 12, color: "#1A2436", fontWeight: 500, whiteSpace: "nowrap" }}>{c.product}</td>
                         <td style={{ padding: "8px 10px" }}>{typeBadge(c.changeType)}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right", fontFamily: "JetBrains Mono", fontSize: 12, color: "#9CA3AF" }}>{c.original}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right", fontFamily: "JetBrains Mono", fontSize: 12, color: "#6B7280", textDecoration: "line-through" }}>{c.updated}</td>
@@ -465,7 +468,7 @@ function ResponseTab({ response, order, onToast }: { response: POSupplierRespons
           </div>
           <ModalFooter>
             <GhostBtn onClick={() => setShowNegotiate(false)}>Cancel</GhostBtn>
-            <div style={{ flex: 1 }}><PrimaryBtn onClick={() => { setShowNegotiate(false); onToast("Negotiation sent to distributor successfully."); }}>Send Notification</PrimaryBtn></div>
+            <div style={{ flex: 1 }}><PrimaryBtn onClick={() => { setShowNegotiate(false); onToast(MSG_PO_NEGOTIATE); }}>Send Notification</PrimaryBtn></div>
           </ModalFooter>
         </ModalWrap>
       )}
@@ -511,7 +514,19 @@ function PODetailDrawer({ order, onClose, onEdit, onToast }: {
   onToast: (msg: string) => void;
 }) {
   const [tab, setTab] = useState<"overview" | "items" | "response" | "activity">("overview");
-  const lines = PO_MOCK_LINES[order.id] ?? [];
+  const [apiLines, setApiLines] = useState<POLine[] | null>(null);
+  const [linesLoading, setLinesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!order.dbId) return;
+    setLinesLoading(true);
+    fetchPODetail(order.dbId)
+      .then(setApiLines)
+      .catch(() => setApiLines(null))
+      .finally(() => setLinesLoading(false));
+  }, [order.dbId]);
+
+  const lines = apiLines ?? PO_MOCK_LINES[order.id] ?? [];
   const response = PO_SUPPLIER_RESPONSE[order.id];
   const activity = PO_ACTIVITY[order.id] ?? [];
   const responseCount = response ? response.priceChanges + response.schemeChanges + response.deliveryChanges : 0;
@@ -565,7 +580,10 @@ function PODetailDrawer({ order, onClose, onEdit, onToast }: {
         {/* Tab body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
           {tab === "overview"  && <OverviewTab order={order} response={response} onReviewChanges={() => setTab("response")} />}
-          {tab === "items"     && <ItemsTab lines={lines} />}
+          {tab === "items"     && (linesLoading
+            ? <div style={{ padding: "48px 0", textAlign: "center", fontSize: 13, color: "#9CA3AF" }}>Loading items…</div>
+            : <ItemsTab lines={lines} />
+          )}
           {tab === "response"  && <ResponseTab response={response} order={order} onToast={onToast} />}
           {tab === "activity"  && <ActivityTab activity={activity} />}
         </div>
@@ -576,17 +594,46 @@ function PODetailDrawer({ order, onClose, onEdit, onToast }: {
 
 // ── Purchase Order list ───────────────────────────────────────────────────────
 
-function PurchaseOrderList({ onNew, onView }: {
+function LoadingRows({ cols }: { cols: number }) {
+  return (
+    <>
+      {[1, 2, 3, 4, 5].map(i => (
+        <tr key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <td key={j} style={{ padding: "10px 14px" }}>
+              <div style={{ height: 14, borderRadius: 4, background: "#F0F3F7", width: j === 0 ? 100 : j === cols - 1 ? 60 : 80 }} />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function PurchaseOrderList({ onNew, onView, additionalOrders = [] }: {
   onNew: (data?: { supplier: string; warehouse: string; expectedDelivery: string; paymentTerms: string }) => void;
-  onView: (id: string) => void;
+  onView: (order: PurchaseOrderRecord) => void;
+  additionalOrders?: PurchaseOrderRecord[];
 }) {
+  const [baseOrders, setBaseOrders] = useState([...purchaseOrders]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  const filtered = useMemo(() => purchaseOrders.filter(o => {
+  useEffect(() => {
+    setLoadingOrders(true);
+    fetchPurchaseOrders()
+      .then(res => setBaseOrders(res.items as typeof purchaseOrders))
+      .catch(() => { /* keep mock data */ })
+      .finally(() => setLoadingOrders(false));
+  }, []);
+
+  const orders = useMemo(() => [...additionalOrders, ...baseOrders], [additionalOrders, baseOrders]);
+
+  const filtered = useMemo(() => orders.filter(o => {
     const q = search.trim().toLowerCase();
     const mSearch = !q || o.id.toLowerCase().includes(q) || o.supplier.toLowerCase().includes(q);
     const mSupplier = supplierFilter === "All" || o.supplier === supplierFilter;
@@ -594,7 +641,7 @@ function PurchaseOrderList({ onNew, onView }: {
     const mFrom = !fromDate || o.date >= fromDate;
     const mTo = !toDate || o.date <= toDate;
     return mSearch && mSupplier && mStatus && mFrom && mTo;
-  }), [search, supplierFilter, statusFilter, fromDate, toDate]);
+  }), [orders, search, supplierFilter, statusFilter, fromDate, toDate]);
 
   const { sortCol, sortDir, handleSort, sorted } = useTableSort(filtered);
   const { pageRows, footerProps } = usePagination(sorted, 10);
@@ -636,11 +683,12 @@ function PurchaseOrderList({ onNew, onView }: {
               </tr>
             </thead>
             <tbody>
-              {pageRows.map(po => (
-                <TableRow key={po.id} onClick={() => onView(po.id)}>
+              {loadingOrders && <LoadingRows cols={10} />}
+              {!loadingOrders && pageRows.map(po => (
+                <TableRow key={po.id} onClick={() => onView(po)}>
                   <Td mono>
                     <button
-                      onClick={e => { e.stopPropagation(); onView(po.id); }}
+                      onClick={e => { e.stopPropagation(); onView(po); }}
                       style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", color: "#1B6CA8", fontFamily: "JetBrains Mono", fontSize: 13, fontWeight: 600 }}
                       onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
                       onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}>
@@ -665,7 +713,7 @@ function PurchaseOrderList({ onNew, onView }: {
                   <Td><Pill status={po.status} /></Td>
                 </TableRow>
               ))}
-              {pageRows.length === 0 && (
+              {!loadingOrders && pageRows.length === 0 && (
                 <EmptyTableRow colSpan={9} message="No purchase orders match your filters." />
               )}
             </tbody>
@@ -687,6 +735,7 @@ export default function PurchaseOrders({ initialViewId, onDeepLinkConsumed }: {
   const [openOrder, setOpenOrder] = useState<PurchaseOrderRecord | null>(null);
   const [drawerOrder, setDrawerOrder] = useState<PurchaseOrderRecord | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [additionalOrders, setAdditionalOrders] = useState<PurchaseOrderRecord[]>([]);
 
   useEffect(() => {
     if (!toast) return;
@@ -705,10 +754,11 @@ export default function PurchaseOrders({ initialViewId, onDeepLinkConsumed }: {
   if (view === "new-order" || view === "view-order") {
     return (
       <NewPurchaseOrder
-        onBack={(result) => {
+        onBack={(result, newRecord) => {
           setView("list");
           setOpenOrder(null);
           if (result) setToast(result);
+          if (newRecord) setAdditionalOrders(prev => [newRecord, ...prev]);
         }}
         initialData={openOrder ?? undefined}
         defaultViewMode={view === "view-order"}
@@ -720,8 +770,8 @@ export default function PurchaseOrders({ initialViewId, onDeepLinkConsumed }: {
     <>
       <PurchaseOrderList
         onNew={() => setView("new-order")}
-        onView={(id) => {
-          const order = purchaseOrders.find(o => o.id === id) ?? null;
+        additionalOrders={additionalOrders}
+        onView={(order) => {
           setDrawerOrder(order);
         }}
       />

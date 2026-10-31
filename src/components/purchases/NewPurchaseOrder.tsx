@@ -1,5 +1,10 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { DatePicker } from "../shared/DatePicker";
 import { suppliers } from "../../data/mockData";
+import {
+  createPurchaseOrder, updatePOStatus, fetchPODetail,
+  type CreatePOPayload,
+} from "../../lib/purchaseApi";
 import { Pill } from "../shared/Pill";
 import { Th } from "../shared/Th";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
@@ -11,7 +16,7 @@ import type { PrintJobType } from "../shared/PrintDialog";
 import {
   type POLine, type PurchaseOrderRecord, type MedCatalogItem, type MedRec,
   type DistributorPolicy, type DrugWithParsed, type RecommendedQtyResult, type DistributorFormData,
-  TODAY, purchaseOrders, purchaseInvoices, purchaseReturns, MEDICINE_RECS, DISTRIBUTOR_POLICIES,
+  TODAY, purchaseOrders, purchaseInvoices, purchaseReturns, PRODUCT_RECS, DISTRIBUTOR_POLICIES,
   PO_MOCK_LINES, PO_PRICE_HISTORY, SUPPLIER_COMPARISON,
   WAREHOUSES, PAYMENT_TERMS_OPTIONS, CANCEL_REASONS,
   formatDMY, money, newEmptyPOLine, parseSchemeFree, calcEffectiveCost,
@@ -22,7 +27,7 @@ import {
   Td, TableRow, FieldLabel, TextInput, DropdownSelect, PrimaryBtn, GhostBtn, Modal,
   FilterSearch, NewButton, BackConfirmDialog, HorizontalStepper,
   EmptyTableRow, EmptyListPlaceholder, DrawerStepFooter, BarcodeIcon,
-  AddMedicineDrawer, MedicineNameCell, MedicineMapModal, PurchaseLineItemsTable,
+  AddProductDrawer, ProductNameCell, ProductMapModal, PurchaseLineItemsTable,
   AddDistributorDrawer, DistributorSearch, DistributorDrawer,
   POLineSearch, EditableChip,
 } from "./purchasesShared";
@@ -40,7 +45,7 @@ function OrderQtyBreakdown({
   onUse: () => void;
   onClose: () => void;
 }) {
-  const rec = calcRecommendedQty(line.medicineName, line.currentStock, distributorName);
+  const rec = calcRecommendedQty(line.productName, line.currentStock, distributorName);
   const need = rec.expectedSales + rec.safetyStock + rec.pendingOrders + rec.expiryLoss;
   const have = rec.usableStock + rec.stockOnPO + rec.branchStock;
   const rowStyle = (color: string): React.CSSProperties => ({
@@ -127,7 +132,7 @@ function NewPurchaseOrder({
   defaultViewMode = false,
   createData,
 }: {
-  onBack: (result?: { type: "success" | "error"; message: string }) => void;
+  onBack: (result?: { type: "success" | "error"; message: string }, newRecord?: PurchaseOrderRecord) => void;
   initialData?: PurchaseOrderRecord;
   defaultViewMode?: boolean;
   createData?: { supplier: string; warehouse: string; expectedDelivery: string; paymentTerms: string };
@@ -166,18 +171,69 @@ function NewPurchaseOrder({
   const [sendEmail, setSendEmail] = useState("procurement@medline.in");
   const [sendWhatsApp, setSendWhatsApp] = useState("");
   const [saved, setSaved] = useState<false | "draft" | "submitted">(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function buildPOPayload(): CreatePOPayload {
+    const distEntry = suppliers.find(s => s.name === supplier);
+    return {
+      global_distributor_id: distEntry?.id ?? supplier,
+      distributor_name: supplier,
+      order_date: orderDate,
+      expected_date: expectedDelivery || null,
+      warehouse,
+      payment_terms: paymentTerms,
+      notes: reference,
+      items: filledLines.map(l => ({
+        global_product_id: l.productId,
+        product_name: l.productName,
+        quantity_ordered: l.orderQty,
+        unit_price: l.purchaseRate,
+      })),
+    };
+  }
+  function buildPORecord(status: string): PurchaseOrderRecord {
+    return {
+      id: poId,
+      supplier,
+      date: orderDate,
+      expectedDelivery: expectedDelivery || orderDate,
+      items: filledLines.length,
+      orderValue: filledLines.reduce((s, l) => s + l.orderQty * l.purchaseRate, 0),
+      received: 0,
+      pending: filledLines.length,
+      status,
+      warehouse,
+      paymentTerms,
+      reference,
+    };
+  }
+
   const [showAddMedDrawer, setShowAddMedDrawer] = useState(false);
   const [addMedInitialName, setAddMedInitialName] = useState("");
   const [poCashDiscount, setPoCashDiscount] = useState(0);
   const [poAdjustment, setPoAdjustment] = useState(0);
+  const [pendingLine, setPendingLine] = useState<POLine | null>(null);
 
   const [poLines, setPoLines] = useState<POLine[]>(() => {
     const seed = PO_MOCK_LINES[poId];
     if (seed) return seed;
     return [newEmptyPOLine(nextLineId.current++)];
   });
+  const [linesLoading, setLinesLoading] = useState(false);
 
-  const filledLines = poLines.filter(l => l.medicineName.trim() !== "");
+  useEffect(() => {
+    if (!initialData?.dbId) return;
+    if (PO_MOCK_LINES[poId]) return; // mock data already seeded
+    setLinesLoading(true);
+    fetchPODetail(initialData.dbId)
+      .then(items => {
+        if (items.length > 0) setPoLines(items);
+      })
+      .catch(() => {/* keep empty line */})
+      .finally(() => setLinesLoading(false));
+  }, [initialData?.dbId]);
+
+  const filledLines = poLines.filter(l => l.productName.trim() !== "");
 
   function updatePOLine(id: number, field: keyof POLine, value: string | number) {
     setPoLines(prev => prev.map(l => {
@@ -191,16 +247,22 @@ function NewPurchaseOrder({
   function deletePOLine(id: number) {
     setPoLines(prev => {
       const filtered = prev.filter(l => l.id !== id);
-      if (!filtered.some(l => !l.medicineName)) return [newEmptyPOLine(nextLineId.current++), ...filtered];
+      if (!filtered.some(l => !l.productName)) return [newEmptyPOLine(nextLineId.current++), ...filtered];
       return filtered;
     });
+  }
+
+  function commitPending() {
+    if (!pendingLine) return;
+    setPoLines(prev => [...prev, pendingLine]);
+    setPendingLine(null);
   }
 
   // Re-calc suggested qty for all filled lines when distributor changes (policy affects expiryLoss)
   useEffect(() => {
     setPoLines(prev => prev.map(l => {
-      if (!l.medicineName.trim()) return l;
-      const rec = calcRecommendedQty(l.medicineName, l.currentStock, supplier);
+      if (!l.productName.trim()) return l;
+      const rec = calcRecommendedQty(l.productName, l.currentStock, supplier);
       return { ...l, suggestedQty: rec.qty };
     }));
   }, [supplier]);
@@ -224,8 +286,8 @@ function NewPurchaseOrder({
   const relatedInvoices = purchaseInvoices.filter(inv => inv.poRef === poId);
 
   // ── Supplier Comparison Drawer ──────────────────────────────────────────────
-  function SupplierComparisonDrawer({ medicine, onClose }: { medicine: string; onClose: () => void }) {
-    const comparisons = SUPPLIER_COMPARISON[medicine] ?? [
+  function SupplierComparisonDrawer({ product, onClose }: { product: string; onClose: () => void }) {
+    const comparisons = SUPPLIER_COMPARISON[product] ?? [
       { supplier: "MedLine Pharma", rate: 25.00, scheme: "10+1", disc: 2, availability: "Available", score: 91 },
       { supplier: "GenPharm Ltd", rate: 24.50, scheme: "5+1", disc: 0, availability: "Available", score: 95 },
       { supplier: "Medico Pharma", rate: 24.00, scheme: "10+1", disc: 1, availability: "Partial", score: 84 },
@@ -238,7 +300,7 @@ function NewPurchaseOrder({
           <div style={{ padding: "18px 22px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>Distributor Comparison</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{medicine}</div>
+              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{product}</div>
             </div>
             <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22, lineHeight: 1 }}>×</button>
           </div>
@@ -290,9 +352,9 @@ function NewPurchaseOrder({
   }
 
   // ── Price History Tooltip ───────────────────────────────────────────────────
-  function PriceHistoryPanel({ medicine, onClose }: { medicine: string; onClose: () => void }) {
-    const history = PO_PRICE_HISTORY[medicine] ?? [];
-    const currentRate = filledLines.find(l => l.medicineName === medicine)?.purchaseRate ?? 0;
+  function PriceHistoryPanel({ product, onClose }: { product: string; onClose: () => void }) {
+    const history = PO_PRICE_HISTORY[product] ?? [];
+    const currentRate = filledLines.find(l => l.productName === product)?.purchaseRate ?? 0;
     const lastRate = history[0]?.rate ?? currentRate;
     const pctChange = lastRate > 0 ? ((currentRate - lastRate) / lastRate) * 100 : 0;
     return (
@@ -343,8 +405,8 @@ function NewPurchaseOrder({
             {poId} · {saved === "submitted" ? "Pending manager approval" : "Draft — not yet submitted"}
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <GhostBtn onClick={onBack}>Back to Purchases</GhostBtn>
-            <PrimaryBtn onClick={onBack}>New Purchase Order</PrimaryBtn>
+            <GhostBtn onClick={() => onBack(undefined, buildPORecord(saved === "submitted" ? "Pending Approval" : "Draft"))}>Back to Purchases</GhostBtn>
+            <PrimaryBtn onClick={() => onBack(undefined, buildPORecord(saved === "submitted" ? "Pending Approval" : "Draft"))}>New Purchase Order</PrimaryBtn>
           </div>
         </div>
       </div>
@@ -406,13 +468,24 @@ function NewPurchaseOrder({
           ) : defaultViewMode ? (
             <>
               <GhostBtn onClick={() => setEditOverride(false)}>Cancel Edit</GhostBtn>
-              <PrimaryBtn onClick={() => { setSaved("draft"); setEditOverride(false); }}>Save Changes</PrimaryBtn>
+              <PrimaryBtn disabled={isSubmitting} onClick={async () => {
+                setIsSubmitting(true);
+                try { await createPurchaseOrder(buildPOPayload()); } catch { /* offline — save locally */ }
+                finally { setIsSubmitting(false); }
+                setSaved("draft");
+                setEditOverride(false);
+              }}>Save Changes</PrimaryBtn>
             </>
           ) : (
             <>
-              <GhostBtn onClick={() => setSaved("draft")}>Save Draft</GhostBtn>
+              <GhostBtn disabled={isSubmitting} onClick={async () => {
+                setIsSubmitting(true);
+                try { await createPurchaseOrder(buildPOPayload()); } catch { /* offline — save draft locally */ }
+                finally { setIsSubmitting(false); }
+                setSaved("draft");
+              }}>Save Draft</GhostBtn>
               <GhostBtn onClick={() => {}}>Print</GhostBtn>
-              <PrimaryBtn disabled={!supplier.trim() || filledLines.length === 0} onClick={() => setShowApprovalDrawer(true)}>Submit for Approval</PrimaryBtn>
+              <PrimaryBtn disabled={!supplier.trim() || filledLines.length === 0 || isSubmitting} onClick={() => setShowApprovalDrawer(true)}>Submit for Approval</PrimaryBtn>
             </>
           )}
         </div>
@@ -446,7 +519,7 @@ function NewPurchaseOrder({
               <FieldLabel>Expected Delivery</FieldLabel>
               {isView
                 ? <div style={{ fontSize: 13, fontFamily: "JetBrains Mono", color: "#1A2436", padding: "9px 0" }}>{formatDMY(expectedDelivery)}</div>
-                : <TextInput type="date" value={expectedDelivery} onChange={e => setExpectedDelivery(e.target.value)} />
+                : <DatePicker value={expectedDelivery} onChange={setExpectedDelivery} />
               }
             </div>
             <div>
@@ -503,7 +576,7 @@ function NewPurchaseOrder({
                     <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Selected distributor</div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    {!isView && <GhostBtn onClick={() => setShowComparisonFor(filledLines[0]?.medicineName ?? "Paracetamol 500mg")}>Change Distributor</GhostBtn>}
+                    {!isView && <GhostBtn onClick={() => setShowComparisonFor(filledLines[0]?.productName ?? "Paracetamol 500mg")}>Change Distributor</GhostBtn>}
                   </div>
                 </div>
                 {(() => {
@@ -595,7 +668,7 @@ function NewPurchaseOrder({
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      <Th>Medicine</Th>
+                      <Th>Product</Th>
                       <Th right>Ordered</Th>
                       <Th right>Confirmed</Th>
                       <Th right>Supplied</Th>
@@ -609,7 +682,7 @@ function NewPurchaseOrder({
                       const pending = l.orderQty - supplied;
                       return (
                         <TableRow key={l.id}>
-                          <Td bold>{l.medicineName}</Td>
+                          <Td bold>{l.productName}</Td>
                           <Td mono right>{l.orderQty}</Td>
                           <Td mono right>{l.orderQty}</Td>
                           <Td mono right color={supplied > 0 ? "#2E7D32" : "#9CA3AF"}>{supplied}</Td>
@@ -642,7 +715,7 @@ function NewPurchaseOrder({
                   </div>
                   <div>
                     <FieldLabel>Invoice Date</FieldLabel>
-                    <TextInput type="date" />
+                    <DatePicker />
                   </div>
                   <div>
                     <FieldLabel>Invoice Amount</FieldLabel>
@@ -729,7 +802,11 @@ function NewPurchaseOrder({
                 </span>
               </div>
             </div>
-            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "auto" }}>
+
+            {linesLoading && (
+              <div style={{ padding: "40px 0", textAlign: "center", fontSize: 13, color: "#9CA3AF" }}>Loading items…</div>
+            )}
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "auto", display: linesLoading ? "none" : undefined }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1100, tableLayout: "fixed" }}>
                 <colgroup>
                   <col style={{ width: 172 }} />
@@ -738,25 +815,23 @@ function NewPurchaseOrder({
                   <col style={{ width: 84 }} />
                   <col style={{ width: 82 }} />
                   <col style={{ width: 82 }} />
-                  <col style={{ width: 76 }} />
-                  <col style={{ width: 76 }} />
                   <col style={{ width: 62 }} />
+                  <col style={{ width: 76 }} />
                   <col style={{ width: 82 }} />
                   <col style={{ width: 76 }} />
                   <col style={{ width: 92 }} />
-                  {!isView && <col style={{ width: 36 }} />}
+                  {!isView && <col style={{ width: 56 }} />}
                 </colgroup>
                 <thead>
                   <tr>
-                    <Th>Medicine</Th>
+                    <Th>Product</Th>
                     <Th>Pack</Th>
                     <Th right>Stock</Th>
                     <Th right>Avg Sales</Th>
                     <Th right tooltip={{ formula: "Sugg Qty = (Avg Daily Sales × Cover Days)\n           + Safety Stock\n           − Current Stock\n           − Stock on PO", example: "40/day × 30d + 20 − 120 − 0 = 1,130" }}>Sugg Qty</Th>
                     <Th right>Order Qty</Th>
-                    <Th right>Rate</Th>
-                    <Th>Scheme</Th>
                     <Th right>Free</Th>
+                    <Th right>Rate</Th>
                     <Th right tooltip={{ formula: "Eff Cost = (Qty × Rate) ÷ (Qty + Free)", example: "(400 × ₹1.80) ÷ (400 + 40) = ₹1.64" }}>Eff Cost</Th>
                     <Th right tooltip={{ formula: "Margin % = (MRP − Eff Cost) ÷ MRP × 100", example: "(₹3.50 − ₹1.64) ÷ ₹3.50 × 100 = 53.2%" }}>Margin</Th>
                     <Th right tooltip={{ formula: "Total = Order Qty × Rate\n(before free goods)", example: "400 × ₹1.80 = ₹720.00" }}>Total</Th>
@@ -764,21 +839,31 @@ function NewPurchaseOrder({
                   </tr>
                 </thead>
                 <tbody>
-                  {poLines.filter(l => !lineSearch || l.medicineName.toLowerCase().includes(lineSearch.toLowerCase())).map(l => {
-                    const effCost = calcEffectiveCost(l.purchaseRate, l.scheme, l.orderQty);
-                    const margin = calcMarginPct(l.mrp, effCost);
-                    const lineTotal = l.orderQty * l.purchaseRate;
-                    const isEmpty = !l.medicineName.trim();
+                  {poLines.filter(l => !lineSearch || l.productName.toLowerCase().includes(lineSearch.toLowerCase())).map(l => {
+                    const isEmpty = !l.productName.trim();
+                    const isPending = isEmpty && pendingLine !== null;
+                    const D = isPending ? pendingLine! : l;
+                    const effCost = calcEffectiveCost(D.purchaseRate, D.scheme, D.orderQty);
+                    const margin = calcMarginPct(D.mrp, effCost);
+                    const lineTotal = D.orderQty * D.purchaseRate;
                     return (
-                      <tr key={l.id} style={{ borderBottom: "1px solid #F4F6FA", background: isEmpty ? "#FAFBFD" : "transparent" }}>
-                        <td style={{ padding: "8px 10px", position: "relative", overflow: isEmpty ? "visible" : "hidden" }}>
-                          {isEmpty ? (
+                      <tr key={l.id} style={{ borderBottom: isPending ? "1px solid #BFDBFE" : "1px solid #F4F6FA", background: isPending ? "#EFF6FF" : isEmpty ? "#FAFBFD" : "transparent" }}>
+
+                        {/* ── Product / Search cell ── */}
+                        <td style={{ padding: "8px 10px", position: "relative", overflow: isEmpty && !isPending ? "visible" : "hidden" }}>
+                          {isPending ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: "#1B6CA8", fontFamily: "Inter", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pendingLine!.productName}</span>
+                              <span style={{ fontSize: 10, padding: "1px 6px", background: "#DBEAFE", color: "#1B6CA8", fontWeight: 700, borderRadius: 3, flexShrink: 0 }}>New</span>
+                            </div>
+                          ) : isEmpty ? (
                             <POLineSearch
                               onSelect={m => {
                                 const rec = calcRecommendedQty(m.name, m.totalQty, supplier);
-                                setPoLines(prev => prev.map(pl => pl.id === l.id ? {
-                                  ...pl,
-                                  medicineName: m.name,
+                                setPendingLine({
+                                  id: nextLineId.current++,
+                                  productId: m.id,
+                                  productName: m.name,
                                   pack: m.pack,
                                   currentStock: m.totalQty,
                                   mrp: m.price,
@@ -791,23 +876,21 @@ function NewPurchaseOrder({
                                   branchStock: rec.branchStock,
                                   nearExpiryQty: rec.nearExpiryQty,
                                   safetyStock: rec.safetyStock,
-                                } : pl));
-                                if (!poLines.some(pl => pl.id !== l.id && !pl.medicineName.trim())) {
-                                  setPoLines(prev => [newEmptyPOLine(nextLineId.current++), ...prev]);
-                                }
+                                  scheme: "",
+                                  freeQty: 0,
+                                  orderQty: 0,
+                                });
                               }}
-                              onAddMedicine={q => { setAddMedInitialName(q); setShowAddMedDrawer(true); }}
+                              onAddProduct={q => { setAddMedInitialName(q); setShowAddMedDrawer(true); }}
                             />
                           ) : (
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <button onClick={() => setShowMedDetails(l.medicineName)}
+                              <button onClick={() => setShowMedDetails(l.productName)}
                                 style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", color: "#1B6CA8", fontSize: 13, fontWeight: 600, fontFamily: "Inter", textAlign: "left" }}>
-                                {l.medicineName}
+                                {l.productName}
                               </button>
-                              {MEDICINE_RECS[l.medicineName]?.length > 0 && (
-                                <button
-                                  onClick={() => setShowRecommendFor(l.medicineName)}
-                                  title="Distributor Recommendations"
+                              {PRODUCT_RECS[l.productName]?.length > 0 && (
+                                <button onClick={() => setShowRecommendFor(l.productName)} title="Distributor Recommendations"
                                   style={{ width: 18, height: 18, borderRadius: "50%", border: "none", background: "#0D9488", color: "#fff", fontSize: 10, fontWeight: 700, fontFamily: "Inter", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, lineHeight: 1 }}>
                                   R
                                 </button>
@@ -815,36 +898,42 @@ function NewPurchaseOrder({
                             </div>
                           )}
                         </td>
-                        <td style={{ padding: "8px 10px", fontSize: 12, color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.pack || "—"}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: l.currentStock < 20 ? "#E65100" : "#6B7280" }}>{isEmpty ? "—" : l.currentStock}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{l.avgSales || "—"}</td>
+
+                        <td style={{ padding: "8px 10px", fontSize: 12, color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isEmpty && !isPending ? "—" : D.pack || "—"}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: D.currentStock < 20 ? "#E65100" : "#6B7280" }}>{isEmpty && !isPending ? "—" : D.currentStock}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{isEmpty && !isPending ? "—" : D.avgSales || "—"}</td>
+
+                        {/* ── Sugg Qty ── */}
                         <td style={{ padding: "8px 10px", textAlign: "right", position: "relative" }}>
-                          {l.suggestedQty > 0 ? (
-                            <button
-                              onClick={() => setShowBreakdownFor(showBreakdownFor === l.id ? null : l.id)}
-                              title="Click to see qty breakdown"
+                          {!isEmpty && l.suggestedQty > 0 ? (
+                            <button onClick={() => setShowBreakdownFor(showBreakdownFor === l.id ? null : l.id)} title="Click to see qty breakdown"
                               style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", color: "#1B6CA8", fontSize: 12, fontFamily: "JetBrains Mono", fontWeight: 600 }}>
                               {l.suggestedQty}
                             </button>
+                          ) : isPending && pendingLine!.suggestedQty > 0 ? (
+                            <span style={{ fontSize: 12, fontFamily: "JetBrains Mono", color: "#1B6CA8", fontWeight: 600 }}>{pendingLine!.suggestedQty}</span>
                           ) : (
                             <span style={{ fontSize: 12, fontFamily: "JetBrains Mono", color: "#9CA3AF" }}>—</span>
                           )}
-                          {showBreakdownFor === l.id && (
-                            <OrderQtyBreakdown
-                              line={l}
-                              distributorName={supplier}
-                              onUse={() => {
-                                setPoLines(prev => prev.map(pl => pl.id === l.id ? { ...pl, orderQty: pl.suggestedQty } : pl));
-                                setShowBreakdownFor(null);
-                              }}
-                              onClose={() => setShowBreakdownFor(null)}
-                            />
+                          {!isEmpty && showBreakdownFor === l.id && (
+                            <OrderQtyBreakdown line={l} distributorName={supplier}
+                              onUse={() => { setPoLines(prev => prev.map(pl => pl.id === l.id ? { ...pl, orderQty: pl.suggestedQty } : pl)); setShowBreakdownFor(null); }}
+                              onClose={() => setShowBreakdownFor(null)} />
                           )}
                         </td>
+
+                        {/* ── Order Qty ── */}
                         <td style={{ padding: "4px 8px" }}>
-                          {isView ? (
-                            <span style={{ display: "block", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1A2436" }}>{l.orderQty}</span>
+                          {isPending ? (
+                            <input type="number" value={pendingLine!.orderQty || ""} min={0} autoFocus
+                              onChange={e => setPendingLine(p => p ? { ...p, orderQty: parseInt(e.target.value) || 0 } : p)}
+                              style={{ width: "100%", padding: "5px 6px", borderRadius: 6, border: "1px solid #93C5FD", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none", boxSizing: "border-box", background: "#fff" }}
+                              onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
+                              onBlur={e => (e.currentTarget.style.borderColor = "#93C5FD")} />
+                          ) : isView ? (
+                            <span style={{ display: "block", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1A2436" }}>{isEmpty ? "" : l.orderQty}</span>
                           ) : (
+                            isEmpty ? null :
                             <input type="number" value={l.orderQty || ""} min={0}
                               onChange={e => updatePOLine(l.id, "orderQty", parseInt(e.target.value) || 0)}
                               style={{ width: "100%", padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none", boxSizing: "border-box" }}
@@ -852,10 +941,25 @@ function NewPurchaseOrder({
                               onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")} />
                           )}
                         </td>
+
+                        {/* ── Free ── */}
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: D.freeQty > 0 ? "#2E7D32" : "#9CA3AF", fontWeight: D.freeQty > 0 ? 700 : 400 }}>
+                          {isEmpty && !isPending ? "—" : D.freeQty > 0 ? `+${D.freeQty}` : "—"}
+                        </td>
+
+                        {/* ── Rate ── */}
                         <td style={{ padding: "4px 8px" }}>
-                          {isView ? (
-                            <span style={{ display: "block", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436" }}>{money(l.purchaseRate)}</span>
+                          {isPending ? (
+                            <input type="number" value={pendingLine!.purchaseRate || ""} min={0} step={0.01}
+                              onChange={e => setPendingLine(p => p ? { ...p, purchaseRate: parseFloat(e.target.value) || 0 } : p)}
+                              onKeyDown={e => { if (e.key === "Enter") commitPending(); }}
+                              style={{ width: "100%", padding: "5px 6px", borderRadius: 6, border: "1px solid #93C5FD", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none", boxSizing: "border-box", background: "#fff" }}
+                              onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
+                              onBlur={e => (e.currentTarget.style.borderColor = "#93C5FD")} />
+                          ) : isView ? (
+                            <span style={{ display: "block", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436" }}>{isEmpty ? "" : money(l.purchaseRate)}</span>
                           ) : (
+                            isEmpty ? null :
                             <input type="number" value={l.purchaseRate || ""} min={0} step={0.01}
                               onChange={e => updatePOLine(l.id, "purchaseRate", parseFloat(e.target.value) || 0)}
                               style={{ width: "100%", padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", textAlign: "right", outline: "none", boxSizing: "border-box" }}
@@ -863,38 +967,39 @@ function NewPurchaseOrder({
                               onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")} />
                           )}
                         </td>
-                        <td style={{ padding: "4px 8px" }}>
-                          {isView ? (
-                            <span style={{ fontSize: 12, fontFamily: "JetBrains Mono", color: l.scheme ? "#1B6CA8" : "#9CA3AF" }}>{l.scheme || "—"}</span>
-                          ) : (
-                            <input value={l.scheme} placeholder="10+1"
-                              onChange={e => updatePOLine(l.id, "scheme", e.target.value)}
-                              style={{ width: "100%", padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, fontFamily: "JetBrains Mono", outline: "none", boxSizing: "border-box" }}
-                              onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
-                              onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")} />
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436" }}>
+                          {isPending ? (lineTotal > 0 ? money(effCost) : "—") : (
+                            <button onClick={() => setShowPriceHistoryFor(l.productName)}
+                              style={{ border: "none", background: "transparent", padding: 0, cursor: isEmpty ? "default" : "pointer", color: "#1A2436", fontFamily: "JetBrains Mono", fontSize: 12 }}>
+                              {isEmpty ? "—" : money(effCost)}
+                            </button>
                           )}
                         </td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: l.freeQty > 0 ? "#2E7D32" : "#9CA3AF", fontWeight: l.freeQty > 0 ? 700 : 400 }}>{l.freeQty > 0 ? `+${l.freeQty}` : "—"}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1A2436" }}>
-                          <button onClick={() => setShowPriceHistoryFor(l.medicineName)}
-                            style={{ border: "none", background: "transparent", padding: 0, cursor: isEmpty ? "default" : "pointer", color: "#1A2436", fontFamily: "JetBrains Mono", fontSize: 12 }}>
-                            {isEmpty ? "—" : money(effCost)}
-                          </button>
-                        </td>
                         <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", fontWeight: 600, color: margin < 15 ? "#C62828" : margin > 25 ? "#2E7D32" : "#E65100" }}>
-                          {isEmpty ? "—" : `${margin.toFixed(1)}%`}
+                          {isEmpty && !isPending ? "—" : lineTotal > 0 ? `${margin.toFixed(1)}%` : "—"}
                         </td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1A2436" }}>
-                          {isEmpty ? "—" : money(lineTotal)}
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontSize: 12, fontFamily: "JetBrains Mono", fontWeight: 700, color: isPending ? "#1B6CA8" : "#1A2436" }}>
+                          {isEmpty && !isPending ? "—" : lineTotal > 0 ? money(lineTotal) : "—"}
                         </td>
+
+                        {/* ── Action ── */}
                         {!isView && (
-                          <td style={{ padding: "8px 4px", textAlign: "center" }}>
-                            {!isEmpty && (
+                          <td style={{ padding: "4px 6px", textAlign: "center" }}>
+                            {isPending ? (
+                              <div style={{ display: "flex", flexDirection: "row", gap: 4, justifyContent: "center" }}>
+                                <button onClick={commitPending} title="Add to order"
+                                  style={{ border: "none", background: "#16A34A", color: "#fff", borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0 }}>✓</button>
+                                <button onClick={() => setPendingLine(null)} title="Discard"
+                                  style={{ border: "none", background: "#F3F4F6", color: "#9CA3AF", borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                                  onMouseEnter={e => (e.currentTarget.style.color = "#C62828")}
+                                  onMouseLeave={e => (e.currentTarget.style.color = "#9CA3AF")}>×</button>
+                              </div>
+                            ) : !isEmpty ? (
                               <button onClick={() => deletePOLine(l.id)}
                                 style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 16, padding: "0 4px", lineHeight: 1 }}
                                 onMouseEnter={e => (e.currentTarget.style.color = "#C62828")}
                                 onMouseLeave={e => (e.currentTarget.style.color = "#9CA3AF")}>×</button>
-                            )}
+                            ) : null}
                           </td>
                         )}
                       </tr>
@@ -906,16 +1011,16 @@ function NewPurchaseOrder({
           </div>
       </div>
 
-      {/* ── Add Medicine Drawer ── */}
+      {/* ── Add Product Drawer ── */}
       {showAddMedDrawer && (
-        <AddMedicineDrawer
+        <AddProductDrawer
           initialName={addMedInitialName}
           onClose={() => setShowAddMedDrawer(false)}
           onSaved={name => {
             setPoLines(prev => {
-              const emptyLine = prev.find(l => !l.medicineName.trim());
+              const emptyLine = prev.find(l => !l.productName.trim());
               if (emptyLine) {
-                return prev.map(l => l.id === emptyLine.id ? { ...l, medicineName: name } : l);
+                return prev.map(l => l.id === emptyLine.id ? { ...l, productName: name } : l);
               }
               return prev;
             });
@@ -1224,7 +1329,7 @@ function NewPurchaseOrder({
 
       {/* ── Supplier Comparison Drawer ── */}
       {showComparisonFor && (
-        <SupplierComparisonDrawer medicine={showComparisonFor} onClose={() => setShowComparisonFor(null)} />
+        <SupplierComparisonDrawer product={showComparisonFor} onClose={() => setShowComparisonFor(null)} />
       )}
 
       {/* ── Approval Modal ── */}
@@ -1260,22 +1365,26 @@ function NewPurchaseOrder({
             <div style={{ display: "flex", gap: 10, paddingTop: 4 }}>
               <GhostBtn onClick={() => setShowApprovalDrawer(false)}>Cancel</GhostBtn>
               <div style={{ flex: 1 }}>
-                <PrimaryBtn onClick={() => {
+                <PrimaryBtn disabled={isSubmitting} onClick={async () => {
                   const distInfo = suppliers.find(s => s.name === supplier);
                   const channel = distInfo?.notifyChannel ?? "Email";
-                  const sent = Math.random() > 0.2;
-                  setPoStatus("Pending Approval");
+                  setIsSubmitting(true);
                   setShowApprovalDrawer(false);
-                  if (sent) {
+                  try {
+                    const created = await createPurchaseOrder(buildPOPayload());
+                    try { await updatePOStatus(created.id, "sent"); } catch { /* status update best-effort */ }
+                    setPoStatus("Pending Approval");
                     const msg = channel === "WhatsApp"
                       ? `WhatsApp message sent successfully to ${supplier}`
                       : `Email sent successfully to ${supplier}`;
-                    onBack({ type: "success", message: msg });
-                  } else {
+                    onBack({ type: "success", message: msg }, buildPORecord("Pending Approval"));
+                  } catch {
                     const err = channel === "WhatsApp"
                       ? `Failed to send WhatsApp message to ${supplier}. Please try again.`
                       : `Failed to send email to ${supplier}. Please check the address and retry.`;
                     onBack({ type: "error", message: err });
+                  } finally {
+                    setIsSubmitting(false);
                   }
                 }}>
                   Send
@@ -1308,7 +1417,13 @@ function NewPurchaseOrder({
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingTop: 4 }}>
               <GhostBtn onClick={() => setShowSendModal(false)}>Cancel</GhostBtn>
-              <PrimaryBtn onClick={() => { setPoStatus("Sent"); setShowSendModal(false); }}>Send PO</PrimaryBtn>
+              <PrimaryBtn onClick={async () => {
+                if (initialData?.dbId) {
+                  try { await updatePOStatus(initialData.dbId, "sent"); } catch { /* best-effort */ }
+                }
+                setPoStatus("Sent");
+                setShowSendModal(false);
+              }}>Send PO</PrimaryBtn>
             </div>
           </div>
         </Modal>
@@ -1316,7 +1431,7 @@ function NewPurchaseOrder({
 
       {/* ── Distributor Recommendation Panel ── */}
       {showRecommendFor && (() => {
-        const recs = MEDICINE_RECS[showRecommendFor] ?? [];
+        const recs = PRODUCT_RECS[showRecommendFor] ?? [];
         const bestScore = recs.length > 0 ? Math.max(...recs.map(r => r.score)) : 0;
         return (
           <>
@@ -1338,7 +1453,7 @@ function NewPurchaseOrder({
               {/* Table */}
               <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "auto" }}>
                 {recs.length === 0 ? (
-                  <div style={{ padding: 32, textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>No recommendation data available for this medicine.</div>
+                  <div style={{ padding: 32, textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>No recommendation data available for this product.</div>
                 ) : (
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
@@ -1388,8 +1503,8 @@ function NewPurchaseOrder({
                               <button
                                 onClick={() => {
                                   setPoLines(prev => {
-                                    const filtered = prev.filter(pl => pl.medicineName !== showRecommendFor);
-                                    if (filtered.some(pl => !pl.medicineName.trim())) return filtered;
+                                    const filtered = prev.filter(pl => pl.productName !== showRecommendFor);
+                                    if (filtered.some(pl => !pl.productName.trim())) return filtered;
                                     return [newEmptyPOLine(nextLineId.current++), ...filtered];
                                   });
                                   setShowRecommendFor(null);
@@ -1415,7 +1530,7 @@ function NewPurchaseOrder({
         <>
           <div onClick={() => setShowPriceHistoryFor(null)} style={{ position: "fixed", inset: 0, zIndex: 98 }} />
           <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 200 }}>
-            <PriceHistoryPanel medicine={showPriceHistoryFor} onClose={() => setShowPriceHistoryFor(null)} />
+            <PriceHistoryPanel product={showPriceHistoryFor} onClose={() => setShowPriceHistoryFor(null)} />
           </div>
         </>
       )}
@@ -1434,7 +1549,13 @@ function NewPurchaseOrder({
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingTop: 4 }}>
               <GhostBtn onClick={() => setShowCancelModal(false)}>Keep PO</GhostBtn>
-              <button onClick={() => { setPoStatus("Cancelled"); setShowCancelModal(false); }}
+              <button onClick={async () => {
+                setShowCancelModal(false);
+                if (initialData?.dbId) {
+                  try { await updatePOStatus(initialData.dbId, "cancelled"); } catch { /* best-effort */ }
+                }
+                setPoStatus("Cancelled");
+              }}
                 style={{ padding: "9px 18px", border: "none", background: "#C62828", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
                 Cancel PO
               </button>
@@ -1443,36 +1564,62 @@ function NewPurchaseOrder({
         </Modal>
       )}
 
-      {/* ── PO Summary Footer ── */}
-      <div style={{ flexShrink: 0, borderTop: "2px solid #E8ECF4", background: "#fff", display: "flex", alignItems: "stretch", minHeight: 76, boxShadow: "0 -4px 16px rgba(0,0,0,0.07)" }}>
-        <div style={{ display: "flex", alignItems: "stretch", flex: 1, flexWrap: "nowrap", overflowX: "auto" }}>
-          <EditableChip label="Cash Discount" value={poCashDiscount} onChange={setPoCashDiscount} editable prefix="-" />
-          <EditableChip label="Adjustment" value={poAdjustment} onChange={setPoAdjustment} editable allowNegative />
+      {/* ── Order Summary Card ── */}
+      <div style={{ flexShrink: 0, background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4", margin: "0 20px 16px 20px", overflow: "hidden" }}>
+
+        {/* Card header */}
+        <div style={{ padding: "10px 16px", borderBottom: "1px solid #EEF1F6" }}>
+          <span style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Order Summary</span>
+        </div>
+
+        {/* Card body — single row of tiles */}
+        <div style={{ display: "flex", alignItems: "stretch" }}>
+
+          {/* Static tiles */}
           {[
-            { label: "Items", val: String(filledLines.length), muted: true },
-            { label: "Subtotal", val: money(poSubtotal), muted: true },
-            { label: "Scheme Amount", val: `-${money(poSchemeAmt)}`, color: "#2E7D32" },
-            { label: "GST / Tax", val: money(poTax), muted: true },
-            { label: "Round Off", val: `${poRoundOff >= 0 ? "" : "-"}₹${Math.abs(poRoundOff).toFixed(2)}`, muted: true },
-            { label: "Total", val: money(total), bold: true, highlight: true },
-            { label: "Avg Margin", val: `${filledLines.length > 0 ? (filledLines.reduce((s, l) => s + calcMarginPct(l.mrp, calcEffectiveCost(l.purchaseRate, l.scheme, l.orderQty)), 0) / filledLines.length).toFixed(1) : "0"}%`, color: "#2E7D32" },
-          ].map(s => (
-            <div key={s.label} style={{ display: "flex", alignItems: "center", padding: "0 16px", borderLeft: "1px solid #EEF1F6", flex: "1 1 0", minWidth: 110 }}>
-              <div>
-                <div style={{ fontSize: 9, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 3 }}>{s.label}</div>
-                <div style={{
-                  fontFamily: "JetBrains Mono",
-                  fontSize: s.bold ? 15 : 13,
-                  fontWeight: s.bold ? 700 : 500,
-                  color: s.color ?? (s.muted ? "#6B7280" : "#1A2436"),
-                  background: s.highlight ? "#EFF6FF" : undefined,
-                  padding: s.highlight ? "2px 6px" : undefined,
-                  display: "inline-block",
-                  whiteSpace: "nowrap",
-                }}>{s.val}</div>
-              </div>
+            { label: "Items", val: String(filledLines.length), valColor: "#1A2436" },
+            { label: "Subtotal", val: money(poSubtotal), valColor: "#1A2436" },
+            { label: "GST / Tax", val: `+${money(poTax)}`, valColor: "#1A2436" },
+            { label: "Free Goods", val: money(poSchemeAmt), valColor: "#C2410C" },
+            { label: "Round Off", val: `${poRoundOff >= 0 ? "+" : ""}₹${Math.abs(poRoundOff).toFixed(2)}`, valColor: "#9CA3AF" },
+            { label: "Avg Margin", val: `${filledLines.length > 0 ? (filledLines.reduce((s, l) => s + calcMarginPct(l.mrp, calcEffectiveCost(l.purchaseRate, l.scheme, l.orderQty)), 0) / filledLines.length).toFixed(1) : "0"}%`, valColor: "#15803D" },
+          ].map(t => (
+            <div key={t.label} style={{ flex: 1, padding: "14px 16px", borderRight: "1px solid #EEF1F6", display: "flex", flexDirection: "column", gap: 6, justifyContent: "center" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.09em" }}>{t.label}</span>
+              <span style={{ fontSize: 14, fontFamily: "JetBrains Mono", fontWeight: 700, color: t.valColor }}>{t.val}</span>
             </div>
           ))}
+
+          {/* Editable — Cash Discount */}
+          <div style={{ flex: 1, padding: "14px 16px", borderRight: "1px solid #EEF1F6", display: "flex", flexDirection: "column", gap: 6, justifyContent: "center" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.09em" }}>Cash Discount</span>
+            <input
+              type="number" value={poCashDiscount || ""} min={0}
+              onChange={e => setPoCashDiscount(parseFloat(e.target.value) || 0)}
+              style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", outline: "none", background: "#FAFBFD", color: "#15803D", fontWeight: 700, boxSizing: "border-box" }}
+              onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
+            />
+          </div>
+
+          {/* Editable — Adjustment */}
+          <div style={{ flex: 1, padding: "14px 16px", borderRight: "1px solid #EEF1F6", display: "flex", flexDirection: "column", gap: 6, justifyContent: "center" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.09em" }}>Adjustment</span>
+            <input
+              type="number" value={poAdjustment || ""}
+              onChange={e => setPoAdjustment(parseFloat(e.target.value) || 0)}
+              style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "JetBrains Mono", outline: "none", background: "#FAFBFD", color: "#1A2436", fontWeight: 700, boxSizing: "border-box" }}
+              onFocus={e => (e.currentTarget.style.borderColor = "#1B6CA8")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#E8ECF4")}
+            />
+          </div>
+
+          {/* Grand Total — highlighted end tile */}
+          <div style={{ flex: "0 0 180px", padding: "14px 20px", background: "#EFF6FF", display: "flex", flexDirection: "column", gap: 6, justifyContent: "center" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#1B6CA8", textTransform: "uppercase", letterSpacing: "0.09em" }}>Grand Total</span>
+            <span style={{ fontSize: 18, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1B6CA8" }}>{money(total)}</span>
+          </div>
+
         </div>
       </div>
     </div>

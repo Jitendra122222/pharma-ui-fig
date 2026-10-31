@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { DatePicker } from "../shared/DatePicker";
 import PurchaseVerifyFlow from "./PurchaseVerifyFlow";
-import { suppliers, drugs } from "../../data/mockData";
+import { suppliers, products } from "../../data/mockData";
 import MultiStepper from "../shared/MultiStepper";
 import { Pill } from "../shared/Pill";
 import { Th } from "../shared/Th";
@@ -15,11 +16,13 @@ import {
   formatDMY, money, newEmptyLine, calcLineSubtotal, calcLineDiscount, calcLineTax,
   normalizeHeader, autoMapHeader, classifyImportedLine,
 } from "./purchasesData";
+import { MSG_INVOICE_DRAFT, MSG_INVOICE_POST } from "../../constants/purchaseMessages";
+import { fetchPurchaseInvoices } from "../../lib/purchaseApi";
 import {
   Td, TableRow, PrimaryBtn, GhostBtn, Modal,
   FilterSearch, FilterDropdown, ClearFiltersButton, NewButton,
   BackConfirmDialog, EmptyTableRow,
-  MedicineMapModal, PurchaseLineItemsTable, AddMedicineDrawer,
+  ProductMapModal, PurchaseLineItemsTable, AddProductDrawer,
   DistributorSearch, AddDistributorDrawer, DistributorDrawer,
 } from "./purchasesShared";
 
@@ -59,7 +62,7 @@ function EditableChip({ label, value, onChange, editable, prefix, allowNegative 
 function PurchaseInvoiceFooter({ items, paid = 0, cashDiscount = 0, onCashDiscountChange, adjustment = 0, onAdjustmentChange }: {
   items: PurchaseLine[]; paid?: number; cashDiscount?: number; onCashDiscountChange?: (v: number) => void; adjustment?: number; onAdjustmentChange?: (v: number) => void;
 }) {
-  const active = items.filter(i => i.medicineName);
+  const active = items.filter(i => i.productName);
   const subtotal = active.reduce((s, i) => s + calcLineSubtotal(i), 0);
   const discount = active.reduce((s, i) => s + calcLineDiscount(i), 0);
   const tax = active.reduce((s, i) => s + calcLineTax(i), 0);
@@ -488,7 +491,23 @@ const ImportCards = () => (
 
 // ─── Tab: Purchase Invoice list ───────────────────────────────────────────────
 
-function PurchaseInvoiceList({ onNew, onView, invoices }: { onNew: () => void; onView: (id: string) => void; invoices: typeof purchaseInvoices }) {
+function InvoiceLoadingRows() {
+  return (
+    <>
+      {[1, 2, 3, 4, 5].map(i => (
+        <tr key={i}>
+          {[100, 120, 90, 80, 80, 40, 70, 70, 70, 60].map((w, j) => (
+            <td key={j} style={{ padding: "10px 14px" }}>
+              <div style={{ height: 14, borderRadius: 4, background: "#F0F3F7", width: w }} />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function PurchaseInvoiceList({ onNew, onView, invoices, loading = false }: { onNew: () => void; onView: (id: string) => void; invoices: typeof purchaseInvoices; loading?: boolean }) {
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -542,7 +561,8 @@ function PurchaseInvoiceList({ onNew, onView, invoices }: { onNew: () => void; o
               </tr>
             </thead>
             <tbody>
-              {pageRows.map(inv => (
+              {loading && <InvoiceLoadingRows />}
+              {!loading && pageRows.map(inv => (
                 <TableRow key={inv.id} onClick={() => onView(inv.id)}>
                   <Td mono>
                     <button
@@ -564,7 +584,7 @@ function PurchaseInvoiceList({ onNew, onView, invoices }: { onNew: () => void; o
                   <Td><Pill status={inv.status} /></Td>
                 </TableRow>
               ))}
-              {pageRows.length === 0 && (
+              {!loading && pageRows.length === 0 && (
                 <EmptyTableRow colSpan={10} message="No invoices match your filters." />
               )}
             </tbody>
@@ -663,7 +683,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
           importedName: raw.importedName,
           mappingStatus: status,
           suggestedName: status !== "matched" ? systemName : undefined,
-          medicineName: status === "matched" ? systemName : (status === "fuzzy" ? systemName : ""),
+          productName: status === "matched" ? systemName : (status === "fuzzy" ? systemName : ""),
           batchNo: raw.batchNo, mfgDate: raw.mfgDate, expDate: raw.expDate,
           packSize: raw.packSize, qty: raw.qty, free: raw.free,
           purchaseRate: raw.purchaseRate, mrp: raw.mrp, disc: raw.disc, gst: raw.gst,
@@ -679,13 +699,13 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
     return [newEmptyLine(nextId.current++)];
   });
 
-  const hasItems = items.some(i => i.medicineName !== "");
+  const hasItems = items.some(i => i.productName !== "");
 
   const updateItem = (id: number, field: keyof PurchaseLine, value: number | string) => {
     setItems(prev => {
       const updated = prev.map(i => i.id === id ? { ...i, [field]: value } : i);
-      const hasEmpty = updated.some(i => !i.medicineName);
-      if (!hasEmpty && field === "medicineName") {
+      const hasEmpty = updated.some(i => !i.productName);
+      if (!hasEmpty && field === "productName") {
         return [newEmptyLine(nextId.current++), ...updated];
       }
       return updated;
@@ -695,7 +715,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
   const deleteItem = (id: number) => {
     setItems(prev => {
       const filtered = prev.filter(i => i.id !== id);
-      const hasEmpty = filtered.some(i => !i.medicineName);
+      const hasEmpty = filtered.some(i => !i.productName);
       if (filtered.length === 0 || !hasEmpty) {
         return [newEmptyLine(nextId.current++), ...filtered];
       }
@@ -783,7 +803,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                       onClick={() => {
                         if (!canPost) return;
                         onPostInvoice?.({ supplier, invoiceNo, invoiceDate, dueDate, poRef, items, cashDiscount, adjustment });
-                        const medicineItems = items.filter(i => i.medicineName !== "");
+                        const medicineItems = items.filter(i => i.productName !== "");
                         const initSelected = new Set(medicineItems.map(i => i.id));
                         const initQty: Record<number, number> = {};
                         medicineItems.forEach(i => { initQty[i.id] = i.qty + i.free; });
@@ -791,7 +811,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                         setBarcodePrintQty(initQty);
                         setShowBarcodeSelect(true);
                       }}
-                      title={!hasItems ? "Add items first" : !canPost ? "Resolve all medicine mappings before posting" : undefined}
+                      title={!hasItems ? "Add items first" : !canPost ? "Resolve all product mappings before posting" : undefined}
                       style={{ padding: "7px 20px", border: "none", background: canPost ? "#1B6CA8" : "#C8D6E5", fontSize: 13, cursor: canPost ? "pointer" : "not-allowed", color: canPost ? "#fff" : "#8FA3B1", fontFamily: "Inter", fontWeight: 600 }}>
                       Post Invoice
                     </button>
@@ -851,8 +871,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
             {viewMode ? (
               <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{formatDMY(invoiceDate)}</div>
             ) : (
-              <input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: "#fff" }} />
+              <DatePicker value={invoiceDate} onChange={setInvoiceDate} />
             )}
           </div>
 
@@ -861,8 +880,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
             {viewMode ? (
               <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{formatDMY(dueDate)}</div>
             ) : (
-              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: "#fff" }} />
+              <DatePicker value={dueDate} onChange={setDueDate} />
             )}
           </div>
 
@@ -896,7 +914,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Line Items</span>
               <span style={{ padding: "3px 12px", background: "#E0F7FA", color: "#00838F", fontSize: 12, fontWeight: 700, borderRadius: 999, fontFamily: "Inter" }}>
-                {items.filter(i => i.medicineName).length} items
+                {items.filter(i => i.productName).length} items
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -922,7 +940,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                 style={{ border: "none", background: "transparent", cursor: "pointer", color: "#1B6CA8", fontSize: 16, lineHeight: 1, padding: "0 4px" }}>×</button>
             </div>
           )}
-          {items.filter(i => i.medicineName).length === 0 && !showManual && !importedFile ? (
+          {items.filter(i => i.productName).length === 0 && !showManual && !importedFile ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", border: "2px dashed #DDE3EC", background: "#FAFBFD", margin: "16px 20px", borderRadius: 8, flex: 1 }}>
               <ImportCards />
               <h3 style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33", margin: "0 0 8px 0" }}>Import Distributor Invoice</h3>
@@ -978,7 +996,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
               onMap={id => setMappingItemId(id)}
               onAccept={id => {
                 const it = items.find(i => i.id === id);
-                if (it?.medicineName) updateItem(id, "mappingStatus", "matched");
+                if (it?.productName) updateItem(id, "mappingStatus", "matched");
               }}
               lineSearch={lineSearch}
               onLineSearchChange={setLineSearch}
@@ -1034,7 +1052,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                   importedName: raw.importedName,
                   mappingStatus: status,
                   suggestedName: status !== "matched" ? systemName : undefined,
-                  medicineName: status === "matched" ? systemName : (status === "fuzzy" ? systemName : ""),
+                  productName: status === "matched" ? systemName : (status === "fuzzy" ? systemName : ""),
                   batchNo: raw.batchNo, mfgDate: raw.mfgDate, expDate: raw.expDate,
                   packSize: raw.packSize, qty: raw.qty, free: raw.free,
                   purchaseRate: raw.purchaseRate, mrp: raw.mrp, disc: raw.disc, gst: raw.gst,
@@ -1048,10 +1066,10 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
         const mapItem = items.find(i => i.id === mappingItemId);
         if (!mapItem) return null;
         return (
-          <MedicineMapModal
-            importedName={mapItem.importedName ?? mapItem.medicineName}
+          <ProductMapModal
+            importedName={mapItem.importedName ?? mapItem.productName}
             onMap={systemName => {
-              updateItem(mappingItemId, "medicineName", systemName);
+              updateItem(mappingItemId, "productName", systemName);
               updateItem(mappingItemId, "mappingStatus", "matched");
               setMappingItemId(null);
             }}
@@ -1065,11 +1083,11 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
         const mapItem = items.find(i => i.id === mappingItemId);
         if (!mapItem) return null;
         return (
-          <AddMedicineDrawer
-            initialName={mapItem.importedName ?? mapItem.medicineName}
+          <AddProductDrawer
+            initialName={mapItem.importedName ?? mapItem.productName}
             onClose={() => setShowAddMedForMap(false)}
             onSaved={name => {
-              updateItem(mappingItemId, "medicineName", name);
+              updateItem(mappingItemId, "productName", name);
               updateItem(mappingItemId, "mappingStatus", "matched");
               setShowAddMedForMap(false);
               setMappingItemId(null);
@@ -1091,7 +1109,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
               <GhostBtn onClick={onBack}>Back to Purchases</GhostBtn>
               {saved === "posted" && (
                 <PrimaryBtn onClick={() => {
-                  const medicineItems = items.filter(i => i.medicineName !== "");
+                  const medicineItems = items.filter(i => i.productName !== "");
                   const initSelected = new Set(medicineItems.map(i => i.id));
                   const initQty: Record<number, number> = {};
                   medicineItems.forEach(i => { initQty[i.id] = i.qty + i.free; });
@@ -1106,7 +1124,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
       )}
 
       {showBarcodeSelect && (() => {
-        const medicineItems = items.filter(i => i.medicineName !== "");
+        const medicineItems = items.filter(i => i.productName !== "");
         const allIds = medicineItems.map(i => i.id);
         const allSelected = allIds.every(id => barcodeSelected.has(id));
         const someSelected = allIds.some(id => barcodeSelected.has(id)) && !allSelected;
@@ -1127,7 +1145,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
           });
         };
 
-        const getDosageForm = (name: string) => drugs.find(d => d.name === name)?.unit ?? "—";
+        const getDosageForm = (name: string) => products.find(d => d.name === name)?.unit ?? "—";
         const UNIT_ABBR: Record<string, string> = {
           "Tablets": "Tab", "Tablet": "Tab",
           "Capsules": "Cap", "Capsule": "Cap",
@@ -1151,7 +1169,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
               <div style={{ padding: "18px 24px", borderBottom: "1px solid #E8ECF4", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
                 <div>
                   <div style={{ fontFamily: "Outfit", fontSize: 17, fontWeight: 700, color: "#1A2436" }}>Print Barcode Labels</div>
-                  <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>Select items and set print quantity for each medicine</div>
+                  <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>Select items and set print quantity for each product</div>
                 </div>
                 <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "JetBrains Mono" }}>
                   {selectedCount} of {medicineItems.length} selected
@@ -1172,7 +1190,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                           style={{ cursor: "pointer", width: 14, height: 14 }}
                         />
                       </th>
-                      <th style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "#6B7280", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Medicine Name</th>
+                      <th style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "#6B7280", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Product Name</th>
                       <th style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "#6B7280", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Composition</th>
                       <th style={{ padding: "10px 12px", textAlign: "right", fontWeight: 600, color: "#6B7280", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Pack</th>
                       <th style={{ padding: "10px 12px", textAlign: "left", fontWeight: 600, color: "#6B7280", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Dosage Form</th>
@@ -1243,10 +1261,10 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                               style={{ cursor: "pointer", width: 14, height: 14 }}
                             />
                           </td>
-                          <td style={{ padding: "10px 12px", fontWeight: 600, color: "#1A2436" }}>{item.medicineName}</td>
-                          <td style={{ padding: "10px 12px", color: "#6B7280" }}>{item.medicineName}</td>
-                          <td style={{ padding: "10px 12px", textAlign: "right", fontFamily: "JetBrains Mono", color: "#1A2436" }}>{getPackLabel(item.medicineName, item.packSize)}</td>
-                          <td style={{ padding: "10px 12px", color: "#6B7280" }}>{getDosageForm(item.medicineName)}</td>
+                          <td style={{ padding: "10px 12px", fontWeight: 600, color: "#1A2436" }}>{item.productName}</td>
+                          <td style={{ padding: "10px 12px", color: "#6B7280" }}>{item.productName}</td>
+                          <td style={{ padding: "10px 12px", textAlign: "right", fontFamily: "JetBrains Mono", color: "#1A2436" }}>{getPackLabel(item.productName, item.packSize)}</td>
+                          <td style={{ padding: "10px 12px", color: "#6B7280" }}>{getDosageForm(item.productName)}</td>
                           <td style={{ padding: "10px 12px", textAlign: "right", fontFamily: "JetBrains Mono", color: "#1A2436" }}>{totalQty}</td>
                           <td style={{ padding: "10px 12px", fontFamily: "JetBrains Mono", color: "#6B7280" }}>{formatDMY(item.expDate)}</td>
                           <td style={{ padding: "10px 12px", textAlign: "right" }} onClick={e => e.stopPropagation()}>
@@ -1268,7 +1286,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
                     })}
                     {medicineItems.length === 0 && (
                       <tr>
-                        <td colSpan={10} style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>No medicine items in this invoice.</td>
+                        <td colSpan={10} style={{ padding: "32px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>No product items in this invoice.</td>
                       </tr>
                     )}
                   </tbody>
@@ -1341,7 +1359,7 @@ function NewPurchaseInvoice({ onBack, onSaveDraft, onPostInvoice, initialData, d
               setPurchaseVerified(true);
               setShowVerifyFlow(false);
               onPostInvoice?.({ supplier, invoiceNo, invoiceDate, dueDate, poRef, items, cashDiscount, adjustment });
-              const medicineItems = items.filter(i => i.medicineName !== "");
+              const medicineItems = items.filter(i => i.productName !== "");
               const initSelected = new Set(medicineItems.map(i => i.id));
               const initQty: Record<number, number> = {};
               medicineItems.forEach(i => { initQty[i.id] = i.qty + i.free; });
@@ -1366,6 +1384,7 @@ export default function PurchaseInvoices({ initialViewId, onDeepLinkConsumed }: 
   const [view, setView] = useState<"list" | "new-invoice" | "view-invoice">("list");
   const [openInvoice, setOpenInvoice] = useState<typeof purchaseInvoices[0] | null>(null);
   const [invoices, setInvoices] = useState([...purchaseInvoices]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
@@ -1373,6 +1392,14 @@ export default function PurchaseInvoices({ initialViewId, onDeepLinkConsumed }: 
     const t = setTimeout(() => setToast(null), 5000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    setLoadingInvoices(true);
+    fetchPurchaseInvoices()
+      .then(res => setInvoices(res.items as typeof purchaseInvoices))
+      .catch(() => { /* keep mock data */ })
+      .finally(() => setLoadingInvoices(false));
+  }, []);
 
   useEffect(() => {
     if (!initialViewId) return;
@@ -1383,7 +1410,7 @@ export default function PurchaseInvoices({ initialViewId, onDeepLinkConsumed }: 
   }, [initialViewId]);
 
   const buildInvoiceRow = (data: InvoiceFormData, status: "Draft" | "Unpaid") => {
-    const filled = data.items.filter(i => i.medicineName);
+    const filled = data.items.filter(i => i.productName);
     const subtotal = filled.reduce((s, i) => s + calcLineSubtotal(i), 0);
     const discount = filled.reduce((s, i) => s + calcLineDiscount(i), 0);
     const tax = filled.reduce((s, i) => s + calcLineTax(i), 0);
@@ -1407,13 +1434,13 @@ export default function PurchaseInvoices({ initialViewId, onDeepLinkConsumed }: 
     setInvoices(prev => [buildInvoiceRow(data, "Draft"), ...prev]);
     setView("list");
     setOpenInvoice(null);
-    setToast({ type: "success", message: "Purchase Invoice saved as Draft successfully." });
+    setToast({ type: "success", message: MSG_INVOICE_DRAFT });
   };
 
   const handlePostInvoice = (data: InvoiceFormData) => {
     // Add to list + show toast but don't redirect — the barcode popup owns navigation
     setInvoices(prev => [buildInvoiceRow(data, "Unpaid"), ...prev]);
-    setToast({ type: "success", message: "Purchase Invoice posted successfully." });
+    setToast({ type: "success", message: MSG_INVOICE_POST });
   };
 
   const Toast = toast && (
@@ -1469,6 +1496,7 @@ export default function PurchaseInvoices({ initialViewId, onDeepLinkConsumed }: 
     <>
       <PurchaseInvoiceList
         invoices={invoices}
+        loading={loadingInvoices}
         onNew={() => setView("new-invoice")}
         onView={(id) => {
           const inv = invoices.find(i => i.id === id) ?? null;

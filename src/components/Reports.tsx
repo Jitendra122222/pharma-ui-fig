@@ -2,7 +2,7 @@ import { useState } from "react";
 import { S } from "../styles/common";
 import { RP } from "../styles/reports";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
-import { salesData, categoryData, drugs } from "../data/mockData";
+import { salesData, categoryData, products } from "../data/mockData";
 import { MOVEMENTS, adjustments } from "./stock/stockData";
 
 const monthlyRx = [
@@ -14,7 +14,7 @@ const monthlyRx = [
   { month: "Jul", filled: 387, cancelled: 11 },
 ];
 
-const topDrugs = [
+const topProducts = [
   { name: "Paracetamol 500mg", units: 4200, revenue: 336 },
   { name: "Metformin 1000mg", units: 1840, revenue: 589 },
   { name: "Amlodipine 5mg", units: 1620, revenue: 729 },
@@ -30,15 +30,15 @@ export default function Reports() {
     else { setSortCol(col); setSortDir("asc"); }
   };
 
-  const sortedTopDrugs = sortCol
-    ? [...topDrugs].sort((a: any, b: any) => {
+  const sortedTopProducts = sortCol
+    ? [...topProducts].sort((a: any, b: any) => {
         let va = a[sortCol]; let vb = b[sortCol];
         if (va == null) return 1; if (vb == null) return -1;
         if (typeof va === "string") va = va.toLowerCase();
         if (typeof vb === "string") vb = vb.toLowerCase();
         return va < vb ? (sortDir === "asc" ? -1 : 1) : va > vb ? (sortDir === "asc" ? 1 : -1) : 0;
       })
-    : topDrugs;
+    : topProducts;
 
   return (
     <div className="flex flex-col gap-5">
@@ -114,12 +114,12 @@ export default function Reports() {
       <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
         {/* Top drugs table */}
         <div style={RP.tableCard}>
-          <div style={RP.tableTitle}>Top Selling Drugs</div>
+          <div style={RP.tableTitle}>Top Selling Products</div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#F8FAFC" }}>
                 <th onClick={() => handleSort("name")} style={{ padding: "8px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#6B7280", letterSpacing: "0.06em", textTransform: "uppercase", borderBottom: "1px solid #DDE3EC", cursor: "pointer", userSelect: "none" as const }}>
-                  Drug
+                  Product
                   <span style={{ display: "inline-flex", flexDirection: "column", gap: 1.5, marginLeft: 4, lineHeight: 1 }}>
                     <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "name" && sortDir === "asc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 0L6 4H0L3 0Z" /></svg>
                     <svg width="6" height="4" viewBox="0 0 6 4" style={{ display: "block" }} fill={sortCol === "name" && sortDir === "desc" ? "#1B6CA8" : "#C8CDD8"}><path d="M3 4L0 0H6L3 4Z" /></svg>
@@ -142,7 +142,7 @@ export default function Reports() {
               </tr>
             </thead>
             <tbody>
-              {sortedTopDrugs.map((d, i) => (
+              {sortedTopProducts.map((d, i) => (
                 <tr key={d.name} style={{ borderBottom: "1px solid #F0F3F7" }}>
                   <td style={{ padding: "11px 16px" }}>
                     <div className="flex items-center gap-2">
@@ -160,7 +160,7 @@ export default function Reports() {
 
         {/* Category distribution */}
         <div style={RP.chartCard}>
-          <div style={RP.chartTitle}>Sales by Drug Category</div>
+          <div style={RP.chartTitle}>Sales by Product Category</div>
           <div style={RP.chartSubtitle}>% share of total sales</div>
           <div className="flex flex-col gap-3">
             {categoryData.map((c, i) => {
@@ -183,12 +183,12 @@ export default function Reports() {
 
       {/* ── Dead Stock & Shrinkage ── */}
       {(() => {
-        function wv(d: typeof drugs[0]) {
+        function wv(d: typeof products[0]) {
           const sales = (MOVEMENTS[d.name] ?? []).filter(m => m.type === "Sale");
           const total = sales.reduce((s, m) => s + Math.abs(m.qty), 0);
           return sales.length > 0 ? Math.round(total / 4) : 0;
         }
-        const deadStock = drugs
+        const deadStock = products
           .filter(d => wv(d) === 0 && d.stock > 0)
           .map(d => ({ ...d, value: d.stock * d.cost, daysStale: Math.round((Date.now() - new Date(d.lastMove).getTime()) / 86400000) }))
           .sort((a, b) => b.value - a.value);

@@ -30,9 +30,9 @@ export function SummaryFooter({
   onAdjustmentChange?: (v: number) => void;
   labels?: SummaryLabels;
 }) {
-  const subtotal = items.reduce((s, i) => s + (i.medicineName ? i.qty * i.saleRate : 0), 0);
-  const discount = items.reduce((s, i) => s + (i.medicineName ? i.qty * i.saleRate * (i.disc / 100) : 0), 0);
-  const tax = items.reduce((s, i) => s + (i.medicineName ? (i.qty * i.saleRate - i.qty * i.saleRate * (i.disc / 100)) * (i.gst / 100) : 0), 0);
+  const subtotal = items.reduce((s, i) => s + (i.productName ? i.qty * i.saleRate : 0), 0);
+  const discount = items.reduce((s, i) => s + (i.productName ? i.qty * i.saleRate * (i.disc / 100) : 0), 0);
+  const tax = items.reduce((s, i) => s + (i.productName ? (i.qty * i.saleRate - i.qty * i.saleRate * (i.disc / 100)) * (i.gst / 100) : 0), 0);
   const roundOff = 0;
   const total = subtotal - discount - cashDiscount + tax + roundOff + adjustment;
   const balance = total - paid;

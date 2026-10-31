@@ -11,7 +11,7 @@ export interface Batch {
 export interface LineItem {
   id: number;
   barcode: string;
-  medicineName: string;
+  productName: string;
   batch: Batch | null;
   packs: number;
   qty: number;
@@ -23,7 +23,7 @@ export interface LineItem {
   restock?: boolean;
 }
 
-export interface Medicine {
+export interface Product {
   name: string;
   barcode: string;
   batches: Batch[];

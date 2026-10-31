@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import type { PurchaseLine } from "./purchasesData";
 import { purchaseOrders } from "./purchasesData";
+import { SKIP_REASONS } from "../../constants/purchaseLOV";
 import { Svg, IconCheck, IconAlert, IconBarcode, IconChevRight, IconPhone, IconCamera, IconKeyboard } from "../shared/Icons";
 import { OptionCard, MethodCard, CenteredModal } from "./purchasesShared";
+import { suppliers } from "../../data/mockData";
+import { createGRN } from "../../lib/purchaseApi";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -21,7 +24,7 @@ type POVStatus = "matched" | "warning" | "critical" | "missing" | "expired";
 
 interface PhysItem {
   id: number;
-  medicineName: string;
+  productName: string;
   batchNo: string;
   expDate: string;
   mrp: number;
@@ -33,7 +36,7 @@ interface PhysItem {
 
 interface POItem {
   id: number;
-  medicineName: string;
+  productName: string;
   poQty: number;
   confirmedQty: number;
   invoiceQty: number;
@@ -83,15 +86,6 @@ const POV_S: Record<POVStatus, { color: string; bg: string; border: string; labe
   expired:  { color: "#6B7280", bg: "#F3F4F6", border: "#DDE3EC", label: "Expired"  },
 };
 
-const SKIP_REASONS = [
-  "Direct Purchase",
-  "Emergency Purchase",
-  "Small / Low-Value Purchase",
-  "Supplier Already Verified",
-  "Already Checked Manually",
-  "Trusted Supplier",
-  "Other",
-];
 
 
 // QR code SVG placeholder
@@ -135,7 +129,32 @@ export default function PurchaseVerifyFlow({
 }: PurchaseVerifyFlowProps) {
   const hasPO = poRef.trim().length > 0;
   const linkedPO = purchaseOrders.find(p => p.id === poRef);
-  const medItems = useMemo(() => items.filter(i => i.medicineName.trim() !== ""), [items]);
+
+  async function handlePost() {
+    const distEntry = suppliers.find(s => s.name === supplier);
+    try {
+      await createGRN({
+        global_distributor_id: distEntry?.id ?? supplier,
+        distributor_name: supplier,
+        invoice_date: invoiceDate,
+        distributor_invoice_number: invoiceNo,
+        po_number: poRef || null,
+        items: items.filter(i => i.productName.trim()).map(i => ({
+          global_product_id: i.productName.toLowerCase().replace(/\s+/g, "-"),
+          product_name: i.productName,
+          batch_number: i.batchNo,
+          expiry_date: i.expDate,
+          quantity: i.qty,
+          free_quantity: i.free,
+          mrp: i.mrp,
+          purchase_rate: i.purchaseRate,
+          gst_rate: i.gst,
+        })),
+      });
+    } catch { /* API unavailable — continue with local post */ }
+    onPost();
+  }
+  const medItems = useMemo(() => items.filter(i => i.productName.trim() !== ""), [items]);
 
   // ── Navigation ──
   const [step, setStep] = useState<FlowStep>("decision");
@@ -231,7 +250,7 @@ export default function PurchaseVerifyFlow({
     setPhysItems(prev => {
       const idx = prev.findIndex(i =>
         (i.batchNo && i.batchNo.toLowerCase() === raw.toLowerCase()) ||
-        i.medicineName.toLowerCase().includes(raw.toLowerCase())
+        i.productName.toLowerCase().includes(raw.toLowerCase())
       );
       if (idx === -1) {
         setScanToast({ ok: false, msg: `Not found: "${raw}"` });
@@ -250,9 +269,9 @@ export default function PurchaseVerifyFlow({
 
       setScanToast({
         ok: newStatus !== "excess",
-        msg: newStatus === "matched" ? `${item.medicineName} — Matched (${newQty})`
-          : newStatus === "short"    ? `${item.medicineName} — ${newQty} / ${item.invoiceQty} scanned`
-          :                            `${item.medicineName} — Excess! ${newQty} > ${item.invoiceQty}`,
+        msg: newStatus === "matched" ? `${item.productName} — Matched (${newQty})`
+          : newStatus === "short"    ? `${item.productName} — ${newQty} / ${item.invoiceQty} scanned`
+          :                            `${item.productName} — Excess! ${newQty} > ${item.invoiceQty}`,
       });
       return updated;
     });
@@ -291,7 +310,7 @@ export default function PurchaseVerifyFlow({
         (qtyOff !== 0 || batchOff || poFree !== invFree || poMrp !== invMrp || poDisc !== invDisc) ? "warning" : "matched";
 
       return {
-        id: item.id, medicineName: item.medicineName,
+        id: item.id, productName: item.productName,
         poQty: poQ, confirmedQty: poQ, invoiceQty: isMissing ? 0 : item.qty,
         poRate: poR, invoiceRate: item.purchaseRate,
         poMrp, invMrp, poDiscount: poDisc, invDiscount: invDisc,
@@ -305,7 +324,7 @@ export default function PurchaseVerifyFlow({
     // Synthetic short-delivery row — PO ordered 150, invoice delivered only 110
     mapped.push({
       id: -1,
-      medicineName: "Pantoprazole 40mg",
+      productName: "Pantoprazole 40mg",
       poQty: 150, confirmedQty: 150, invoiceQty: 110,
       poRate: 3.80, invoiceRate: 3.80,
       poMrp: 7.50, invMrp: 7.50,
@@ -321,7 +340,7 @@ export default function PurchaseVerifyFlow({
 
   const initPhysItems = useCallback(() => {
     setPhysItems(medItems.map(item => ({
-      id: item.id, medicineName: item.medicineName, batchNo: item.batchNo || "",
+      id: item.id, productName: item.productName, batchNo: item.batchNo || "",
       expDate: item.expDate || "", mrp: item.mrp, invoiceQty: item.qty,
       physicalQty: 0, status: "pending" as PhysStatus,
     })));
@@ -685,7 +704,7 @@ export default function PurchaseVerifyFlow({
           <button onClick={() => setStep("decision")} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
           <button
             disabled={!skipReason}
-            onClick={onPost}
+            onClick={handlePost}
             style={{ padding: "7px 20px", border: "none", background: skipReason ? "#1B6CA8" : "#C8D6E5", fontSize: 13, fontWeight: 600, cursor: skipReason ? "pointer" : "not-allowed", color: skipReason ? "#fff" : "#8FA3B1", fontFamily: "Inter" }}>
             Confirm Skip
           </button>
@@ -746,7 +765,7 @@ export default function PurchaseVerifyFlow({
           <button onClick={() => setStep("decision")} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
           <button
             disabled={!skipReason}
-            onClick={onPost}
+            onClick={handlePost}
             style={{ padding: "7px 20px", border: "none", background: skipReason ? "#C62828" : "#C8D6E5", fontSize: 13, fontWeight: 600, cursor: skipReason ? "pointer" : "not-allowed", color: skipReason ? "#fff" : "#8FA3B1", fontFamily: "Inter" }}>
             Confirm & Post
           </button>
@@ -942,7 +961,7 @@ export default function PurchaseVerifyFlow({
                       <tr key={item.id} style={{ background: rowBg, borderBottom: "1px solid #EEF1F6" }}>
                         {/* Product */}
                         <td style={{ padding: P, fontSize: 12, color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>
-                          {item.medicineName}
+                          {item.productName}
                           {isMissing    && <div style={{ fontSize: 9, color: "#C62828", fontWeight: 700, marginTop: 1 }}>NOT IN INVOICE</div>}
                           {item.isExpired && <div style={{ fontSize: 9, color: "#6B7280", fontWeight: 700, marginTop: 1 }}>EXPIRED</div>}
                           {isExcess      && <div style={{ fontSize: 9, color: "#1B6CA8", fontWeight: 700, marginTop: 1 }}>EXCESS +{item.invoiceQty - item.poQty}</div>}
@@ -1137,7 +1156,7 @@ export default function PurchaseVerifyFlow({
                     value={manualEntry}
                     onChange={e => setManualEntry(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleScan(manualEntry)}
-                    placeholder="Type medicine name or batch, press Enter"
+                    placeholder="Type product name or batch, press Enter"
                     style={{ flex: 1, padding: "7px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none" }}/>
                   <button onClick={() => handleScan(manualEntry)} style={{ padding: "7px 14px", border: "none", borderRadius: 6, background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>Add</button>
                 </div>
@@ -1187,7 +1206,7 @@ export default function PurchaseVerifyFlow({
                     const s = PHYS_S[item.status];
                     return (
                       <tr key={item.id} style={{ background: item.status === "matched" ? "#F0FFF4" : idx % 2 === 0 ? "#fff" : "#FAFBFD", borderBottom: "1px solid #EEF1F6" }}>
-                        <td style={{ padding: "10px 14px", fontSize: 13, color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>{item.medicineName}</td>
+                        <td style={{ padding: "10px 14px", fontSize: 13, color: "#1A2436", fontFamily: "Inter", fontWeight: 500 }}>{item.productName}</td>
                         <td style={{ padding: "10px 14px", fontSize: 12, color: "#6B7280", fontFamily: "JetBrains Mono" }}>{item.batchNo || "—"}</td>
                         <td style={{ padding: "10px 14px", fontSize: 12, color: "#6B7280", fontFamily: "JetBrains Mono" }}>{item.expDate || "—"}</td>
                         <td style={{ padding: "10px 14px", fontSize: 13, color: "#1A2436", fontFamily: "JetBrains Mono", textAlign: "right" as const }}>{item.invoiceQty}</td>
@@ -1244,7 +1263,7 @@ export default function PurchaseVerifyFlow({
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                         <div>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                            <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>{item.medicineName}</span>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2436", fontFamily: "Inter" }}>{item.productName}</span>
                             <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: "#fff", border: `1px solid ${s.border}`, padding: "1px 8px", fontFamily: "Inter" }}>{s.label}</span>
                           </div>
                           <div style={{ display: "flex", gap: 14, fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>
@@ -1378,7 +1397,7 @@ export default function PurchaseVerifyFlow({
           </button>
         ) : (
           <button
-            onClick={onPost}
+            onClick={handlePost}
             style={{ padding: "9px 28px", border: "none", background: "#2E7D32", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#fff", fontFamily: "Inter", letterSpacing: "0.01em" }}>
             Final Verify & Post
           </button>
@@ -1395,7 +1414,7 @@ export default function PurchaseVerifyFlow({
             <button onClick={() => setException(null)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#6B7280", fontSize: 20, lineHeight: 1, padding: "0 4px" }}>×</button>
           </div>
           <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
-            <div style={{ fontFamily: "Inter", fontSize: 15, fontWeight: 700, color: "#1A2436", marginBottom: 14 }}>{exception.medicineName}</div>
+            <div style={{ fontFamily: "Inter", fontSize: 15, fontWeight: 700, color: "#1A2436", marginBottom: 14 }}>{exception.productName}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
               {[
                 { label: "Invoice Qty",  value: String(exception.invoiceQty),  color: "#1A2436" },

@@ -1,12 +1,16 @@
-﻿import { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { SK } from "../../styles/stock";
-import { drugs } from "../../data/mockData";
 import { Th } from "../shared/Th";
 import { Pill } from "../shared/Pill";
 import { useTableSort } from "../shared/useTableSort";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
-import { adjustments, batches, MOVEMENTS } from "./stockData";
-import type { StockMovement } from "./stockData";
+import { useEffect } from "react";
+import { fetchStockOverview, fetchProductBatches, fetchMovements } from "../../lib/stockApi";
+import type { StockOverviewRow, ProductBatch, Movement } from "../../lib/stockApi";
+import { useMasters } from "../../lib/mastersApi";
+import { AdjustStockDialog } from "../inventory/StockModals";
+import type { BatchView } from "../inventory/StockModals";
+type OvProduct = StockOverviewRow;
 import type { ShortBookItem } from "../ShortBook";
 
 interface StockOverviewProps {
@@ -15,26 +19,67 @@ interface StockOverviewProps {
 }
 
 export default function StockOverview({ onNavigate, onAddToShortBook }: StockOverviewProps = {}) {
+  const [rows, setRows] = useState<OvProduct[]>([]);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+  const [loadError, setLoadError] = useState("");
+  const [reload, setReload] = useState(0);
+  useEffect(() => {
+    let live = true;
+    setLoadState("loading");
+    fetchStockOverview({ pageSize: 500 })
+      .then(r => { if (live) { setRows(r.items); setLoadState("ready"); } })
+      .catch((e: unknown) => { if (live) { setLoadError(e instanceof Error ? e.message.replace(/^API \d+:\s*/, "") : "Could not load stock"); setLoadState("error"); } });
+    return () => { live = false; };
+  }, [reload]);
+  const { masters } = useMasters();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
-  const [sel, setSel] = useState<typeof drugs[0] | null>(null);
+  const [sel, setSel] = useState<OvProduct | null>(null);
   const [dTab, setDTab] = useState<"overview" | "clinical" | "movements" | "history">("overview");
   const [showAdjust, setShowAdjust] = useState(false);
   const [adjType, setAdjType] = useState("Write-off");
   const [adjTypeOpen, setAdjTypeOpen] = useState(false);
   const [showReorder, setShowReorder] = useState(false);
+  const [selBatchRows, setSelBatchRows] = useState<ProductBatch[]>([]);
+  const [selMovements, setSelMovements] = useState<Movement[]>([]);
+  const [selState, setSelState] = useState<"idle" | "loading" | "error">("idle");
+  const [selNonce, setSelNonce] = useState(0);
+  const selId = sel?.id;
+  useEffect(() => {
+    if (!selId) { setSelBatchRows([]); setSelMovements([]); setSelState("idle"); return; }
+    let live = true;
+    setSelState("loading");
+    Promise.all([fetchProductBatches(selId), fetchMovements(selId, { page: 1, pageSize: 100 })])
+      .then(([b, m]) => { if (live) { setSelBatchRows(b); setSelMovements(m.items); setSelState("idle"); } })
+      .catch(() => { if (live) setSelState("error"); });
+    return () => { live = false; };
+  }, [selId, selNonce]);
+  const fmtWhen = (iso: string) => {
+    const d = new Date(iso);
+    const z = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`;
+  };
+  const TYPE_FROM_EVENT: Record<string, string> = { Purchase: "GRN", "Sale Return": "Return", "Return to Distributor": "Return", "Return Cancelled": "Return" };
+  const selMoves = selMovements.map(m => ({
+    id: m.id, date: fmtWhen(m.date), type: TYPE_FROM_EVENT[m.event] ?? m.event, ref: m.ref, qty: m.qty, user: m.user,
+    reason: m.note || undefined, batch: m.batchNo, qtyBefore: m.balance - m.qty, qtyAfter: m.balance,
+    fromLocation: undefined as string | undefined, toLocation: undefined as string | undefined,
+  }));
+  const selBatches = selBatchRows.filter(b => b.qtyCurrent > 0).map(b => ({
+    id: b.batchNo, status: b.status, received: b.receivedDate, expiry: b.expiry, qtyCurrent: b.qtyCurrent, unit: sel?.unit ?? "",
+  }));
   const [sbToast, setSbToast] = useState<string | null>(null);
   const [sbToastKey, setSbToastKey] = useState(0);
   const sbTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function addToShortBook(d: typeof drugs[0]) {
+  function addToShortBook(d: OvProduct) {
     if (!onAddToShortBook) return;
     const qtyNeeded = Math.max(1, d.minStock - d.stock);
     const priority: "High" | "Medium" | "Low" = d.status === "Out of Stock" ? "High" : d.status === "Low Stock" ? "Medium" : "Low";
     const reason = (d.status === "Out of Stock" ? "Out of Stock" : d.status === "Low Stock" ? "Low Stock" : "Manual") as ShortBookItem["reason"];
     onAddToShortBook({
       id: `SB-${Date.now()}`,
-      medicine: d.name,
+      product: d.name,
       manufacturer: d.supplier,
       reason,
       currentStock: d.stock,
@@ -61,38 +106,13 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
   const [fSchedule, setFSchedule] = useState<string[]>([]);
   const [fExpiry, setFExpiry] = useState("all");
 
-  // Confidence score per drug: 100 = perfect, decremented by risk factors
-  function confidenceScore(d: typeof drugs[0]): number {
-    let score = 100;
-    const moves = MOVEMENTS[d.name] ?? [];
-    const lastCount = moves.find(m => m.type === "Adjustment" && m.reason?.toLowerCase().includes("count"));
-    if (!lastCount) score -= 20;
-    if (d.stock < d.minStock) score -= 15;
-    const daysNoActivity = moves.length > 0
-      ? Math.round((new Date("2025-07-29").getTime() - new Date(moves[0].date).getTime()) / 86400000)
-      : 60;
-    if (daysNoActivity > 30) score -= 10;
-    if (d.status === "Out of Stock") score -= 20;
-    return Math.max(0, score);
-  }
-
-  // Velocity: avg units dispensed per week (from Sale movements)
-  function weeklyVelocity(d: typeof drugs[0]): number {
-    const sales = (MOVEMENTS[d.name] ?? []).filter(m => m.type === "Sale");
-    const totalOut = sales.reduce((s, m) => s + Math.abs(m.qty), 0);
-    const weeks = sales.length > 0 ? 4 : 0;
-    return weeks > 0 ? Math.round(totalOut / weeks) : 0;
-  }
-  const SCHEDULE: Record<string, string> = {
-    Antibiotics: "Schedule H", Antidiabetics: "Schedule H", Antihypertensives: "Schedule H",
-    Statins: "Schedule H", Antacids: "OTC", Bronchodilators: "Schedule H",
-    Analgesics: "OTC", Hormones: "Schedule H1", Anticoagulants: "Schedule H1", Antidepressants: "Schedule H",
-  };
-
+  // Confidence, velocity and days-left are computed on the server from the stock ledger
+  const confidenceScore = (d: OvProduct) => d.confidence;
+  const weeklyVelocity = (d: OvProduct) => d.velocity;
   const activeFilterCount = fCategories.length + fSuppliers.length + fLocations.length + fSchedule.length +
     (fExpiry !== "all" ? 1 : 0) + (fStockRange[0] > 0 || fStockRange[1] < 1500 ? 1 : 0);
 
-  const filtered = drugs.filter(d => {
+  const filtered = rows.filter(d => {
     const q = search.toLowerCase();
     const m = d.name.toLowerCase().includes(q) || d.category.toLowerCase().includes(q) || d.location.toLowerCase().includes(q);
     if (!m) return false;
@@ -102,15 +122,15 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
     if (fSuppliers.length && !fSuppliers.includes(d.supplier)) return false;
     if (fLocations.length && !fLocations.includes(d.location)) return false;
     if (d.stock < fStockRange[0] || d.stock > fStockRange[1]) return false;
-    if (fSchedule.length && !fSchedule.includes(SCHEDULE[d.category] ?? "OTC")) return false;
+    if (fSchedule.length && !fSchedule.includes(d.rx)) return false;
     if (fExpiry === "30d") {
-      const days = Math.round((new Date(d.expiry).getTime() - new Date("2026-09-27").getTime()) / 86400000);
+      const days = d.daysToExpiry ?? 99999;
       if (days > 30) return false;
     } else if (fExpiry === "90d") {
-      const days = Math.round((new Date(d.expiry).getTime() - new Date("2026-09-27").getTime()) / 86400000);
+      const days = d.daysToExpiry ?? 99999;
       if (days > 90) return false;
     } else if (fExpiry === "expired") {
-      const days = Math.round((new Date(d.expiry).getTime() - new Date("2026-09-27").getTime()) / 86400000);
+      const days = d.daysToExpiry ?? 99999;
       if (days >= 0) return false;
     }
     return true;
@@ -118,7 +138,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
   const { sortCol, sortDir, handleSort, sorted: sortedFiltered } = useTableSort(filtered);
   const { pageRows: invPageRows, footerProps: invFooterProps } = usePagination(sortedFiltered, 10);
 
-  const totalValue = drugs.reduce((s, d) => s + d.stock * d.cost, 0);
+  const totalValue = rows.reduce((s, d) => s + d.stockValue, 0);
 
   const CAT_COLOR: Record<string, string> = {
     Antibiotics: "#00ACC1", Antidiabetics: "#7C3AED", Antihypertensives: "#1B6CA8",
@@ -128,15 +148,15 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
   const dosageForm = (unit: string) => unit === "Capsules" ? "Capsule" : unit === "Tablets" ? "Tablet" : unit;
   const genericName = (name: string) => name.replace(/\s+\d.*$/, "").trim();
 
-  const lowStockCount = drugs.filter(d => d.status === "Low Stock").length;
-  const outOfStockCount = drugs.filter(d => d.status === "Out of Stock").length;
-  const reorderDrugs = drugs.filter(d => d.stock <= d.minStock && d.stock > 0);
+  const lowStockCount = rows.filter(d => d.status === "Low Stock").length;
+  const outOfStockCount = rows.filter(d => d.status === "Out of Stock").length;
+  const reorderDrugs = rows.filter(d => d.stock <= d.minStock && d.stock > 0);
 
   // ABC classification by cost × velocity score
-  const abcScores = drugs.map(d => ({ name: d.name, score: d.cost * weeklyVelocity(d) }))
+  const abcScores = rows.map(d => ({ name: d.name, score: d.cost * weeklyVelocity(d) }))
     .sort((a, b) => b.score - a.score);
-  const topCutoff = Math.ceil(drugs.length * 0.2);
-  const midCutoff = Math.ceil(drugs.length * 0.5);
+  const topCutoff = Math.ceil(rows.length * 0.2);
+  const midCutoff = Math.ceil(rows.length * 0.5);
   function abcClass(name: string): "A" | "B" | "C" {
     const rank = abcScores.findIndex(s => s.name === name);
     return rank < topCutoff ? "A" : rank < midCutoff ? "B" : "C";
@@ -153,7 +173,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
       {/* ── KPI tiles ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
         {[
-          { label: "Total SKUs",       value: drugs.length,                         color: "#1B6CA8", bg: "#EFF6FF",  fmt: (v: number) => v.toString() },
+          { label: "Total SKUs",       value: rows.length,                         color: "#1B6CA8", bg: "#EFF6FF",  fmt: (v: number) => v.toString() },
           { label: "Total Stock Value", value: totalValue,                           color: "#2E7D32", bg: "#E8F5E9",  fmt: (v: number) => `₹${v.toFixed(0)}` },
           { label: "Low Stock",         value: lowStockCount,                        color: "#E65100", bg: "#FFF3E0",  fmt: (v: number) => v.toString() },
           { label: "Out of Stock",      value: outOfStockCount,                      color: "#C62828", bg: "#FFEBEE",  fmt: (v: number) => v.toString() },
@@ -230,7 +250,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
             <svg width="14" height="14" fill="none" stroke="#9CA3AF" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input
               type="text"
-              placeholder="Medicine / Barcode / Batch..."
+              placeholder="Product / Barcode / Batch..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{ ...SK.searchInput, flex: "1 1 auto" }}
@@ -284,9 +304,16 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                   <Th onSort={() => handleSort("status")} sortDir={sortCol === "status" ? sortDir : null}>Status</Th>
                 </tr></thead>
                 <tbody>
+                  {invPageRows.length === 0 && (
+                    <tr><td colSpan={14} style={{ padding: 36, textAlign: "center" as const, fontSize: 13, color: loadState === "error" ? "#B91C1C" : "#9CA3AF" }}>
+                      {loadState === "loading" ? "Loading stock…" : loadState === "error"
+                        ? <>Could not load stock: {loadError} <button onClick={() => setReload(n => n + 1)} style={{ marginLeft: 8 }}>Retry</button></>
+                        : rows.length === 0 ? "No products in this pharmacy yet. Add one from Inventory." : "No products match the filters."}
+                    </td></tr>
+                  )}
                   {invPageRows.map(d => {
-                    const margin = ((d.price - d.cost) / d.price * 100).toFixed(0);
-                    const value = d.stock * d.cost;
+                    const margin = d.price > 0 ? ((d.price - d.cost) / d.price * 100).toFixed(0) : "0";
+                    const value = d.stockValue;
                     const statusStyle = d.status === "In Stock" ? { bg: "#E8F5E9", color: "#2E7D32" } : d.status === "Low Stock" ? { bg: "#FFF8E1", color: "#F57F17" } : { bg: "#FFEBEE", color: "#C62828" };
                     const isSelected = sel?.id === d.id;
                     return (
@@ -308,7 +335,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                         <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#9CA3AF", textAlign: "right" as const }}>{d.minStock}</td>
                         <td style={{ padding: "11px 14px" }}>
                           <div style={{ height: 6, background: "#EEF1F6", position: "relative" }}>
-                            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.min(100, (d.stock / (d.minStock * 3)) * 100)}%`, background: d.stock < d.minStock ? "#C62828" : "#2E7D32" }} />
+                            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${d.minStock > 0 ? Math.min(100, (d.stock / (d.minStock * 3)) * 100) : (d.stock > 0 ? 100 : 0)}%`, background: d.stock < d.minStock ? "#C62828" : "#2E7D32" }} />
                           </div>
                         </td>
                         <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280", textAlign: "right" as const }}>₹{d.cost.toFixed(2)}</td>
@@ -326,13 +353,12 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                           return (
                             <td style={{ padding: "11px 14px", textAlign: "right" as const }}>
                               <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: vel > 0 ? "#1B6CA8" : "#9CA3AF" }}>{vel > 0 ? vel : "—"}</span>
-                              {d.stock * d.cost > 5000 && <span style={{ marginLeft: 5, fontSize: 10, fontWeight: 700, color: "#E65100", background: "#FFF3E0", padding: "1px 5px" }}>HV</span>}
+                              {d.stockValue > 5000 && <span style={{ marginLeft: 5, fontSize: 10, fontWeight: 700, color: "#E65100", background: "#FFF3E0", padding: "1px 5px" }}>HV</span>}
                             </td>
                           );
                         })()}
                         {(() => {
-                          const vel = weeklyVelocity(d);
-                          const days = vel > 0 ? Math.round(d.stock / (vel / 7)) : null;
+                          const days = d.daysLeft;
                           if (days === null) return <td style={{ padding: "11px 14px", fontFamily: "JetBrains Mono", fontSize: 12, color: "#9CA3AF", textAlign: "center" as const }}>—</td>;
                           const col = days < 7 ? "#C62828" : days < 14 ? "#E65100" : "#2E7D32";
                           const bg  = days < 7 ? "#FFEBEE" : days < 14 ? "#FFF3E0" : "#E8F5E9";
@@ -399,9 +425,9 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
               <div style={{ paddingTop: 16, paddingBottom: 16, borderBottom: "1px solid #F0F3F7" }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: 10, fontFamily: "Inter" }}>Category</div>
                 <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
-                  {[...new Set(drugs.map(d => d.category))].sort().map(cat => {
+                  {[...new Set(rows.map(d => d.category))].sort().map(cat => {
                     const on = fCategories.includes(cat);
-                    const count = drugs.filter(d => d.category === cat).length;
+                    const count = rows.filter(d => d.category === cat).length;
                     return (
                       <label key={cat} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                         <input type="checkbox" checked={on} onChange={() => setFCategories(prev => on ? prev.filter(c => c !== cat) : [...prev, cat])}
@@ -418,9 +444,9 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
               <div style={{ paddingTop: 16, paddingBottom: 16, borderBottom: "1px solid #F0F3F7" }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: 10, fontFamily: "Inter" }}>Supplier</div>
                 <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
-                  {[...new Set(drugs.map(d => d.supplier))].sort().map(sup => {
+                  {[...new Set(rows.map(d => d.supplier))].sort().map(sup => {
                     const on = fSuppliers.includes(sup);
-                    const count = drugs.filter(d => d.supplier === sup).length;
+                    const count = rows.filter(d => d.supplier === sup).length;
                     return (
                       <label key={sup} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                         <input type="checkbox" checked={on} onChange={() => setFSuppliers(prev => on ? prev.filter(s => s !== sup) : [...prev, sup])}
@@ -437,7 +463,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
               <div style={{ paddingTop: 16, paddingBottom: 16, borderBottom: "1px solid #F0F3F7" }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: 10, fontFamily: "Inter" }}>Location</div>
                 <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8 }}>
-                  {[...new Set(drugs.map(d => d.location))].sort().map(loc => {
+                  {[...new Set(rows.map(d => d.location))].sort().map(loc => {
                     const on = fLocations.includes(loc);
                     return (
                       <button key={loc} onClick={() => setFLocations(prev => on ? prev.filter(l => l !== loc) : [...prev, loc])}
@@ -536,7 +562,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
               {/* Badges */}
               <div style={{ padding: "0 24px 14px", display: "flex", gap: 6, alignItems: "center" }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: CAT_COLOR[sel.category] || "#00ACC1", letterSpacing: "0.08em", textTransform: "uppercase" as const, background: "#F0F9FF", padding: "3px 10px" }}>{sel.category}</span>
-                <span style={{ fontSize: 11, padding: "3px 10px", background: "#F0F3F7", color: "#6B7280", fontFamily: "Inter" }}>{SCHEDULE[sel.category] || "Schedule H"}</span>
+                <span style={{ fontSize: 11, padding: "3px 10px", background: "#F0F3F7", color: "#6B7280", fontFamily: "Inter" }}>{sel.rx}</span>
                 <span style={{ fontSize: 11, padding: "3px 10px", fontWeight: 700,
                   background: sel.status === "In Stock" ? "#E8F5E9" : sel.status === "Low Stock" ? "#FFF3E0" : "#FFEBEE",
                   color: sel.status === "In Stock" ? "#2E7D32" : sel.status === "Low Stock" ? "#E65100" : "#C62828" }}>{sel.status}</span>
@@ -618,7 +644,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
                       {[
-                        { label: "Stock Value", value: `₹${(sel.stock * sel.cost).toFixed(2)}`, color: "#0C1B33" },
+                        { label: "Stock Value", value: `₹${sel.stockValue.toFixed(2)}`, color: "#0C1B33" },
                         { label: "Retail Value", value: `₹${(sel.stock * sel.price).toFixed(2)}`, color: "#2E7D32" },
                         { label: "Potential Profit", value: `₹${(sel.stock * (sel.price - sel.cost)).toFixed(2)}`, color: "#1B6CA8" },
                       ].map((k, i) => (
@@ -635,13 +661,13 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                     <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Active Batches</span>
                       <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#6B7280" }}>
-                        {batches.filter(b => b.drug === sel.name).length} record{batches.filter(b => b.drug === sel.name).length !== 1 ? "s" : ""}
+                        {selBatches.length} record{selBatches.length !== 1 ? "s" : ""}
                       </span>
                     </div>
-                    {batches.filter(b => b.drug === sel.name).length > 0 ? (
-                      batches.filter(b => b.drug === sel.name).map((b, i, arr) => {
-                        const bStatus = b.status === "Active" ? { bg: "#E8F5E9", color: "#2E7D32" } : b.status === "Low" ? { bg: "#FFF8E1", color: "#F57F17" } : { bg: "#FFEBEE", color: "#C62828" };
-                        const nearExpiry = new Date(b.expiry) < new Date("2025-12-31");
+                    {selBatches.length > 0 ? (
+                      selBatches.map((b, i, arr) => {
+                        const bStatus = b.status === "Active" ? { bg: "#E8F5E9", color: "#2E7D32" } : b.status === "Quarantine" ? { bg: "#FFF8E1", color: "#F57F17" } : { bg: "#FFEBEE", color: "#C62828" };
+                        const nearExpiry = new Date(b.expiry).getTime() < Date.now() + 90 * 86400000;
                         return (
                           <div key={b.id} style={{ padding: "12px 16px", borderBottom: i < arr.length - 1 ? "1px solid #F4F6FA" : "none" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -664,16 +690,16 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                         );
                       })
                     ) : (
-                      <div style={{ padding: 16, fontSize: 12, color: "#9CA3AF", textAlign: "center" as const }}>No batch records for this item.</div>
+                      <div style={{ padding: 16, fontSize: 12, color: "#9CA3AF", textAlign: "center" as const }}>{selState === "loading" ? "Loading…" : "No batches with stock for this item."}</div>
                     )}
                   </div>
 
                   {/* 4. Supply Chain Provenance */}
                   {(() => {
-                    const drugMoves = MOVEMENTS[sel.name] ?? [];
+                    const drugMoves = selMoves;
                     const grnMoves = drugMoves.filter(m => m.type === "GRN").sort((a, b) => b.date.localeCompare(a.date));
                     const latestGRN = grnMoves[0] ?? null;
-                    const drugBatch = batches.find(b => b.drug === sel.name);
+                    const drugBatch = selBatches[0];
                     const poRef = latestGRN ? `PO-${latestGRN.ref.replace("GRN-", "")}` : "—";
                     const provenanceSteps = [
                       {
@@ -707,7 +733,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                         icon: "STOCK",
                         label: "Available in Stock",
                         ref: `${sel.stock} ${sel.unit}`,
-                        meta: `Bin: ${sel.location} · Value: ₹${(sel.stock * sel.cost).toFixed(2)}`,
+                        meta: `Bin: ${sel.location} · Value: ₹${sel.stockValue.toFixed(2)}`,
                         color: sel.stock === 0 ? "#C62828" : sel.stock < sel.minStock ? "#E65100" : "#00ACC1",
                         bg: sel.stock === 0 ? "#FFEBEE" : sel.stock < sel.minStock ? "#FFF3E0" : "#E0F7FA",
                         done: sel.stock > 0,
@@ -759,7 +785,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                       { label: "Dosage Form", value: dosageForm(sel.unit), mono: false },
                       { label: "Unit of Measure", value: sel.unit, mono: false },
                       { label: "Category", value: sel.category, mono: false },
-                      { label: "Schedule", value: SCHEDULE[sel.category] || "Schedule H", mono: false },
+                      { label: "Schedule", value: sel.rx, mono: false },
                       { label: "Expiry Date", value: sel.expiry, mono: true },
                       { label: "Manufacturer", value: sel.supplier, mono: false },
                     ].map((row, i, arr) => (
@@ -779,10 +805,10 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                   <div style={{ padding: 20 }}>
                     {[
                       { label: "Therapeutic Category", value: sel.category },
-                      { label: "Schedule", value: SCHEDULE[sel.category] || "Schedule H" },
+                      { label: "Schedule", value: sel.rx },
                       { label: "Dosage Form", value: dosageForm(sel.unit) },
                       { label: "Unit of Measure", value: sel.unit },
-                      { label: "Expiry", value: sel.expiry },
+                      { label: "Nearest expiry", value: sel.expiry || "—" },
                     ].map((r, i, arr) => (
                       <div key={r.label} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: i < arr.length - 1 ? "1px solid #F4F6FA" : "none" }}>
                         <span style={{ fontSize: 12, color: "#9CA3AF" }}>{r.label}</span>
@@ -797,15 +823,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
               )}
 
               {dTab === "movements" && (() => {
-                const allMoves: StockMovement[] = (
-                  MOVEMENTS[sel.name]
-                    ? [...MOVEMENTS[sel.name]]
-                    : adjustments.filter(a => a.drug === sel.name).map(a => ({
-                        id: a.id, date: a.date, type: "Adjustment" as const,
-                        ref: a.ref, qty: a.qty, user: a.by, reason: a.reason,
-                        qtyBefore: a.qtyBefore, qtyAfter: a.qtyAfter,
-                      }))
-                ).sort((a, b) => b.date.localeCompare(a.date));
+                const allMoves = [...selMoves].sort((a, b) => b.date.localeCompare(a.date));
 
                 const stockIn  = allMoves.filter(m => m.qty > 0).reduce((s, m) => s + m.qty, 0);
                 const stockOut = allMoves.filter(m => m.qty < 0).reduce((s, m) => s + m.qty, 0);
@@ -922,7 +940,7 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
                           </div>
                         );
                       }) : (
-                        <div style={{ padding: 24, fontSize: 13, color: "#9CA3AF", textAlign: "center" as const }}>No movements recorded for this item.</div>
+                        <div style={{ padding: 24, fontSize: 13, color: "#9CA3AF", textAlign: "center" as const }}>{selState === "loading" ? "Loading…" : selState === "error" ? "Could not load movements." : "No movements recorded for this item."}</div>
                       )}
                     </div>
 
@@ -932,9 +950,9 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
 
               {/* #23 Historical Stock View — cumulative stock level over time */}
               {dTab === "history" && (() => {
-                const moves = [...(MOVEMENTS[sel.name] ?? [])].sort((a, b) => a.date.localeCompare(b.date));
+                const moves = [...selMoves].sort((a, b) => a.date.localeCompare(b.date));
                 if (moves.length === 0) return (
-                  <div style={{ padding: 32, textAlign: "center" as const, fontSize: 13, color: "#9CA3AF" }}>No movement history available for this item.</div>
+                  <div style={{ padding: 32, textAlign: "center" as const, fontSize: 13, color: "#9CA3AF" }}>{selState === "loading" ? "Loading…" : "No movement history available for this item."}</div>
                 );
                 let runningQty = sel.stock;
                 const timeline = [...moves].reverse().map(m => {
@@ -1020,84 +1038,19 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
         </>
       )}
 
-      {/* Adjust Stock modal */}
+      {/* Adjust Stock: a count correction or write-off, sent for approval */}
       {showAdjust && sel && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 210, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", width: 480, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #EEF1F6" }}>
-              <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>New Stock Adjustment</div>
-              <button onClick={() => setShowAdjust(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>&times;</button>
-            </div>
-            <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
-
-              {/* Drug / Item */}
-              <div>
-                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Drug / Item</label>
-                <input type="text" defaultValue={sel.name} readOnly style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", background: "#F8FAFC", boxSizing: "border-box" as const }} />
-              </div>
-
-              {/* Adjustment Type — custom dropdown */}
-              <div>
-                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Adjustment Type</label>
-                <div style={{ position: "relative" }}>
-                  <button
-                    onClick={() => setAdjTypeOpen(o => !o)}
-                    style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: adjTypeOpen ? "1.5px solid #1B6CA8" : "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#fff", color: "#1A2436", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", boxSizing: "border-box" as const, outline: "none" }}>
-                    <span>{adjType}</span>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ transition: "transform 0.15s", transform: adjTypeOpen ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>
-                      <path d="M3 5l4 4 4-4" stroke="#6B7280" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  {adjTypeOpen && (
-                    <>
-                      <div onClick={() => setAdjTypeOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 219 }} />
-                      <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#fff", border: "1px solid #E8ECF4", borderRadius: 6, boxShadow: "0 6px 24px rgba(10,22,44,0.13)", zIndex: 220, overflow: "hidden" }}>
-                        {["Write-off", "Stock Count", "Damage", "Donation", "Other"].map(opt => (
-                          <button key={opt} onMouseDown={() => { setAdjType(opt); setAdjTypeOpen(false); }}
-                            style={{ width: "100%", textAlign: "left", padding: "10px 14px", border: "none", background: adjType === opt ? "#EFF6FF" : "transparent", cursor: "pointer", fontSize: 13, fontFamily: "Inter", fontWeight: adjType === opt ? 600 : 400, color: adjType === opt ? "#1B6CA8" : "#1A2436", borderBottom: "1px solid #F4F6FA", display: "block" }}
-                            onMouseEnter={e => { if (adjType !== opt) e.currentTarget.style.background = "#F7F9FC"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = adjType === opt ? "#EFF6FF" : "transparent"; }}>
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Quantity Change */}
-              <div>
-                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Quantity Change</label>
-                <input type="number" placeholder="Use negative for reduction (e.g. -10)" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} />
-              </div>
-
-              {/* Reason */}
-              <div>
-                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Reason</label>
-                <input type="text" placeholder="Describe the reason for adjustment" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
-              </div>
-
-              {/* Reference # */}
-              <div>
-                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 }}>Reference #</label>
-                <input type="text" placeholder="e.g. COUNT-AUG29" style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "JetBrains Mono", boxSizing: "border-box" as const }} />
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
-                <button onClick={() => { setShowAdjust(false); setAdjTypeOpen(false); }} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-                <button onClick={() => {
-                  setShowAdjust(false);
-                  setAdjTypeOpen(false);
-                  if (sbTimerRef.current) clearTimeout(sbTimerRef.current);
-                  setSbToast(`${adjType} adjustment posted successfully`);
-                  setSbToastKey(k => k + 1);
-                  sbTimerRef.current = setTimeout(() => setSbToast(null), 2000);
-                }} style={{ padding: "9px 22px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Post Adjustment</button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AdjustFromOverview
+          productName={sel.name} batches={selBatchRows.filter(b => b.qtyCurrent > 0)}
+          locations={masters.storage_locations} reasons={masters.adjustment_reasons}
+          onClose={() => setShowAdjust(false)}
+          onDone={msg => {
+            setShowAdjust(false);
+            if (sbTimerRef.current) clearTimeout(sbTimerRef.current);
+            setSbToast(msg); setSbToastKey(k => k + 1);
+            sbTimerRef.current = setTimeout(() => setSbToast(null), 4000);
+            setSelNonce(n => n + 1); setReload(n => n + 1);
+          }} />
       )}
 
       {/* Short Book toast */}
@@ -1122,6 +1075,49 @@ export default function StockOverview({ onNavigate, onAddToShortBook }: StockOve
       )}
 
 
+    </div>
+  );
+}
+
+// Pick the batch and the kind of adjustment, then hand over to the shared dialog
+function AdjustFromOverview({ productName, batches, locations, reasons, onClose, onDone }: {
+  productName: string; batches: ProductBatch[]; locations: { id: string; name: string }[]; reasons: { id: string; name: string }[];
+  onClose: () => void; onDone: (msg: string) => void;
+}) {
+  const [batchId, setBatchId] = useState(batches[0]?.id ?? "");
+  const [writeOff, setWriteOff] = useState<boolean | null>(null);
+  const b = batches.find(x => x.id === batchId);
+  if (b && writeOff !== null) {
+    const view: BatchView = {
+      id: b.batchNo, dbId: b.id, expiry: b.expiry, qtyCurrent: b.qtyCurrent, location: locations.find(l => l.id === b.locationId)?.name ?? "",
+      locationId: b.locationId, status: b.status,
+    };
+    return <AdjustStockDialog batch={view} productName={productName} reasons={reasons as never} writeOff={writeOff} onClose={onClose} onDone={onDone} />;
+  }
+  const btn: React.CSSProperties = { flex: 1, padding: "10px 0", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "Inter", fontWeight: 600, color: "#1B6CA8" };
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 210, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div role="dialog" aria-label="Adjust stock" style={{ background: "#fff", width: 440, borderRadius: 6, border: "1px solid #E8ECF4", padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>Adjust stock · {productName}</div>
+        {batches.length === 0 ? (
+          <div style={{ fontSize: 13, color: "#6B7280" }}>This product has no batches with stock to adjust.</div>
+        ) : (
+          <>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.07em" }}>Batch
+              <select aria-label="Batch" value={batchId} onChange={e => setBatchId(e.target.value)}
+                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", borderRadius: 6, border: "1.5px solid #E8ECF4", fontSize: 13 }}>
+                {batches.map(x => <option key={x.id} value={x.id}>{x.batchNo} · {x.qtyCurrent} units · exp {x.expiry}</option>)}
+              </select>
+            </label>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button style={btn} onClick={() => setWriteOff(false)}>Count correction</button>
+              <button style={{ ...btn, color: "#C62828" }} onClick={() => setWriteOff(true)}>Write off</button>
+            </div>
+            <div style={{ fontSize: 12, color: "#9CA3AF" }}>Either way the change is sent for approval by another admin or manager before stock moves.</div>
+          </>
+        )}
+        <button onClick={onClose} style={{ alignSelf: "flex-end", padding: "8px 18px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", cursor: "pointer", fontSize: 13 }}>Cancel</button>
+      </div>
     </div>
   );
 }

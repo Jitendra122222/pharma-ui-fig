@@ -1,65 +1,86 @@
 import { useState, useRef, useEffect, type CSSProperties } from "react";
-import { drugs } from "../../data/mockData";
 import { Th } from "../shared/Th";
 import { Pill } from "../shared/Pill";
 import { useTableSort } from "../shared/useTableSort";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
-import { adjustments, batches } from "./stockData";
+import {
+  fetchStockOverview, fetchAllAdjustments, reviewAdjustment, requestAdjustment, fetchProductBatches, fetchBatches,
+} from "../../lib/stockApi";
+import type { StockOverviewRow, Adjustment, AdjustmentCounts, ProductBatch } from "../../lib/stockApi";
+import { useMasters } from "../../lib/mastersApi";
 import MultiStepper from "../shared/MultiStepper";
 import { SK } from "../../styles/stock";
 
 type ApprovalStatus = "Pending" | "Approved" | "Rejected";
-type AdjRow = { id: string; date: string; drug: string; type: string; qtyBefore: number; qty: number; qtyAfter: number; reason: string; ref: string; by: string };
+type CountItem = { id: string; productId: string; name: string; category: string; batchNo: string; location: string; stock: number };
 type CompletedSession = { id: string; startedAt: string; completedAt: string; scope: string; assignedTo: string; itemsCounted: number; variancesFound: number; adjustmentsCreated: number };
 
-const ADJ_APPROVALS: ApprovalStatus[] = ["Approved", "Pending", "Rejected", "Approved", "Pending"];
-const ADJ_APPROVERS = ["Jane Doe", "", "", "Mark Stevens", ""];
-const ADJ_APPROVED_AT = ["2025-07-26 10:30", "", "", "2025-07-16 09:15", ""];
-
-const ADJ_TYPES = ["Write-off", "Stock Count", "Damage", "Donation", "Other"] as const;
-const REASONS_BY_TYPE: Record<string, string[]> = {
-  "Write-off":   ["Expired stock disposal", "Near-expiry disposal", "Contaminated batch", "Regulatory recall"],
-  "Stock Count": ["Physical stock count variance", "Periodic audit correction", "Missing units found", "System sync error"],
-  "Damage":      ["Damaged in storage (moisture)", "Dropped / breakage", "Temperature excursion", "Pest damage"],
-  "Donation":    ["Donated to clinic", "Charity distribution", "Government program"],
-  "Other":       ["Manual entry correction", "Transfer reversal", "Data migration fix"],
+const ADJ_TYPES = ["Stock Count", "Write-off"] as const;
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
+const errText = (e: unknown, fallback: string) => {
+  const raw = e instanceof Error ? e.message : "";
+  return /"detail"\s*:\s*"([^"]+)"/.exec(raw)?.[1] ?? /"msg"\s*:\s*"([^"]+)"/.exec(raw)?.[1]?.replace(/^Value error, /, "")
+    ?? (raw.replace(/^API \d+:\s*/, "") || fallback);
 };
-const STAFF_LIST = ["Jane Doe", "Mark Stevens", "Anna Kowalski", "Priya Sharma", "Rahul Mehta"];
-const TODAY = "2026-09-28";
 
-const EMPTY_ADJ_FORM = {
-  drugId: "" as string | number,
-  batchId: "",
-  adjType: "",
-  adjDirection: "-" as "+" | "-",
-  adjQty: "",
-  reason: "",
-  customReason: "",
-  refNo: "",
-  requestedBy: "",
-  notes: "",
-  date: new Date("2026-09-28").toISOString().slice(0, 10),
-};
+const EMPTY_ADJ_FORM = { drugId: "", batchId: "", adjType: "", adjQty: "", reason: "", notes: "" };
 
 export default function Adjustments() {
+  const { masters } = useMasters();
+
+  // ── data from the backend ──
+  const [ovRows, setOvRows] = useState<StockOverviewRow[]>([]);
+  const [adjs, setAdjs] = useState<Adjustment[]>([]);
+  const [adjCounts, setAdjCounts] = useState<AdjustmentCounts>({ pending: 0, approved: 0, rejected: 0, today: 0 });
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+  const [loadError, setLoadError] = useState("");
+  const [reload, setReload] = useState(0);
+  useEffect(() => {
+    let live = true;
+    setLoadState("loading");
+    Promise.all([fetchStockOverview({ pageSize: 500 }), fetchAllAdjustments()])
+      .then(([o, a]) => { if (live) { setOvRows(o.items); setAdjs(a.items); setAdjCounts(a.counts); setLoadState("ready"); } })
+      .catch((e: unknown) => { if (live) { setLoadError(errText(e, "Could not load stock adjustments")); setLoadState("error"); } });
+    return () => { live = false; };
+  }, [reload]);
+
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   const [adjView, setAdjView] = useState<"workqueue" | "log">("workqueue");
-  const [showModal, setShowModal] = useState(false);
   const [newAdjPage, setNewAdjPage] = useState(false);
   const [adjForm, setAdjForm] = useState(EMPTY_ADJ_FORM);
   const [adjFormErrors, setAdjFormErrors] = useState<Partial<typeof EMPTY_ADJ_FORM>>({});
   const [adjDrugSearch, setAdjDrugSearch] = useState("");
   const [adjDrugOpen, setAdjDrugOpen] = useState(false);
+  const [adjBusy, setAdjBusy] = useState(false);
+  const [adjError, setAdjError] = useState("");
+  const [formBatches, setFormBatches] = useState<ProductBatch[]>([]);
+  const [formBatchState, setFormBatchState] = useState<"idle" | "loading" | "error">("idle");
   const drugSearchRef = useRef<HTMLInputElement>(null);
 
-  const selectedDrug = drugs.find(d => d.id === Number(adjForm.drugId));
-  const drugBatches = batches.filter(b => b.drug === selectedDrug?.name);
-  const currentStock = selectedDrug?.stock ?? 0;
+  const selectedDrug = ovRows.find(d => d.id === adjForm.drugId);
+  const selectedBatch = formBatches.find(b => b.id === adjForm.batchId);
   const adjQtyNum = parseInt(adjForm.adjQty, 10);
-  const adjustedStock = !isNaN(adjQtyNum) && selectedDrug
-    ? adjForm.adjDirection === "-"
-      ? currentStock - adjQtyNum
-      : currentStock + adjQtyNum
-    : null;
+  const isWriteOff = adjForm.adjType === "Write-off";
+  const batchStock = selectedBatch?.qtyCurrent ?? 0;
+  const adjustedStock = !isNaN(adjQtyNum) && selectedBatch ? (isWriteOff ? batchStock - adjQtyNum : adjQtyNum) : null;
+
+  useEffect(() => {
+    const id = adjForm.drugId;
+    if (!id) { setFormBatches([]); setFormBatchState("idle"); return; }
+    let live = true;
+    setFormBatchState("loading");
+    fetchProductBatches(id)
+      .then(b => { if (live) { setFormBatches(b.filter(x => x.qtyCurrent > 0)); setFormBatchState("idle"); } })
+      .catch(() => { if (live) setFormBatchState("error"); });
+    return () => { live = false; };
+  }, [adjForm.drugId]);
 
   function setAdjField<K extends keyof typeof EMPTY_ADJ_FORM>(key: K, value: typeof EMPTY_ADJ_FORM[K]) {
     setAdjForm(prev => ({ ...prev, [key]: value }));
@@ -69,51 +90,43 @@ export default function Adjustments() {
   function openNewAdj(prefill?: Partial<typeof EMPTY_ADJ_FORM>) {
     setAdjForm({ ...EMPTY_ADJ_FORM, ...prefill });
     setAdjFormErrors({});
-    setAdjDrugSearch(prefill?.drugId ? (drugs.find(d => d.id === Number(prefill.drugId))?.name ?? "") : "");
+    setAdjError("");
+    setAdjDrugSearch("");
     setNewAdjPage(true);
   }
 
-  function submitAdjForm() {
+  async function submitAdjForm() {
     const errs: Partial<typeof EMPTY_ADJ_FORM> = {};
-    if (!adjForm.drugId)             errs.drugId     = "Select a drug";
-    if (!adjForm.adjType)            errs.adjType    = "Select adjustment type";
-    if (!adjForm.adjQty || isNaN(adjQtyNum) || adjQtyNum <= 0) errs.adjQty = "Enter a valid quantity";
-    if (!adjForm.reason)             errs.reason     = "Select a reason";
-    if (!adjForm.requestedBy)        errs.requestedBy = "Enter requestor name";
+    if (!adjForm.drugId)  errs.drugId  = "Select a product";
+    if (!adjForm.batchId) errs.batchId = "Select the batch";
+    if (!adjForm.adjType) errs.adjType = "Select adjustment type";
+    if (!adjForm.adjQty || isNaN(adjQtyNum) || adjQtyNum < (isWriteOff ? 1 : 0)) errs.adjQty = "Enter a valid quantity";
+    else if (isWriteOff && selectedBatch && adjQtyNum > batchStock) errs.adjQty = `Only ${batchStock} in this batch`;
+    else if (!isWriteOff && selectedBatch && adjQtyNum === batchStock) errs.adjQty = "Counted quantity matches the system";
+    if (!adjForm.reason)  errs.reason  = "Select a reason";
     if (Object.keys(errs).length > 0) { setAdjFormErrors(errs); return; }
-    const qty = adjForm.adjDirection === "-" ? -adjQtyNum : adjQtyNum;
-    const before = selectedDrug!.stock;
-    const newRow: AdjRow = {
-      id: `ADJ-${Date.now()}`,
-      date: new Date().toISOString().slice(0, 10),
-      drug: selectedDrug!.name,
-      type: adjForm.adjType,
-      qtyBefore: before,
-      qty,
-      qtyAfter: before + qty,
-      reason: adjForm.customReason || adjForm.reason,
-      ref: adjForm.refNo || `ADJ-REF-${Date.now()}`,
-      by: adjForm.requestedBy,
-    };
-    setExtraAdjustments(prev => [newRow, ...prev]);
-    setExtraApprovalMap(prev => ({ ...prev, [newRow.id]: "Pending" }));
-    setAdjForm(EMPTY_ADJ_FORM);
-    setAdjFormErrors({});
-    setNewAdjPage(false);
-    setShowModal(false);
+    setAdjBusy(true); setAdjError("");
+    try {
+      const r = await requestAdjustment(isWriteOff
+        ? { batchId: adjForm.batchId, type: "WRITE_OFF", writeOffQty: adjQtyNum, reason: adjForm.reason, notes: adjForm.notes }
+        : { batchId: adjForm.batchId, type: "COUNT", countedQty: adjQtyNum, reason: adjForm.reason, notes: adjForm.notes });
+      setAdjForm(EMPTY_ADJ_FORM); setAdjFormErrors({}); setNewAdjPage(false);
+      setToast({ ok: true, msg: `${r.number} sent for approval. Stock changes once another admin or manager approves it.` });
+      setReload(n => n + 1);
+      setAdjView("log");
+    } catch (e) { setAdjError(errText(e, "Could not submit the adjustment")); } finally { setAdjBusy(false); }
   }
-  const [approvals, setApprovals] = useState<ApprovalStatus[]>(ADJ_APPROVALS);
-  const [approverMap, setApproverMap] = useState<Record<string, string>>(
-    Object.fromEntries(ADJ_APPROVERS.map((a, i) => [adjustments[i].id, a]))
-  );
+
+  // ── approvals ──
   const [approveTarget, setApproveTarget] = useState<string | null>(null);
   const [approveAction, setApproveAction] = useState<"approve" | "reject">("approve");
-  const [approverInput, setApproverInput] = useState("");
   const [approverNote, setApproverNote] = useState("");
+  const [approveBusy, setApproveBusy] = useState(false);
+  const [approveError, setApproveError] = useState("");
 
   // Blind Physical Count state
   const [showBlind, setShowBlind] = useState(false);
-  const [blindDrugId, setBlindDrugId] = useState(drugs[0]?.id ?? 0);
+  const [blindDrugId, setBlindDrugId] = useState("");
   const [blindDrugLocked, setBlindDrugLocked] = useState(false);
   const [blindDrugSearch, setBlindDrugSearch] = useState("");
   const [blindDrugOpen, setBlindDrugOpen] = useState(false);
@@ -130,24 +143,24 @@ export default function Adjustments() {
   const [countAssignTo, setCountAssignTo] = useState("");
   const [countMode, setCountMode] = useState<"manual" | "scan">("manual");
   const [countSession, setCountSession] = useState<{ id: string; startedAt: string; scope: string; assignedTo: string } | null>(null);
-  const [countEntries, setCountEntries] = useState<Record<number, string>>({});
+  const [countEntries, setCountEntries] = useState<Record<string, string>>({});
   const [scanInput, setScanInput] = useState("");
   const [countSearch, setCountSearch] = useState("");
   const [countReview, setCountReview] = useState(false);
   const [countToast, setCountToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
-  const [skippedCountIds, setSkippedCountIds] = useState<Set<number>>(new Set());
+  const [skippedCountIds, setSkippedCountIds] = useState<Set<string>>(new Set());
+  const [countBatches, setCountBatches] = useState<CountItem[]>([]);
+  const [countLoad, setCountLoad] = useState<"idle" | "loading" | "error">("idle");
+  const [countSubmitting, setCountSubmitting] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
   const blindQtyRef = useRef<HTMLInputElement>(null);
   const blindDrugSearchRef = useRef<HTMLInputElement>(null);
 
   const [logFilter, setLogFilter] = useState<"all" | "Pending" | "Approved" | "Rejected">("all");
   const [countOverlayOpen, setCountOverlayOpen] = useState(false);
-  const [selectedVerIds, setSelectedVerIds] = useState<Set<number>>(new Set());
-  const [countPreselectedIds, setCountPreselectedIds] = useState<number[]>([]);
+  const [selectedVerIds, setSelectedVerIds] = useState<Set<string>>(new Set());
+  const [countPreselectedIds, setCountPreselectedIds] = useState<string[]>([]);
   const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
-
-  const [extraAdjustments, setExtraAdjustments] = useState<AdjRow[]>([]);
-  const [extraApprovalMap, setExtraApprovalMap] = useState<Record<string, ApprovalStatus>>({});
 
   useEffect(() => {
     if (!showBlind || blindSubmitted) return;
@@ -158,21 +171,18 @@ export default function Adjustments() {
     }
   }, [showBlind, blindSubmitted, blindDrugLocked]);
 
-  const uniqueLocations = [...new Set(drugs.map(d => d.location).filter(Boolean))].sort();
-  const uniqueCategories = [...new Set(drugs.map(d => d.category).filter(Boolean))].sort();
+  const uniqueLocations = masters.storage_locations.map(l => l.name).sort();
+  const uniqueCategories = [...new Set(ovRows.map(d => d.category).filter(Boolean))].sort();
 
-  // Smart Verification Queue
-  const verificationQueue = drugs
+  // Smart Verification Queue: products that most need a physical check
+  const verificationQueue = ovRows
+    .filter(d => d.stock > 0)
     .map(d => {
-      const lastAdj = adjustments.filter(a => a.drug === d.name).sort((a, b) => b.date.localeCompare(a.date))[0];
-      const daysLastCount = lastAdj
-        ? Math.round((new Date("2025-07-28").getTime() - new Date(lastAdj.date).getTime()) / 86400000)
-        : 999;
-      const batch = batches.find(b => b.drug === d.name);
-      const nearExpiry = batch ? new Date(batch.expiry) < new Date("2025-12-31") : false;
+      const daysLastCount = d.lastCounted ? Math.round((Date.now() - new Date(d.lastCounted).getTime()) / 86400000) : 999;
+      const nearExpiry = d.daysToExpiry !== null && d.daysToExpiry < 90;
       const lowStock = d.stock < d.minStock;
-      const highValue = d.cost * d.stock > 5000;
-      const controlled = ["Hormones", "Anticoagulants", "Antidepressants"].includes(d.category);
+      const highValue = d.stockValue > 5000;
+      const controlled = d.rx === "Schedule H1" || d.rx === "Schedule X";
       const score = (lowStock ? 3 : 0) + (nearExpiry ? 2 : 0) + (highValue ? 2 : 0) + (controlled ? 2 : 0) + (daysLastCount > 30 ? 1 : 0);
       const reasons: string[] = [];
       if (lowStock) reasons.push("Low stock");
@@ -180,32 +190,23 @@ export default function Adjustments() {
       if (highValue) reasons.push("High value");
       if (controlled) reasons.push("Controlled substance");
       if (daysLastCount > 30) reasons.push(`${daysLastCount === 999 ? "Never counted" : `${daysLastCount}d since last count`}`);
-      return { ...d, score, lastCountDate: lastAdj?.date ?? "Never", reasons };
+      return { ...d, score, lastCountDate: d.lastCounted ? d.lastCounted.slice(0, 10) : "Never", reasons };
     })
     .filter(d => d.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  const allApprovalStatuses = [...Object.values(extraApprovalMap), ...approvals];
-  const pendingApprovals = allApprovalStatuses.filter(s => s === "Pending").length;
-  const approved = allApprovalStatuses.filter(s => s === "Approved").length;
-  const rejected = allApprovalStatuses.filter(s => s === "Rejected").length;
+  const pendingApprovals = adjCounts.pending;
 
-  const rowsWithApproval = [
-    ...extraAdjustments.map(a => ({
-      ...a,
-      approval: extraApprovalMap[a.id] ?? ("Pending" as ApprovalStatus),
-      approvedBy: approverMap[a.id] ?? "",
-      approvedAt: "",
-    })),
-    ...adjustments.map((a, i) => ({
-      ...a,
-      approval: approvals[i],
-      approvedBy: approverMap[a.id] ?? "",
-      approvedAt: ADJ_APPROVED_AT[i] ?? "",
-    })),
-  ];
+  const rowsWithApproval = adjs.map(a => ({
+    id: a.number, dbId: a.id, date: a.createdAt.slice(0, 10), drug: a.productName,
+    type: a.type === "WRITE_OFF" ? "Write-off" : "Stock Count",
+    qtyBefore: a.systemQty, qty: a.variance, qtyAfter: a.countedQty, reason: a.reason, ref: a.batchNumber, by: a.requestedBy,
+    approval: cap(a.status) as ApprovalStatus, approvedBy: a.reviewedBy,
+    approvedAt: a.reviewedAt ? a.reviewedAt.slice(0, 16).replace("T", " ") : "",
+  }));
   const adjFiltered = rowsWithApproval.filter(a => {
-    const matchSearch = !adjSearch || a.drug.toLowerCase().includes(adjSearch.toLowerCase()) || a.id.toLowerCase().includes(adjSearch.toLowerCase()) || a.reason.toLowerCase().includes(adjSearch.toLowerCase());
+    const q = adjSearch.toLowerCase();
+    const matchSearch = !q || a.drug.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.reason.toLowerCase().includes(q) || a.ref.toLowerCase().includes(q);
     const matchFilter = logFilter === "all" || a.approval === logFilter;
     return matchSearch && matchFilter;
   });
@@ -217,31 +218,44 @@ export default function Adjustments() {
   );
   const { pageRows: verPageRows, footerProps: verFooterProps } = usePagination(verFiltered, 10);
 
-  const blindDrugObj = drugs.find(d => d.id === blindDrugId) ?? drugs[0];
+  const blindDrugObj = ovRows.find(d => d.id === blindDrugId);
   const blindQtyNum = parseInt(blindQty, 10);
   const blindVariance = blindSubmitted && !isNaN(blindQtyNum) ? blindQtyNum - (blindDrugObj?.stock ?? 0) : null;
 
-  const countItems = countSession
-    ? drugs.filter(d => {
-        if (countSession.scope === "By Location") return d.location === countScopeFilter;
-        if (countSession.scope === "By Company") return d.category === countScopeFilter;
-        return true;
-      }).filter(d => !countSearch || d.name.toLowerCase().includes(countSearch.toLowerCase()))
-    : [];
-  const allCountItems = countSession
-    ? drugs.filter(d => {
-        if (countSession.scope === "By Location") return d.location === countScopeFilter;
-        if (countSession.scope === "By Company") return d.category === countScopeFilter;
-        if (countSession.scope === "Selected Items") return countPreselectedIds.includes(d.id);
-        return true;
-      })
-    : [];
+  // Count sheets work per batch, because that is where stock is held and adjusted
+  const categoryOf = Object.fromEntries(ovRows.map(d => [d.id, d.category]));
+  const inScope = (d: CountItem) => {
+    if (!countSession) return false;
+    if (countSession.scope === "By Location") return d.location === countScopeFilter;
+    if (countSession.scope === "By Company") return d.category === countScopeFilter;
+    if (countSession.scope === "Selected Items") return countPreselectedIds.includes(d.productId);
+    return true;
+  };
+  const allCountItems = countBatches.filter(inScope);
+  const countItems = allCountItems.filter(d => !countSearch || d.name.toLowerCase().includes(countSearch.toLowerCase()) || d.batchNo.toLowerCase().includes(countSearch.toLowerCase()));
   const countedCount = allCountItems.filter(d => countEntries[d.id] !== undefined && countEntries[d.id] !== "").length;
   const progressPct = allCountItems.length > 0 ? Math.round((countedCount / allCountItems.length) * 100) : 0;
   const countVarianceItems = allCountItems.filter(d => {
     const e = countEntries[d.id];
     return e !== undefined && e !== "" && parseInt(e, 10) !== d.stock;
   });
+
+  async function loadCountBatches() {
+    setCountLoad("loading");
+    try {
+      const out: CountItem[] = [];
+      for (let page = 1; page <= 20; page++) {
+        const r = await fetchBatches(page, 100, true);
+        out.push(...r.items.map(b => ({
+          id: b.dbId, productId: b.productId, name: b.drug, category: categoryOf[b.productId] ?? "", batchNo: b.id,
+          location: b.location, stock: b.qtyCurrent,
+        })));
+        if (page * 100 >= r.total) break;
+      }
+      setCountBatches(out);
+      setCountLoad("idle");
+    } catch { setCountLoad("error"); }
+  }
 
   function startCountSession() {
     if (countScope === "location" && !countScopeFilter) return;
@@ -251,54 +265,44 @@ export default function Adjustments() {
       : countScope === "location" ? "By Location"
       : countScope === "supplier" ? "By Company"
       : "Selected Items";
-    setCountSession({ id: `CS-${Math.floor(Math.random() * 900) + 100}`, startedAt: TODAY + " 10:00", scope, assignedTo: countAssignTo || "Unassigned" });
+    setCountSession({ id: `CS-${Math.floor(Math.random() * 900) + 100}`, startedAt: todayStr() + " " + new Date().toTimeString().slice(0, 5), scope, assignedTo: countAssignTo || "Unassigned" });
     setCountEntries({});
     setCountSearch("");
     setCountReview(false);
   }
 
-  function submitCountSession() {
+  async function submitCountSession() {
+    if (countSubmitting || !countSession) return;
     const toCreate = countVarianceItems.filter(d => !skippedCountIds.has(d.id));
-    if (toCreate.length > 0) {
-      const today = "2026-09-28";
-      const seqBase = Date.now();
-      const newAdjs: AdjRow[] = toCreate.map((d, i) => {
-        const entered = parseInt(countEntries[d.id] ?? "0", 10);
-        const variance = entered - d.stock;
-        return {
-          id: `ADJ-2026-${String(seqBase + i).slice(-4)}`,
-          date: today,
-          drug: d.name,
-          type: "Stock Count",
-          qtyBefore: d.stock,
-          qty: variance,
-          qtyAfter: entered,
-          reason: "Physical stock count variance",
-          ref: `${countSession!.id}`,
-          by: countSession!.assignedTo,
-        };
-      });
-      setExtraAdjustments(prev => [...newAdjs, ...prev]);
-      setExtraApprovalMap(prev => ({
-        ...prev,
-        ...Object.fromEntries(newAdjs.map(a => [a.id, "Pending" as ApprovalStatus])),
-      }));
-      setCountToast({ msg: `${toCreate.length} adjustment${toCreate.length > 1 ? "s" : ""} created and sent for approval.`, type: "success" });
-    } else {
-      setCountToast({ msg: "Count complete — no adjustments created.", type: "success" });
+    const reasonName = (masters.adjustment_reasons.find(r => /count/i.test(r.name)) ?? masters.adjustment_reasons[0])?.name;
+    if (toCreate.length > 0 && !reasonName) {
+      setCountToast({ msg: "Add an adjustment reason under Masters first.", type: "error" });
+      setTimeout(() => setCountToast(null), 4000);
+      return;
     }
-    const completed: CompletedSession = {
-      id: countSession!.id,
-      startedAt: countSession!.startedAt,
-      completedAt: TODAY + " " + new Date().toTimeString().slice(0, 5),
-      scope: countSession!.scope,
-      assignedTo: countSession!.assignedTo,
-      itemsCounted: countedCount,
-      variancesFound: countVarianceItems.length,
-      adjustmentsCreated: toCreate.length,
-    };
-    setCompletedSessions(prev => [completed, ...prev]);
-    setTimeout(() => setCountToast(null), 4000);
+    setCountSubmitting(true);
+    let created = 0;
+    const failed: string[] = [];
+    for (const d of toCreate) {
+      try {
+        await requestAdjustment({
+          batchId: d.id, type: "COUNT", countedQty: parseInt(countEntries[d.id] ?? "0", 10), reason: reasonName!,
+          notes: `Count session ${countSession.id}${countSession.assignedTo !== "Unassigned" ? ` · ${countSession.assignedTo}` : ""}`,
+        });
+        created++;
+      } catch { failed.push(`${d.name} (${d.batchNo})`); }
+    }
+    setCountSubmitting(false);
+    setCompletedSessions(prev => [{
+      id: countSession.id, startedAt: countSession.startedAt, completedAt: todayStr() + " " + new Date().toTimeString().slice(0, 5),
+      scope: countSession.scope, assignedTo: countSession.assignedTo, itemsCounted: countedCount,
+      variancesFound: countVarianceItems.length, adjustmentsCreated: created,
+    }, ...prev]);
+    setToast(failed.length
+      ? { ok: false, msg: `${created} adjustment${created !== 1 ? "s" : ""} created. Could not create: ${failed.join(", ")}` }
+      : toCreate.length > 0
+        ? { ok: true, msg: `${created} adjustment${created !== 1 ? "s" : ""} created and sent for approval.` }
+        : { ok: true, msg: "Count complete. No adjustments needed." });
     setCountSession(null);
     setCountEntries({});
     setCountReview(false);
@@ -310,9 +314,10 @@ export default function Adjustments() {
     setLogFilter("Pending");
     setSelectedVerIds(new Set());
     setCountPreselectedIds([]);
+    setReload(n => n + 1);
   }
 
-  function openCountOverlay(preselected?: number[]) {
+  function openCountOverlay(preselected?: string[]) {
     setCountPreselectedIds(preselected ?? []);
     setCountScope(preselected && preselected.length > 0 ? "selected" : "full");
     setCountScopeFilter("");
@@ -323,13 +328,14 @@ export default function Adjustments() {
     setCountReview(false);
     setSkippedCountIds(new Set());
     setCountOverlayOpen(true);
+    void loadCountBatches();
   }
 
   function handleScan(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter") return;
     const query = scanInput.trim().toLowerCase();
     if (!query) return;
-    const match = allCountItems.find(d => d.name.toLowerCase().includes(query) || String(d.id) === query);
+    const match = allCountItems.find(d => d.name.toLowerCase().includes(query) || d.batchNo.toLowerCase() === query);
     if (match) {
       const el = document.getElementById(`count-input-${match.id}`);
       if (el) { el.focus(); (el as HTMLInputElement).select(); }
@@ -337,18 +343,16 @@ export default function Adjustments() {
     setScanInput("");
   }
 
-  function doApprove() {
-    const status: ApprovalStatus = approveAction === "approve" ? "Approved" : "Rejected";
-    if (extraAdjustments.some(a => a.id === approveTarget)) {
-      setExtraApprovalMap(prev => ({ ...prev, [approveTarget!]: status }));
-    } else {
-      const idx = adjustments.findIndex(a => a.id === approveTarget);
-      if (idx >= 0) setApprovals(prev => prev.map((s, i) => i === idx ? status : s));
-    }
-    setApproverMap(prev => ({ ...prev, [approveTarget!]: approverInput || "Admin" }));
-    setApproveTarget(null);
-    setApproverInput("");
-    setApproverNote("");
+  async function doApprove() {
+    if (!approveTarget || approveBusy) return;
+    setApproveBusy(true); setApproveError("");
+    try {
+      const r = await reviewAdjustment(approveTarget, approveAction, approverNote);
+      setApproveTarget(null);
+      setApproverNote("");
+      setToast({ ok: true, msg: approveAction === "approve" ? `${r.number} approved. Stock has been updated.` : `${r.number} rejected. Stock is unchanged.` });
+      setReload(n => n + 1);
+    } catch (e) { setApproveError(errText(e, "Could not save the decision")); } finally { setApproveBusy(false); }
   }
 
   const PILL_APPROVAL: Record<ApprovalStatus, { bg: string; color: string }> = {
@@ -361,13 +365,19 @@ export default function Adjustments() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
 
+      {loadState === "error" && (
+        <div role="alert" style={{ padding: "10px 14px", background: "#FFEBEE", border: "1px solid #FFCDD2", color: "#B91C1C", fontSize: 13, borderRadius: 6 }}>
+          Could not load stock data: {loadError} <button onClick={() => setReload(n => n + 1)} style={{ marginLeft: 8 }}>Retry</button>
+        </div>
+      )}
+
       {/* ── KPI Tiles ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
         {[
           { label: "Pending Approvals", val: pendingApprovals, color: pendingApprovals > 0 ? "#E65100" : "#1A2436" },
           { label: "High Risk Items",   val: verificationQueue.length, color: "#C62828" },
           { label: "Active Session",    val: countOverlayOpen && countSession ? 1 : 0, color: "#1B6CA8" },
-          { label: "Adjustments Today", val: rowsWithApproval.filter(a => a.date === TODAY).length, color: "#2E7D32" },
+          { label: "Adjustments Today", val: adjCounts.today, color: "#2E7D32" },
         ].map(t => (
           <div key={t.label} style={{ background: "#fff", border: "1px solid #DDE3EC", borderRadius: 6, padding: "14px 18px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6, fontFamily: "Inter" }}>{t.label}</div>
@@ -408,7 +418,7 @@ export default function Adjustments() {
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <div style={{ ...SK.searchWrapper, flex: "0 0 300px" }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                  <input type="text" placeholder="Search drugs..." value={verSearch} onChange={e => setVerSearch(e.target.value)}
+                  <input type="text" placeholder="Search products..." value={verSearch} onChange={e => setVerSearch(e.target.value)}
                     style={{ ...SK.searchInput }} />
                 </div>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
@@ -426,7 +436,7 @@ export default function Adjustments() {
               </div>
               <div style={{ overflowX: "auto" }}>
                 {verFiltered.length === 0 ? (
-                  <div style={{ padding: "36px 24px", textAlign: "center" as const, color: "#9CA3AF", fontSize: 13 }}>No items currently require physical verification.</div>
+                  <div style={{ padding: "36px 24px", textAlign: "center" as const, color: "#9CA3AF", fontSize: 13 }}>{loadState === "loading" ? "Loading…" : "No items currently require physical verification."}</div>
                 ) : (
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead><tr>
@@ -585,6 +595,11 @@ export default function Adjustments() {
                   <Th>Actions</Th>
                 </tr></thead>
                 <tbody>
+                  {adjPageRows.length === 0 && (
+                    <tr><td colSpan={11} style={{ padding: 32, textAlign: "center" as const, fontSize: 13, color: "#9CA3AF" }}>
+                      {loadState === "loading" ? "Loading…" : adjs.length === 0 ? "No stock adjustments yet." : "No adjustments match the filter."}
+                    </td></tr>
+                  )}
                   {adjPageRows.map(a => {
                     const typeStyle = a.type === "Write-off"
                       ? { bg: "#FFEBEE", color: "#C62828" }
@@ -598,7 +613,10 @@ export default function Adjustments() {
                         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                         <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1B6CA8" }}>{a.id}</td>
                         <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{a.date}</td>
-                        <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{a.drug}</td>
+                        <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 600, color: "#1A2436" }}>
+                          {a.drug}
+                          {a.ref && <div style={{ fontSize: 10, fontFamily: "JetBrains Mono", color: "#9CA3AF", fontWeight: 400, marginTop: 1 }}>Batch {a.ref}</div>}
+                        </td>
                         <td style={{ padding: "11px 14px" }}><Pill label={a.type} bg={typeStyle.bg} color={typeStyle.color} /></td>
                         <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280", textAlign: "right" as const }}>{a.qtyBefore}</td>
                         <td style={{ padding: "11px 14px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 700, color: a.qty > 0 ? "#2E7D32" : "#C62828", textAlign: "right" as const }}>
@@ -616,11 +634,11 @@ export default function Adjustments() {
                         <td style={{ padding: "11px 14px" }}>
                           {a.approval === "Pending" ? (
                             <div style={{ display: "flex", gap: 4 }}>
-                              <button onClick={() => { setApproveTarget(a.id); setApproveAction("approve"); }}
+                              <button onClick={() => { setApproveTarget(a.dbId); setApproveAction("approve"); setApproveError(""); }}
                                 style={{ padding: "4px 10px", border: "none", background: "#E8F5E9", color: "#2E7D32", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>
                                 Approve
                               </button>
-                              <button onClick={() => { setApproveTarget(a.id); setApproveAction("reject"); }}
+                              <button onClick={() => { setApproveTarget(a.dbId); setApproveAction("reject"); setApproveError(""); }}
                                 style={{ padding: "4px 10px", border: "none", background: "#FFEBEE", color: "#C62828", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>
                                 Reject
                               </button>
@@ -744,11 +762,8 @@ export default function Adjustments() {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.07em", marginBottom: 8, fontFamily: "Inter" }}>Assign To</div>
-                        <select value={countAssignTo} onChange={e => setCountAssignTo(e.target.value)}
-                          style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", background: "#fff", color: "#1A2436" }}>
-                          <option value="">— Unassigned —</option>
-                          {STAFF_LIST.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
+                        <input value={countAssignTo} onChange={e => setCountAssignTo(e.target.value)} placeholder="Name (optional)"
+                          style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", background: "#fff", color: "#1A2436", boxSizing: "border-box" as const }} />
                       </div>
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.07em", marginBottom: 8, fontFamily: "Inter" }}>Count Method</div>
@@ -835,8 +850,12 @@ export default function Adjustments() {
                         <th style={{ padding: "9px 14px", fontSize: 10, fontWeight: 700, color: "#9CA3AF", textAlign: "right" as const, letterSpacing: "0.08em", textTransform: "uppercase" as const, borderBottom: "1px solid #EEF1F6", background: "#FAFBFD" }}>Variance</th>
                       </tr></thead>
                       <tbody>
+                        {countItems.length === 0 && (
+                          <tr><td colSpan={6} style={{ padding: 28, textAlign: "center" as const, fontSize: 13, color: countLoad === "error" ? "#B91C1C" : "#9CA3AF" }}>
+                            {countLoad === "loading" ? "Loading batches…" : countLoad === "error" ? "Could not load batches." : "No batches with stock in this scope."}
+                          </td></tr>
+                        )}
                         {countItems.map((d, idx) => {
-                          const batch = batches.find(b => b.drug === d.name);
                           const enteredStr = countEntries[d.id] ?? "";
                           const entered = enteredStr !== "" ? parseInt(enteredStr, 10) : null;
                           const variance = entered !== null ? entered - d.stock : null;
@@ -849,7 +868,7 @@ export default function Adjustments() {
                                 <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{d.name}</div>
                                 <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter", marginTop: 1 }}>{d.category}</div>
                               </td>
-                              <td style={{ padding: "9px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{batch?.id ?? "—"}</td>
+                              <td style={{ padding: "9px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{d.batchNo || "—"}</td>
                               <td style={{ padding: "9px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{d.location || "—"}</td>
                               {!countBlind && <td style={{ padding: "9px 14px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1A2436", textAlign: "right" as const }}>{d.stock}</td>}
                               <td style={{ padding: "9px 14px", textAlign: "right" as const }}>
@@ -893,7 +912,7 @@ export default function Adjustments() {
                         </div>
                       </div>
                       <button onClick={submitCountSession}
-                        disabled={countVarianceItems.length > 0 && toCreateCount === 0}
+                        disabled={countSubmitting || (countVarianceItems.length > 0 && toCreateCount === 0)}
                         style={{ padding: "8px 20px", border: "none", borderRadius: 6, background: (countVarianceItems.length > 0 && toCreateCount === 0) ? "#C7D3E3" : "#1B6CA8", color: "#fff", fontSize: 13, fontFamily: "Inter", fontWeight: 600, cursor: (countVarianceItems.length > 0 && toCreateCount === 0) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                         {countVarianceItems.length === 0 ? "Complete Count" : toCreateCount === 0 ? "All Skipped" : `Create ${toCreateCount} Adjustment${toCreateCount !== 1 ? "s" : ""}`}
@@ -949,7 +968,6 @@ export default function Adjustments() {
                             {countVarianceItems.map(d => {
                               const entered = parseInt(countEntries[d.id] ?? "0", 10);
                               const variance = entered - d.stock;
-                              const batch = batches.find(b => b.drug === d.name);
                               const skipped = skippedCountIds.has(d.id);
                               return (
                                 <tr key={d.id} style={{ borderBottom: "1px solid #F4F6FA", background: skipped ? "#FAFBFD" : "#FFFDE7", opacity: skipped ? 0.55 : 1, transition: "opacity 0.15s" }}>
@@ -957,7 +975,7 @@ export default function Adjustments() {
                                     <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2436", textDecoration: skipped ? "line-through" : "none" }}>{d.name}</div>
                                     <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter", marginTop: 1 }}>{d.category}</div>
                                   </td>
-                                  <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{batch?.id ?? "—"}</td>
+                                  <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{d.batchNo || "—"}</td>
                                   <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#6B7280" }}>{d.location || "—"}</td>
                                   <td style={{ padding: "11px 14px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1A2436", textAlign: "right" as const }}>{d.stock}</td>
                                   <td style={{ padding: "11px 14px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1A2436", textAlign: "right" as const }}>{entered}</td>
@@ -1001,17 +1019,12 @@ export default function Adjustments() {
         </div>
       )}
 
-      {/* ── New Adjustment Full-Page Overlay ── */}
+      {/* ── New Adjustment ── */}
       {newAdjPage && (() => {
-        const reasonOptions = adjForm.adjType ? (REASONS_BY_TYPE[adjForm.adjType] ?? []) : [];
         const typeColors: Record<string, { bg: string; color: string }> = {
           "Write-off":   { bg: "#FFEBEE", color: "#C62828" },
-          "Damage":      { bg: "#FFF3E0", color: "#E65100" },
           "Stock Count": { bg: "#E3F2FD", color: "#1B6CA8" },
-          "Donation":    { bg: "#E8F5E9", color: "#2E7D32" },
-          "Other":       { bg: "#F3E8FF", color: "#7B1FA2" },
         };
-
         const LabelRow = ({ text, required }: { text: string; required?: boolean }) => (
           <label style={{ display: "block", fontFamily: "Inter", fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 6, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
             {text}{required && <span style={{ color: "#C62828", marginLeft: 3 }}>*</span>}
@@ -1027,273 +1040,165 @@ export default function Adjustments() {
           background: "#fff",
         });
         const ErrMsg = ({ msg }: { msg?: string }) => msg ? <div style={{ fontSize: 11, color: "#C62828", marginTop: 4, fontFamily: "Inter" }}>{msg}</div> : null;
-
         const filteredDrugsSearch = adjDrugSearch
-          ? drugs.filter(d => d.name.toLowerCase().includes(adjDrugSearch.toLowerCase()) || d.category.toLowerCase().includes(adjDrugSearch.toLowerCase()))
-          : drugs;
+          ? ovRows.filter(d => d.name.toLowerCase().includes(adjDrugSearch.toLowerCase()) || d.category.toLowerCase().includes(adjDrugSearch.toLowerCase()))
+          : ovRows;
+        const reasonNames = masters.adjustment_reasons.map(r => r.name);
 
         return (
           <>
           <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 200 }} onClick={() => setNewAdjPage(false)} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 201, background: "#fff", borderRadius: 10, boxShadow: "0 8px 40px rgba(0,0,0,0.18)", width: 620, maxWidth: "calc(100vw - 32px)", display: "flex", flexDirection: "column", maxHeight: "90vh", overflow: "hidden" }}>
-
-            {/* Modal Header */}
+          <div role="dialog" aria-label="New stock adjustment" style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 201, background: "#fff", borderRadius: 10, boxShadow: "0 8px 40px rgba(0,0,0,0.18)", width: 620, maxWidth: "calc(100vw - 32px)", display: "flex", flexDirection: "column", maxHeight: "90vh", overflow: "hidden" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 8, background: "#FFF3E0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5" stroke="#E65100" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M17.586 3.586a2 2 0 1 1 2.828 2.828L12 15l-4 1 1-4 8.586-8.414Z" stroke="#E65100" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </div>
               <div>
                 <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#0C1B33" }}>New Stock Adjustment</div>
-                <div style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter", marginTop: 1 }}>Record a write-off, damage, count correction or other change</div>
+                <div style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter", marginTop: 1 }}>Correct a count or write stock off. Another admin or manager approves it before stock changes.</div>
               </div>
-              <button onClick={() => setNewAdjPage(false)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#9CA3AF", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
+              <button onClick={() => setNewAdjPage(false)} aria-label="Close" style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#9CA3AF", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
             </div>
 
-            {/* Scrollable body */}
-            <div style={{ overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-                {/* ── Section 1: Drug & Batch ── */}
-                <div style={{ background: "#fff", border: "1px solid #DDE3EC", borderRadius: 8 }}>
-                  <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 28, height: 28, background: "#EFF6FF", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" stroke="#1B6CA8" strokeWidth="1.8" /><path d="M8 12h8M8 8h8M8 16h5" stroke="#1B6CA8" strokeWidth="1.8" strokeLinecap="round" /></svg>
-                    </div>
-                    <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#0C1B33" }}>Drug / Item Details</div>
-                  </div>
-                  <div style={{ padding: "18px 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                    {/* Drug search */}
-                    <div style={{ gridColumn: "1 / -1" }}>
-                      <LabelRow text="Drug / Item" required />
-                      <div style={{ position: "relative" }}>
-                        {adjDrugOpen && <div style={{ position: "fixed", inset: 0, zIndex: 309 }} onMouseDown={() => setAdjDrugOpen(false)} />}
-                        <div style={{ position: "relative", display: "flex", alignItems: "center" }}
-                          onClick={() => { setAdjDrugOpen(true); setTimeout(() => drugSearchRef.current?.focus(), 50); }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, pointerEvents: "none" }}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
-                          <input
-                            ref={drugSearchRef}
-                            value={adjDrugSearch || (selectedDrug ? selectedDrug.name : "")}
-                            onChange={e => { setAdjDrugSearch(e.target.value); setAdjDrugOpen(true); if (!e.target.value) setAdjField("drugId", ""); }}
-                            onFocus={() => { setAdjDrugOpen(true); setAdjDrugSearch(""); }}
-                            placeholder="Search drug name or category..."
-                            style={{ ...inputBase(!!adjFormErrors.drugId, !!adjForm.drugId), paddingLeft: 36, cursor: "pointer" }}
-                          />
-                          {selectedDrug && !adjDrugSearch && (
-                            <span style={{ position: "absolute", right: 12, fontSize: 11, background: "#EFF6FF", color: "#1B6CA8", padding: "2px 8px", borderRadius: 10, fontFamily: "Inter", fontWeight: 600, pointerEvents: "none" }}>
-                              {selectedDrug.category}
-                            </span>
-                          )}
+            <div style={{ overflowY: "auto", padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {/* Product */}
+              <div style={{ gridColumn: "1 / -1" }}>
+                <LabelRow text="Product / Item" required />
+                <div style={{ position: "relative" }}>
+                  {adjDrugOpen && <div style={{ position: "fixed", inset: 0, zIndex: 309 }} onMouseDown={() => setAdjDrugOpen(false)} />}
+                  <input
+                    ref={drugSearchRef} aria-label="Product"
+                    value={adjDrugSearch || (selectedDrug ? selectedDrug.name : "")}
+                    onChange={e => { setAdjDrugSearch(e.target.value); setAdjDrugOpen(true); if (!e.target.value) { setAdjField("drugId", ""); setAdjField("batchId", ""); } }}
+                    onFocus={() => { setAdjDrugOpen(true); setAdjDrugSearch(""); }}
+                    placeholder="Search product name or category..."
+                    style={{ ...inputBase(!!adjFormErrors.drugId, !!adjForm.drugId), cursor: "pointer" }}
+                  />
+                  {adjDrugOpen && (
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "#fff", border: "1px solid #DDE3EC", borderRadius: 6, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 310, maxHeight: 240, overflowY: "auto" }}>
+                      {filteredDrugsSearch.length === 0 ? (
+                        <div style={{ padding: "12px 14px", fontSize: 13, color: "#9CA3AF", fontFamily: "Inter" }}>{loadState === "loading" ? "Loading…" : "No products found"}</div>
+                      ) : filteredDrugsSearch.map(d => (
+                        <div key={d.id}
+                          onMouseDown={() => { setAdjField("drugId", d.id); setAdjField("batchId", ""); setAdjDrugSearch(""); setAdjDrugOpen(false); }}
+                          style={{ padding: "10px 14px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F8FAFC"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "#fff"; }}>
+                          <div>
+                            <div style={{ fontSize: 13, color: "#0C1B33", fontFamily: "Inter" }}>{d.name}</div>
+                            <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter", marginTop: 2 }}>{d.category} · {d.manufacturer}</div>
+                          </div>
+                          <div style={{ textAlign: "right" as const }}>
+                            <div style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700, color: d.stock < d.minStock ? "#C62828" : "#1A2436" }}>{d.stock}</div>
+                            <div style={{ fontSize: 10, color: "#9CA3AF", fontFamily: "Inter" }}>in stock</div>
+                          </div>
                         </div>
-                        {adjDrugOpen && (
-                          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "#fff", border: "1px solid #DDE3EC", borderRadius: 6, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 310, maxHeight: 240, overflowY: "auto" }}>
-                            {filteredDrugsSearch.length === 0 ? (
-                              <div style={{ padding: "12px 14px", fontSize: 13, color: "#9CA3AF", fontFamily: "Inter" }}>No drugs found</div>
-                            ) : filteredDrugsSearch.map(d => {
-                              const sel = adjForm.drugId === d.id;
-                              return (
-                                <div key={d.id}
-                                  onMouseDown={() => { setAdjField("drugId", d.id); setAdjField("batchId", ""); setAdjDrugSearch(""); setAdjDrugOpen(false); }}
-                                  style={{ padding: "10px 14px", paddingLeft: sel ? 11 : 14, borderLeft: sel ? "3px solid #1B6CA8" : "3px solid transparent", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                                  onMouseEnter={e => { if (!sel) (e.currentTarget as HTMLElement).style.background = "#F8FAFC"; }}
-                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "#fff"; }}>
-                                  <div>
-                                    <div style={{ fontSize: 13, fontWeight: sel ? 700 : 400, color: sel ? "#1B6CA8" : "#0C1B33", fontFamily: "Inter" }}>{d.name}</div>
-                                    <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter", marginTop: 2 }}>{d.category} · {d.manufacturer}</div>
-                                  </div>
-                                  <div style={{ textAlign: "right" as const }}>
-                                    <div style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700, color: d.stock < d.minStock ? "#C62828" : "#1A2436" }}>{d.stock}</div>
-                                    <div style={{ fontSize: 10, color: "#9CA3AF", fontFamily: "Inter" }}>in stock</div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                      <ErrMsg msg={adjFormErrors.drugId} />
+                      ))}
                     </div>
-
-                    {/* Batch */}
-                    <div>
-                      <LabelRow text="Batch" />
-                      <select value={adjForm.batchId} onChange={e => setAdjField("batchId", e.target.value)}
-                        disabled={!selectedDrug}
-                        style={{ ...inputBase(false, !!adjForm.batchId), appearance: "none" as const }}>
-                        <option value="">— All batches / unspecified —</option>
-                        {drugBatches.map(b => (
-                          <option key={b.id} value={b.id}>{b.id} · Exp {b.expiry} · Qty {b.qtyCurrent}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Date */}
-                    <div>
-                      <LabelRow text="Adjustment Date" required />
-                      <input type="date" value={adjForm.date} onChange={e => setAdjField("date", e.target.value)}
-                        style={{ ...inputBase(false, !!adjForm.date), fontFamily: "JetBrains Mono" }} />
-                    </div>
-
-                    {/* Stock snapshot */}
-                    {selectedDrug && (
-                      <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-                        {[
-                          { label: "Current Stock", val: currentStock.toString(), mono: true, color: currentStock < selectedDrug.minStock ? "#C62828" : "#0C1B33" },
-                          { label: "Min Stock",     val: selectedDrug.minStock.toString(), mono: true, color: "#6B7280" },
-                          { label: "Location",      val: selectedDrug.location, mono: true, color: "#1B6CA8" },
-                          { label: "Status",        val: selectedDrug.status, mono: false, color: selectedDrug.status === "In Stock" ? "#2E7D32" : "#C62828" },
-                        ].map(k => (
-                          <div key={k.label} style={{ padding: "10px 14px", background: "#F8FAFC", border: "1px solid #EEF1F6", borderRadius: 6 }}>
-                            <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 4, fontFamily: "Inter" }}>{k.label}</div>
-                            <div style={{ fontFamily: k.mono ? "JetBrains Mono" : "Inter", fontSize: 14, fontWeight: 700, color: k.color }}>{k.val}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
+                <ErrMsg msg={adjFormErrors.drugId} />
+              </div>
 
-                {/* ── Section 2: Adjustment Details ── */}
-                <div style={{ background: "#fff", border: "1px solid #DDE3EC", borderRadius: 8 }}>
-                  <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 28, height: 28, background: "#FFF3E0", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5" stroke="#E65100" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M17.586 3.586a2 2 0 1 1 2.828 2.828L12 15l-4 1 1-4 8.586-8.414Z" stroke="#E65100" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              {/* Batch */}
+              <div style={{ gridColumn: "1 / -1" }}>
+                <LabelRow text="Batch" required />
+                <select aria-label="Batch" value={adjForm.batchId} onChange={e => setAdjField("batchId", e.target.value)}
+                  disabled={!selectedDrug} style={{ ...inputBase(!!adjFormErrors.batchId, !!adjForm.batchId), appearance: "none" as const }}>
+                  <option value="">{!selectedDrug ? "Select a product first" : formBatchState === "loading" ? "Loading batches…" : formBatches.length === 0 ? "No batches with stock" : "— Select batch —"}</option>
+                  {formBatches.map(b => <option key={b.id} value={b.id}>{b.batchNo} · Exp {b.expiry} · Qty {b.qtyCurrent}</option>)}
+                </select>
+                <ErrMsg msg={adjFormErrors.batchId} />
+              </div>
+
+              {selectedDrug && (
+                <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                  {[
+                    { label: "Batch Stock", val: selectedBatch ? String(batchStock) : "—", color: "#0C1B33" },
+                    { label: "Product Stock", val: String(selectedDrug.stock), color: selectedDrug.stock < selectedDrug.minStock ? "#C62828" : "#0C1B33" },
+                    { label: "Min Stock", val: String(selectedDrug.minStock), color: "#6B7280" },
+                    { label: "Status", val: selectedDrug.status, color: selectedDrug.status === "In Stock" ? "#2E7D32" : "#C62828" },
+                  ].map(k => (
+                    <div key={k.label} style={{ padding: "10px 14px", background: "#F8FAFC", border: "1px solid #EEF1F6", borderRadius: 6 }}>
+                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 4, fontFamily: "Inter" }}>{k.label}</div>
+                      <div style={{ fontFamily: "JetBrains Mono", fontSize: 14, fontWeight: 700, color: k.color }}>{k.val}</div>
                     </div>
-                    <div style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#0C1B33" }}>Adjustment Details</div>
-                  </div>
-                  <div style={{ padding: "18px 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-
-                    {/* Adjustment Type */}
-                    <div>
-                      <LabelRow text="Adjustment Type" required />
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
-                        {ADJ_TYPES.map(t => {
-                          const sel = adjForm.adjType === t;
-                          const tc = typeColors[t];
-                          return (
-                            <button key={t} type="button"
-                              onClick={() => { setAdjField("adjType", t); setAdjField("reason", ""); }}
-                              style={{ padding: "7px 14px", border: `1.5px solid ${sel ? tc.color : "#DDE3EC"}`, borderRadius: 20, background: sel ? tc.bg : "#fff", fontSize: 12, fontFamily: "Inter", fontWeight: sel ? 700 : 400, color: sel ? tc.color : "#6B7280", cursor: "pointer" }}>
-                              {t}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <ErrMsg msg={adjFormErrors.adjType} />
-                    </div>
-
-                    {/* Reason */}
-                    <div>
-                      <LabelRow text="Reason" required />
-                      <select value={adjForm.reason} onChange={e => setAdjField("reason", e.target.value)}
-                        disabled={!adjForm.adjType}
-                        style={{ ...inputBase(!!adjFormErrors.reason, !!adjForm.reason), appearance: "none" as const, color: adjForm.reason ? "#0C1B33" : "#9CA3AF" }}>
-                        <option value="">{adjForm.adjType ? "— Select reason —" : "Select adjustment type first"}</option>
-                        {reasonOptions.map(r => <option key={r} value={r}>{r}</option>)}
-                        <option value="__other__">Other (specify below)</option>
-                      </select>
-                      <ErrMsg msg={adjFormErrors.reason} />
-                    </div>
-
-                    {adjForm.reason === "__other__" && (
-                      <div style={{ gridColumn: "1 / -1" }}>
-                        <LabelRow text="Specify Reason" required />
-                        <input value={adjForm.customReason} onChange={e => setAdjField("customReason", e.target.value)}
-                          placeholder="Describe the reason for this adjustment..."
-                          style={inputBase(false, !!adjForm.customReason)} />
-                      </div>
-                    )}
-
-                    {/* Quantity */}
-                    <div>
-                      <LabelRow text="Quantity" required />
-                      <div style={{ display: "flex", gap: 0 }}>
-                        <button type="button"
-                          onClick={() => setAdjField("adjDirection", adjForm.adjDirection === "-" ? "+" : "-")}
-                          style={{ width: 42, border: `1px solid ${adjForm.adjDirection === "-" ? "#C62828" : "#2E7D32"}`, borderRight: "none", borderRadius: "6px 0 0 6px", background: adjForm.adjDirection === "-" ? "#FFEBEE" : "#E8F5E9", fontFamily: "JetBrains Mono", fontSize: 18, fontWeight: 700, color: adjForm.adjDirection === "-" ? "#C62828" : "#2E7D32", cursor: "pointer", flexShrink: 0 }}>
-                          {adjForm.adjDirection}
-                        </button>
-                        <input type="number" min={1} value={adjForm.adjQty} onChange={e => setAdjField("adjQty", e.target.value)}
-                          placeholder="0"
-                          style={{ ...inputBase(!!adjFormErrors.adjQty, !!adjForm.adjQty), borderRadius: "0 6px 6px 0", fontFamily: "JetBrains Mono", fontSize: 15, fontWeight: 600, flex: 1 }} />
-                      </div>
-                      <ErrMsg msg={adjFormErrors.adjQty} />
-                    </div>
-
-                    {/* Adjusted stock preview */}
-                    <div>
-                      <LabelRow text="Stock After Adjustment" />
-                      <div style={{ padding: "9px 14px", background: "#F8FAFC", border: "1px solid #EEF1F6", borderRadius: 6, display: "flex", alignItems: "center", gap: 8, height: 40, boxSizing: "border-box" as const }}>
-                        {adjustedStock !== null ? (
-                          <>
-                            <span style={{ fontFamily: "JetBrains Mono", fontSize: 16, fontWeight: 700, color: adjustedStock < 0 ? "#C62828" : adjustedStock < (selectedDrug?.minStock ?? 0) ? "#E65100" : "#2E7D32" }}>
-                              {adjustedStock}
-                            </span>
-                            <span style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter" }}>
-                              {selectedDrug?.unit}
-                              {adjustedStock < 0 && " · Cannot go below zero"}
-                              {adjustedStock < (selectedDrug?.minStock ?? 0) && adjustedStock >= 0 && " · Below minimum"}
-                            </span>
-                          </>
-                        ) : (
-                          <span style={{ fontSize: 13, color: "#9CA3AF", fontFamily: "Inter" }}>Enter quantity to preview</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Ref # */}
-                    <div>
-                      <LabelRow text="Reference Number" />
-                      <input value={adjForm.refNo} onChange={e => setAdjField("refNo", e.target.value)}
-                        placeholder="e.g. COUNT-SEP28, WO-2026-001"
-                        style={inputBase(false, !!adjForm.refNo)} />
-                    </div>
-
-                    {/* Requested By */}
-                    <div>
-                      <LabelRow text="Requested By" required />
-                      <select value={adjForm.requestedBy} onChange={e => setAdjField("requestedBy", e.target.value)}
-                        style={{ ...inputBase(!!adjFormErrors.requestedBy, !!adjForm.requestedBy), appearance: "none" as const }}>
-                        <option value="">— Select staff —</option>
-                        {STAFF_LIST.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <ErrMsg msg={adjFormErrors.requestedBy} />
-                    </div>
-
-                    {/* Notes */}
-                    <div style={{ gridColumn: "1 / -1" }}>
-                      <LabelRow text="Notes" />
-                      <textarea value={adjForm.notes} onChange={e => setAdjField("notes", e.target.value)}
-                        placeholder="Any additional context, batch numbers, storage conditions, or supporting observations..."
-                        rows={3}
-                        style={{ ...inputBase(false, !!adjForm.notes), resize: "vertical" as const }} />
-                    </div>
-                  </div>
+                  ))}
                 </div>
+              )}
 
-                {/* Approval notice */}
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px", background: "#FFF8E1", border: "1px solid #FFE082", borderRadius: 6 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="#F57F17" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 9v4M12 17h.01" stroke="#F57F17" strokeWidth="1.8" strokeLinecap="round" /></svg>
-                  <div style={{ fontSize: 12, color: "#F57F17", fontFamily: "Inter" }}>
-                    <strong>Approval required:</strong> This adjustment will be placed in the verification queue. A manager must approve it before stock levels are updated in the system.
-                  </div>
+              {/* Type */}
+              <div>
+                <LabelRow text="Adjustment Type" required />
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                  {ADJ_TYPES.map(t => {
+                    const sel = adjForm.adjType === t;
+                    const tc = typeColors[t];
+                    return (
+                      <button key={t} type="button" onClick={() => { setAdjField("adjType", t); setAdjField("adjQty", ""); }}
+                        style={{ padding: "7px 14px", border: `1.5px solid ${sel ? tc.color : "#DDE3EC"}`, borderRadius: 20, background: sel ? tc.bg : "#fff", fontSize: 12, fontFamily: "Inter", fontWeight: sel ? 700 : 400, color: sel ? tc.color : "#6B7280", cursor: "pointer" }}>
+                        {t}
+                      </button>
+                    );
+                  })}
                 </div>
+                <ErrMsg msg={adjFormErrors.adjType} />
+              </div>
 
+              {/* Reason */}
+              <div>
+                <LabelRow text="Reason" required />
+                <select aria-label="Reason" value={adjForm.reason} onChange={e => setAdjField("reason", e.target.value)}
+                  style={{ ...inputBase(!!adjFormErrors.reason, !!adjForm.reason), appearance: "none" as const, color: adjForm.reason ? "#0C1B33" : "#9CA3AF" }}>
+                  <option value="">{reasonNames.length === 0 ? "No reasons set up. Add some under Masters." : "— Select reason —"}</option>
+                  {reasonNames.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+                <ErrMsg msg={adjFormErrors.reason} />
+              </div>
+
+              {/* Quantity */}
+              <div>
+                <LabelRow text={isWriteOff ? "Quantity to write off" : "Counted quantity on the shelf"} required />
+                <input aria-label="Quantity" type="number" min={isWriteOff ? 1 : 0} value={adjForm.adjQty} onChange={e => setAdjField("adjQty", e.target.value)}
+                  placeholder="0" style={{ ...inputBase(!!adjFormErrors.adjQty, !!adjForm.adjQty), fontFamily: "JetBrains Mono", fontSize: 15, fontWeight: 600 }} />
+                <ErrMsg msg={adjFormErrors.adjQty} />
+              </div>
+
+              {/* Preview */}
+              <div>
+                <LabelRow text="Batch Stock After Approval" />
+                <div style={{ padding: "9px 14px", background: "#F8FAFC", border: "1px solid #EEF1F6", borderRadius: 6, display: "flex", alignItems: "center", gap: 8, height: 40, boxSizing: "border-box" as const }}>
+                  {adjustedStock !== null && adjustedStock >= 0 ? (
+                    <>
+                      <span style={{ fontFamily: "JetBrains Mono", fontSize: 16, fontWeight: 700, color: "#2E7D32" }}>{adjustedStock}</span>
+                      <span style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter" }}>({adjustedStock - batchStock > 0 ? "+" : ""}{adjustedStock - batchStock})</span>
+                    </>
+                  ) : adjustedStock !== null ? (
+                    <span style={{ fontSize: 12, color: "#C62828", fontFamily: "Inter" }}>Cannot go below zero</span>
+                  ) : (
+                    <span style={{ fontSize: 13, color: "#9CA3AF", fontFamily: "Inter" }}>Pick a batch and enter a quantity</span>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <LabelRow text="Notes" />
+                <textarea aria-label="Notes" value={adjForm.notes} onChange={e => setAdjField("notes", e.target.value)} rows={3}
+                  placeholder="Any additional context or supporting observations..."
+                  style={{ ...inputBase(false, !!adjForm.notes), resize: "vertical" as const }} />
+              </div>
+
+              <div style={{ gridColumn: "1 / -1", padding: "12px 16px", background: "#FFF8E1", border: "1px solid #FFE082", borderRadius: 6, fontSize: 12, color: "#F57F17", fontFamily: "Inter" }}>
+                <strong>Approval required:</strong> a different admin or manager must approve this before the stock level changes.
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div style={{ padding: "14px 20px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end", gap: 8, flexShrink: 0 }}>
+            <div style={{ padding: "14px 20px", borderTop: "1px solid #EEF1F6", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              {adjError && <span role="alert" style={{ marginRight: "auto", color: "#B91C1C", fontSize: 12, maxWidth: 320 }}>{adjError}</span>}
               <button onClick={() => setNewAdjPage(false)}
                 style={{ padding: "8px 18px", border: "1px solid #DDE3EC", borderRadius: 6, background: "#fff", fontFamily: "Inter", fontSize: 13, fontWeight: 500, color: "#1A2436", cursor: "pointer" }}>
                 Cancel
               </button>
-              <button onClick={() => { setNewAdjPage(false); setShowModal(false); }}
-                style={{ padding: "8px 18px", border: "1px solid #1B6CA8", borderRadius: 6, background: "#EFF6FF", fontFamily: "Inter", fontSize: 13, fontWeight: 600, color: "#1B6CA8", cursor: "pointer" }}>
-                Save Draft
-              </button>
-              <button onClick={submitAdjForm}
-                style={{ padding: "8px 20px", border: "none", borderRadius: 6, background: "#1B6CA8", fontFamily: "Inter", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
-                Submit for Approval
+              <button onClick={submitAdjForm} disabled={adjBusy}
+                style={{ padding: "8px 20px", border: "none", borderRadius: 6, background: adjBusy ? "#C8CDD8" : "#1B6CA8", fontFamily: "Inter", fontSize: 13, fontWeight: 600, color: "#fff", cursor: adjBusy ? "wait" : "pointer" }}>
+                {adjBusy ? "Submitting…" : "Submit for Approval"}
               </button>
             </div>
           </div>
@@ -1301,24 +1206,27 @@ export default function Adjustments() {
         );
       })()}
 
-      {/* ── Approval Modal (Gap #11) ── */}
-      {approveTarget && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", width: 440, borderRadius: 6, border: "1px solid #E8ECF4" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #EEF1F6" }}>
-              <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>
-                {approveAction === "approve" ? "Approve Adjustment" : "Reject Adjustment"}
+      {/* ── Approval Modal ── */}
+      {approveTarget && (() => {
+        const adj = adjs.find(a => a.id === approveTarget);
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div role="dialog" aria-label={approveAction === "approve" ? "Approve adjustment" : "Reject adjustment"} style={{ background: "#fff", width: 440, borderRadius: 6, border: "1px solid #E8ECF4" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #EEF1F6" }}>
+                <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>
+                  {approveAction === "approve" ? "Approve Adjustment" : "Reject Adjustment"}
+                </div>
+                <button onClick={() => setApproveTarget(null)} aria-label="Close" style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>×</button>
               </div>
-              <button onClick={() => setApproveTarget(null)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>×</button>
-            </div>
-            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Summary */}
-              {(() => {
-                const adj = adjustments.find(a => a.id === approveTarget);
-                return adj ? (
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+                {adj && (
                   <div style={{ padding: "12px 14px", background: "#F8FAFC", border: "1px solid #EEF1F6", borderRadius: 4 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      {[["Adjustment #", adj.id], ["Drug", adj.drug], ["Change", adj.qty > 0 ? `+${adj.qty}` : String(adj.qty)], ["Reason", adj.reason]].map(([k, v]) => (
+                      {[
+                        ["Adjustment #", adj.number], ["Product", `${adj.productName} · ${adj.batchNumber}`],
+                        ["Change", `${adj.variance > 0 ? "+" : ""}${adj.variance} (${adj.systemQty} → ${adj.countedQty})`],
+                        ["Reason", adj.reason], ["Requested by", adj.requestedBy],
+                      ].map(([k, v]) => (
                         <div key={k}>
                           <div style={{ fontSize: 9, color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>{k}</div>
                           <div style={{ fontSize: 12, color: "#1A2436", fontFamily: k === "Adjustment #" || k === "Change" ? "JetBrains Mono" : "Inter", fontWeight: k === "Change" ? 700 : 400 }}>{v}</div>
@@ -1326,33 +1234,26 @@ export default function Adjustments() {
                       ))}
                     </div>
                   </div>
-                ) : null;
-              })()}
-              <div>
-                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>
-                  {approveAction === "approve" ? "Approver Name" : "Rejected By"}
-                </label>
-                <input value={approverInput} onChange={e => setApproverInput(e.target.value)}
-                  placeholder="Your name / designation"
-                  style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>Notes</label>
-                <textarea value={approverNote} onChange={e => setApproverNote(e.target.value)}
-                  placeholder="Optional comments..." rows={3}
-                  style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const, resize: "vertical" as const }} />
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button onClick={() => setApproveTarget(null)} style={{ padding: "9px 16px", borderRadius: 4, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
-                <button onClick={doApprove}
-                  style={{ padding: "9px 20px", border: "none", borderRadius: 4, background: approveAction === "approve" ? "#2E7D32" : "#C62828", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
-                  {approveAction === "approve" ? "Confirm Approval" : "Confirm Rejection"}
-                </button>
+                )}
+                <div>
+                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>Notes</label>
+                  <textarea aria-label="Review notes" value={approverNote} onChange={e => setApproverNote(e.target.value)}
+                    placeholder="Optional comments..." rows={3}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const, resize: "vertical" as const }} />
+                </div>
+                {approveError && <div role="alert" style={{ color: "#B91C1C", fontSize: 12 }}>{approveError}</div>}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                  <button onClick={() => setApproveTarget(null)} style={{ padding: "9px 16px", borderRadius: 4, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
+                  <button onClick={doApprove} disabled={approveBusy}
+                    style={{ padding: "9px 20px", border: "none", borderRadius: 4, background: approveBusy ? "#C8CDD8" : approveAction === "approve" ? "#2E7D32" : "#C62828", fontSize: 13, cursor: approveBusy ? "wait" : "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+                    {approveBusy ? "Saving…" : approveAction === "approve" ? "Confirm Approval" : "Confirm Rejection"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Blind Physical Count Modal (Gap #7) ── */}
       {showBlind && (
@@ -1370,7 +1271,7 @@ export default function Adjustments() {
             <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>
-                  {blindDrugLocked ? "Drug" : "Select Drug to Count"}
+                  {blindDrugLocked ? "Product" : "Select Product to Count"}
                 </label>
                 {blindDrugLocked ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#F8FAFC", border: "1px solid #E8ECF4", borderRadius: 6 }}>
@@ -1391,13 +1292,13 @@ export default function Adjustments() {
                       <input
                         ref={blindDrugSearchRef}
                         value={blindDrugSearch || (blindDrugObj ? blindDrugObj.name : "")}
-                        onChange={e => { setBlindDrugSearch(e.target.value); setBlindDrugOpen(true); if (!e.target.value) setBlindDrugId(0); }}
+                        onChange={e => { setBlindDrugSearch(e.target.value); setBlindDrugOpen(true); if (!e.target.value) setBlindDrugId(""); }}
                         onFocus={() => { setBlindDrugOpen(true); setBlindDrugSearch(""); }}
-                        placeholder="Search drug name or category..."
+                        placeholder="Search product name or category..."
                         disabled={blindSubmitted}
                         style={{ width: "100%", padding: "9px 12px 9px 36px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", background: blindSubmitted ? "#F8FAFC" : "#fff", boxSizing: "border-box" as const, cursor: blindSubmitted ? "default" : "pointer" }}
                       />
-                      {blindDrugObj && blindDrugId !== 0 && !blindDrugSearch && (
+                      {blindDrugObj && blindDrugId !== "" && !blindDrugSearch && (
                         <span style={{ position: "absolute", right: 12, fontSize: 11, background: "#EFF6FF", color: "#1B6CA8", padding: "2px 8px", borderRadius: 10, fontFamily: "Inter", fontWeight: 600, pointerEvents: "none" }}>
                           {blindDrugObj.category}
                         </span>
@@ -1407,10 +1308,10 @@ export default function Adjustments() {
                       <div style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "#fff", border: "1px solid #DDE3EC", borderRadius: 6, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 210, maxHeight: 220, overflowY: "auto" }}>
                         {(() => {
                           const filtered = blindDrugSearch
-                            ? drugs.filter(d => d.name.toLowerCase().includes(blindDrugSearch.toLowerCase()) || d.category.toLowerCase().includes(blindDrugSearch.toLowerCase()))
-                            : drugs;
+                            ? ovRows.filter(d => d.name.toLowerCase().includes(blindDrugSearch.toLowerCase()) || d.category.toLowerCase().includes(blindDrugSearch.toLowerCase()))
+                            : ovRows;
                           return filtered.length === 0 ? (
-                            <div style={{ padding: "12px 14px", fontSize: 13, color: "#9CA3AF", fontFamily: "Inter" }}>No drugs found</div>
+                            <div style={{ padding: "12px 14px", fontSize: 13, color: "#9CA3AF", fontFamily: "Inter" }}>No products found</div>
                           ) : filtered.map(d => {
                             const sel = blindDrugId === d.id;
                             return (
@@ -1476,7 +1377,7 @@ export default function Adjustments() {
                   </div>
                   {blindVariance !== null && blindVariance !== 0 ? (
                     <div style={{ padding: "12px 14px", background: "#FFEBEE", border: "1px solid #FFCDD2", borderRadius: 4, fontSize: 13, color: "#C62828" }}>
-                      Variance detected: {Math.abs(blindVariance)} {blindDrugObj?.unit ?? "units"} {blindVariance < 0 ? "short" : "over"}. Create an adjustment record to correct the system.
+                      Variance detected: {Math.abs(blindVariance)} {blindDrugObj?.unit ?? "units"} {blindVariance < 0 ? "short" : "over"}. Create an adjustment for the batch that is out, to correct the system.
                     </div>
                   ) : blindVariance === 0 ? (
                     <div style={{ padding: "12px 14px", background: "#E8F5E9", border: "1px solid #A5D6A7", borderRadius: 4, fontSize: 13, color: "#2E7D32" }}>
@@ -1491,10 +1392,7 @@ export default function Adjustments() {
                           openNewAdj({
                             drugId: blindDrugObj?.id ?? "",
                             adjType: "Stock Count",
-                            adjDirection: (blindVariance ?? 0) >= 0 ? "+" : "-",
-                            adjQty: String(Math.abs(blindVariance ?? 0)),
-                            reason: "Physical stock count variance",
-                            notes: `Blind count: physical ${blindQtyNum}, system ${blindDrugObj?.stock ?? 0}, variance ${blindVariance && blindVariance > 0 ? "+" : ""}${blindVariance}`,
+                            notes: `Blind count of the whole product: physical ${blindQtyNum}, system ${blindDrugObj?.stock ?? 0}, variance ${blindVariance && blindVariance > 0 ? "+" : ""}${blindVariance}. Pick the batch to correct.`,
                           });
                         }}
                         style={{ padding: "9px 20px", border: "none", borderRadius: 4, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
@@ -1506,6 +1404,14 @@ export default function Adjustments() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {toast && (
+        <div role="status" style={{ position: "fixed", bottom: 28, left: "var(--sidebar-w, 228px)", right: 0, display: "flex", justifyContent: "center", zIndex: 1000, pointerEvents: "none" }}>
+          <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", minWidth: 320, maxWidth: 560, background: toast.ok ? "#2E7D32" : "#C62828", color: "#fff", fontSize: 13, fontFamily: "Inter", fontWeight: 600, boxShadow: "0 6px 24px rgba(0,0,0,0.22)" }}>
+            <span style={{ flex: 1 }}>{toast.msg}</span>
+            <button onClick={() => setToast(null)} aria-label="Dismiss" style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", fontSize: 16 }}>×</button>
           </div>
         </div>
       )}

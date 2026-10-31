@@ -1,7 +1,8 @@
 import { Th } from "./Th";
 import { ToggleSwitch } from "./ToggleSwitch";
 import { calcAmount } from "./LineItemsTable";
-import type { Alloc, LineItem, Medicine } from "./types";
+import type { Alloc, LineItem, Product } from "./types";
+import { isNearExpiry } from "../../constants/purchaseLOV";
 import { useEffect, useRef, useState } from "react";
 import { pickBatch } from "./LineItemsTable";
 import type { Batch } from "./types";
@@ -10,10 +11,10 @@ function InlineMedicineCell({
   value, onSelect, alloc, readOnly, medicines,
 }: {
   value: string;
-  onSelect: (med: Medicine, batch: Batch) => void;
+  onSelect: (med: Product, batch: Batch) => void;
   alloc: Alloc;
   readOnly: boolean;
-  medicines: Medicine[];
+  medicines: Product[];
 }) {
   if (readOnly) {
     return (
@@ -24,7 +25,7 @@ function InlineMedicineCell({
   }
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
-  const [batchMed, setBatchMed] = useState<Medicine | null>(null);
+  const [batchMed, setBatchMed] = useState<Product | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   const results = query.length > 0
@@ -43,7 +44,7 @@ function InlineMedicineCell({
         value={query}
         onChange={e => { setQuery(e.target.value); setOpen(true); setBatchMed(null); }}
         onFocus={() => setOpen(true)}
-        placeholder="Search medicine..."
+        placeholder="Search product..."
         style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "Inter", background: "#fff", boxSizing: "border-box" }}
       />
       {open && !batchMed && results.length > 0 && (
@@ -84,7 +85,7 @@ export function ReturnItemsTable({
   onDelete: (id: number) => void;
   alloc?: Alloc;
   readOnly?: boolean;
-  medicines: Medicine[];
+  medicines: Product[];
   rateLabel?: string;
 }) {
   // ensure pickBatch import is retained
@@ -94,7 +95,7 @@ export function ReturnItemsTable({
       <table style={{ borderCollapse: "collapse", minWidth: 1200, width: "100%" }}>
         <thead>
           <tr>
-            <Th>Medicine Name</Th>
+            <Th>Product Name</Th>
             <Th>Batch No</Th>
             <Th>Exp Date</Th>
             <Th right>Pack</Th>
@@ -113,12 +114,12 @@ export function ReturnItemsTable({
             <tr key={item.id} style={{ borderBottom: "1px solid #F4F6FA" }}>
               <td style={{ padding: "4px 6px", minWidth: 220 }}>
                 <InlineMedicineCell
-                  value={item.medicineName}
+                  value={item.productName}
                   alloc={alloc}
                   readOnly={readOnly}
                   medicines={medicines}
                   onSelect={(med, batch) => {
-                    onChange(item.id, "medicineName", med.name);
+                    onChange(item.id, "productName", med.name);
                     onChange(item.id, "barcode", med.barcode);
                     onChange(item.id, "batch", batch);
                     onChange(item.id, "mrp", batch.mrp);
@@ -133,7 +134,7 @@ export function ReturnItemsTable({
                 </div>
               </td>
               <td style={{ padding: "4px 8px" }}>
-                <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: item.batch && new Date(item.batch.expDate) < new Date("2025-12-31") ? "#E65100" : "#9CA3AF", whiteSpace: "nowrap", fontWeight: item.batch && new Date(item.batch.expDate) < new Date("2025-12-31") ? 700 : 400 }}>
+                <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: item.batch && isNearExpiry(item.batch.expDate) ? "#E65100" : "#9CA3AF", whiteSpace: "nowrap", fontWeight: item.batch && isNearExpiry(item.batch.expDate) ? 700 : 400 }}>
                   {item.batch?.expDate ?? "—"}
                 </span>
               </td>
@@ -161,10 +162,10 @@ export function ReturnItemsTable({
                   style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#C62828", whiteSpace: "nowrap" }}>
-                {item.medicineName ? `-₹${calcAmount(item).toFixed(2)}` : "—"}
+                {item.productName ? `-₹${calcAmount(item).toFixed(2)}` : "—"}
               </td>
               <td style={{ padding: "4px 8px", textAlign: "center" }}>
-                {item.medicineName && (
+                {item.productName && (
                   <ToggleSwitch
                     checked={item.restock ?? true}
                     disabled={readOnly}
@@ -173,7 +174,7 @@ export function ReturnItemsTable({
                 )}
               </td>
               <td style={{ padding: "4px 8px" }}>
-                {item.medicineName && !readOnly && (
+                {item.productName && !readOnly && (
                   <button onClick={() => onDelete(item.id)} title="Remove" style={{ border: "none", background: "transparent", cursor: "pointer", color: "#C62828", fontSize: 16, padding: "2px 4px" }}>×</button>
                 )}
               </td>

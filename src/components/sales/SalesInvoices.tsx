@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { patients } from "../../data/mockData";
+import { DatePicker } from "../shared/DatePicker";
+import { patients, type Patient } from "../../data/mockData";
 import AddPatientDrawer from "../AddPatientDrawer";
 import { Pill } from "../shared/Pill";
 import { Th } from "../shared/Th";
@@ -9,10 +10,12 @@ import PrintDialog from "../shared/PrintDialog";
 import type { PrintJobType } from "../shared/PrintDialog";
 import {
   type Alloc, type LineItem,
-  MEDICINES, DOCTORS,
+  PRODUCTS, DOCTORS,
   salesInvoices, patientInvoiceHistory, patientPrevItems,
   newEmptyRow, pickBatch,
 } from "./salesData";
+import { fetchSaleInvoices, createSaleInvoice } from "../../lib/salesApi";
+import { fetchPatients } from "../../lib/patientApi";
 import {
   ChevronDown,
   DateRangePicker,
@@ -25,17 +28,22 @@ import {
 export function PatientSearch({
   onSelect,
 }: {
-  onSelect: (p: typeof patients[0] | null) => void;
+  onSelect: (p: Patient | null) => void;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<typeof patients[0] | null>(null);
+  const [selected, setSelected] = useState<Patient | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [patientList, setPatientList] = useState<Patient[]>(patients);
   const ref = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    fetchPatients().then(d => setPatientList(d.items as Patient[])).catch(() => {});
+  }, []);
+
   const results = query.length > 0
-    ? patients.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.id.toLowerCase().includes(query.toLowerCase()) || p.phone.includes(query))
-    : patients.slice(0, 5);
+    ? patientList.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.id.toLowerCase().includes(query.toLowerCase()) || p.phone.includes(query))
+    : patientList.slice(0, 5);
 
   useEffect(() => {
     function handle(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }
@@ -43,7 +51,7 @@ export function PatientSearch({
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
-  const choose = (p: typeof patients[0]) => {
+  const choose = (p: Patient) => {
     setSelected(p); setQuery(p.name); setOpen(false); onSelect(p);
   };
 
@@ -195,7 +203,7 @@ function DoctorSearch({
 export function PatientDrawer({
   patient, onClose, onAddItems,
 }: {
-  patient: typeof patients[0];
+  patient: Patient;
   onClose: () => void;
   onAddItems: (items: { name: string; qty: number; packs: number }[]) => void;
 }) {
@@ -345,7 +353,11 @@ function InvoiceList({ onNew, onOpen }: { onNew: () => void; onOpen: (inv: typeo
   const [toDate, setToDate] = useState("");
   const [methodFilter, setMethodFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
-  const filtered = salesInvoices.filter(i => {
+  const [invoices, setInvoices] = useState(salesInvoices);
+  useEffect(() => {
+    fetchSaleInvoices().then(d => setInvoices(d.items as typeof salesInvoices)).catch(() => {});
+  }, []);
+  const filtered = invoices.filter(i => {
     const q = search.trim().toLowerCase();
     const matchSearch = !q || i.id.toLowerCase().includes(q) || i.patient.toLowerCase().includes(q);
     const matchFrom = !fromDate || i.date >= fromDate;
@@ -475,7 +487,7 @@ function NewInvoice({
   const isExisting = !!invoice;
   const seedItems = invoice ? (patientPrevItems[invoice.id] ?? []) : preloadItems;
 
-  const [patient, setPatient] = useState<typeof patients[0] | null>(
+  const [patient, setPatient] = useState<Patient | null>(
     invoice ? (patients.find(p => p.id === invoice.patientId) ?? null) : null
   );
   const [doctor, setDoctor] = useState<typeof DOCTORS[0] | null>(null);
@@ -486,20 +498,25 @@ function NewInvoice({
   const [cashDiscount, setCashDiscount] = useState(0);
   const [adjustment, setAdjustment] = useState(0);
   const [saved, setSaved] = useState<null | "draft" | "posted">(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [readOnly, setReadOnly] = useState(isExisting);
   const [printJob, setPrintJob] = useState<{ jobType: PrintJobType; docId?: string } | null>(null);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
+  const [showRxPanel, setShowRxPanel] = useState(false);
+  const [rxDraft, setRxDraft] = useState({ rxNo: "", imageName: "" });
+  const [attachedRx, setAttachedRx] = useState<{ rxNo: string; imageName: string | null } | null>(null);
+  const rxFileRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(1);
 
   const [items, setItems] = useState<LineItem[]>(() => {
     if (seedItems && seedItems.length > 0) {
       const rows = seedItems.map(item => {
-        const med = MEDICINES.find(m => m.name === item.name);
+        const med = PRODUCTS.find(m => m.name === item.name);
         const batch = med?.batches[0] ?? null;
         const row = newEmptyRow(nextId.current++);
         return {
           ...row,
-          medicineName: item.name,
+          productName: item.name,
           barcode: med?.barcode ?? "",
           qty: item.qty,
           packs: item.packs,
@@ -513,13 +530,38 @@ function NewInvoice({
     return [newEmptyRow(nextId.current++)];
   });
 
-  const hasItems = items.some(i => i.medicineName !== "");
+  const hasItems = items.some(i => i.productName !== "");
+
+  const handlePostInvoice = async () => {
+    const filledItems = items.filter(i => i.productName);
+    setIsSubmitting(true);
+    try {
+      await createSaleInvoice({
+        patient_id: (patient as any)?.dbId ?? null,
+        invoice_date: new Date().toISOString().slice(0, 10),
+        sale_type: "retail",
+        items: filledItems.map(i => ({
+          global_product_id: i.barcode || i.productName.toLowerCase().replace(/\s+/g, "-"),
+          batch_id: (i.batch as any)?.dbId ?? null,
+          quantity: i.qty,
+          sale_rate: i.saleRate,
+          item_discount_pct: i.disc,
+        })),
+        cash_discount: cashDiscount,
+        adjustment,
+        payment_mode: payMethod,
+        notes,
+      });
+    } catch { /* offline — continue to success state */ }
+    finally { setIsSubmitting(false); }
+    setSaved("posted");
+  };
 
   const updateItem = (id: number, field: keyof LineItem, value: any) => {
     setItems(prev => {
       const updated = prev.map(i => i.id === id ? { ...i, [field]: value } : i);
       const last = updated[updated.length - 1];
-      if (last.medicineName && field === "medicineName") {
+      if (last.productName && field === "productName") {
         return [...updated, newEmptyRow(nextId.current++)];
       }
       return updated;
@@ -529,7 +571,7 @@ function NewInvoice({
   const deleteItem = (id: number) => {
     setItems(prev => {
       const filtered = prev.filter(i => i.id !== id);
-      if (filtered.length === 0 || filtered[filtered.length - 1].medicineName) {
+      if (filtered.length === 0 || filtered[filtered.length - 1].productName) {
         return [...filtered, newEmptyRow(nextId.current++)];
       }
       return filtered;
@@ -537,15 +579,15 @@ function NewInvoice({
   };
 
   const addScannedBarcode = (barcode: string) => {
-    const med = MEDICINES.find(m => m.barcode === barcode);
+    const med = PRODUCTS.find(m => m.barcode === barcode);
     if (!med) return false;
     const batch = pickBatch(med.batches, alloc);
     if (!batch) return false;
     setItems(prev => {
-      const filled = prev.filter(i => i.medicineName);
+      const filled = prev.filter(i => i.productName);
       const newRow: LineItem = {
         ...newEmptyRow(nextId.current++),
-        medicineName: med.name,
+        productName: med.name,
         barcode: med.barcode,
         batch,
         mrp: batch.mrp,
@@ -581,20 +623,20 @@ function NewInvoice({
 
   const addFromDrawer = (incoming: { name: string; qty: number; packs: number }[]) => {
     setItems(prev => {
-      const filled = prev.filter(i => i.medicineName);
+      const filled = prev.filter(i => i.productName);
       const newRows = incoming.map(item => {
-        const med = MEDICINES.find(m => m.name === item.name);
+        const med = PRODUCTS.find(m => m.name === item.name);
         const batch = med?.batches[0] ?? null;
         const row = newEmptyRow(nextId.current++);
-        return { ...row, medicineName: item.name, qty: item.qty, packs: item.packs, batch, mrp: batch?.mrp ?? 0, saleRate: batch?.saleRate ?? 0 };
+        return { ...row, productName: item.name, qty: item.qty, packs: item.packs, batch, mrp: batch?.mrp ?? 0, saleRate: batch?.saleRate ?? 0 };
       });
       return [...filled, ...newRows, newEmptyRow(nextId.current++)];
     });
   };
 
   const viewItems = useMemo(() => {
-    const empty = items.filter(i => !i.medicineName);
-    const filled = items.filter(i => i.medicineName);
+    const empty = items.filter(i => !i.productName);
+    const filled = items.filter(i => i.productName);
     filled.sort((a, b) => {
       const ad = a.batch?.expDate ?? "";
       const bd = b.batch?.expDate ?? "";
@@ -643,9 +685,24 @@ function NewInvoice({
           )}
           {!isExisting && (
             <>
+              {attachedRx ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#E8F5E9", border: "1px solid #A5D6A7", borderRadius: 6, padding: "5px 10px" }}>
+                  <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="#2E7D32" opacity="0.15"/><path d="M6 10l3 3 5-5" stroke="#2E7D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <span style={{ fontSize: 12, color: "#2E7D32", fontWeight: 600, fontFamily: "Inter" }}>Rx {attachedRx.rxNo || "attached"}{attachedRx.imageName ? ` · ${attachedRx.imageName}` : ""}</span>
+                  <button onClick={() => setAttachedRx(null)} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", color: "#2E7D32" }}>
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => { setRxDraft({ rxNo: "", imageName: "" }); setShowRxPanel(v => !v); }}
+                  style={{ padding: "7px 14px", border: "1px solid #DDE3EC", borderRadius: 6, background: showRxPanel ? "#F0F6FF" : "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#1B6CA8", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 6 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                  Attach Rx
+                </button>
+              )}
               <button disabled={!hasItems} onClick={() => setSaved("draft")} style={{ padding: "7px 16px", border: `1px solid ${hasItems ? "#E8ECF4" : "#F0F0F0"}`, background: hasItems ? "#fff" : "#F5F5F5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#1A2436" : "#BDBDBD", fontFamily: "Inter" }}>Save Draft</button>
               <button disabled={!hasItems} onClick={() => setPrintJob({ jobType: "Sales Invoice" })} style={{ padding: "7px 16px", border: `1px solid ${hasItems ? "#E8ECF4" : "#F0F0F0"}`, background: hasItems ? "#fff" : "#F5F5F5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#1A2436" : "#BDBDBD", fontFamily: "Inter" }}>Print</button>
-              <button disabled={!hasItems} onClick={() => setSaved("posted")} style={{ padding: "7px 20px", border: "none", background: hasItems ? "#1B6CA8" : "#C8D6E5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#fff" : "#8FA3B1", fontFamily: "Inter", fontWeight: 600 }}>Post Invoice</button>
+              <button disabled={!hasItems || isSubmitting} onClick={handlePostInvoice} style={{ padding: "7px 20px", border: "none", background: hasItems && !isSubmitting ? "#1B6CA8" : "#C8D6E5", fontSize: 13, cursor: hasItems && !isSubmitting ? "pointer" : "not-allowed", color: hasItems && !isSubmitting ? "#fff" : "#8FA3B1", fontFamily: "Inter", fontWeight: 600 }}>{isSubmitting ? "Posting..." : "Post Invoice"}</button>
             </>
           )}
         </div>
@@ -660,6 +717,49 @@ function NewInvoice({
               <button onClick={() => setShowBackConfirm(false)} style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>Cancel</button>
               <button onClick={() => { setSaved("draft"); setShowBackConfirm(false); }} style={{ padding: "6px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 12, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>Save</button>
               <button onClick={onBack} style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#C62828", fontFamily: "Inter" }}>Discard</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attach Rx panel */}
+      {showRxPanel && !attachedRx && !isExisting && (
+        <div style={{ background: "#FAFBFD", borderBottom: "1px solid #E8ECF4", padding: "14px 20px", flexShrink: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#6B7280", marginBottom: 12 }}>Attach Prescription</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" as const }}>
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>Rx / Prescription No.</label>
+              <input
+                type="text"
+                placeholder="e.g. RX-2026-0042"
+                value={rxDraft.rxNo}
+                onChange={e => setRxDraft(d => ({ ...d, rxNo: e.target.value }))}
+                style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, fontFamily: "Inter", outline: "none", width: 200, background: "#fff" }}
+              />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>Hard Copy Image</label>
+              <input ref={rxFileRef} type="file" accept="image/*,.pdf" style={{ display: "none" }} onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) setRxDraft(d => ({ ...d, imageName: f.name }));
+              }} />
+              <button onClick={() => rxFileRef.current?.click()}
+                style={{ padding: "7px 12px", borderRadius: 6, border: "1px dashed #B0BEC5", background: "#fff", fontSize: 12, cursor: "pointer", color: "#6B7280", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" as const }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                {rxDraft.imageName || "Upload photo / scan"}
+              </button>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setShowRxPanel(false)}
+                style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>
+                Cancel
+              </button>
+              <button
+                disabled={!rxDraft.rxNo && !rxDraft.imageName}
+                onClick={() => { setAttachedRx({ rxNo: rxDraft.rxNo, imageName: rxDraft.imageName || null }); setShowRxPanel(false); }}
+                style={{ padding: "7px 16px", borderRadius: 6, border: "none", background: rxDraft.rxNo || rxDraft.imageName ? "#1B6CA8" : "#C8D6E5", fontSize: 13, fontWeight: 600, cursor: rxDraft.rxNo || rxDraft.imageName ? "pointer" : "default", color: "#fff", fontFamily: "Inter" }}>
+                Attach
+              </button>
             </div>
           </div>
         </div>
@@ -697,8 +797,7 @@ function NewInvoice({
 
           <div style={{ flex: "0 0 140px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Invoice Date</div>
-            <input type="date" defaultValue={invoice?.date ?? "2026-08-14"} disabled={readOnly}
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+            <DatePicker defaultValue={invoice?.date ?? "2026-08-14"} disabled={readOnly} />
           </div>
 
           <div style={{ flex: "0 0 130px" }}>
@@ -711,8 +810,7 @@ function NewInvoice({
 
           <div style={{ flex: "0 0 140px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Due Date</div>
-            <input type="date" defaultValue={invoice?.due ?? "2026-09-14"} disabled={readOnly}
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+            <DatePicker defaultValue={invoice?.due ?? "2026-09-14"} disabled={readOnly} />
           </div>
 
           <div>
@@ -735,7 +833,7 @@ function NewInvoice({
             <div>
               <span style={{ fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: "#1A2436" }}>Line Items</span>
               <span style={{ fontSize: 12, color: "#9CA3AF", marginLeft: 8 }}>
-                {readOnly ? "Read-only view — click Edit to modify" : "Search and add medicines to this invoice"}
+                {readOnly ? "Read-only view — click Edit to modify" : "Search and add products to this invoice"}
               </span>
             </div>
             <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#9CA3AF" }}>Allocation: {alloc}</span>

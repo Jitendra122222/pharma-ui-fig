@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePicker } from "../shared/DatePicker";
 import { Th } from "../shared/Th";
 import { providers } from "./insuranceData";
 
@@ -40,7 +41,7 @@ export default function SubmitClaim() {
                   {f.opts.map((o: string) => <option key={o}>{o}</option>)}
                 </select>
               ) : f.type === "date" ? (
-                <input type="date" defaultValue={f.val} style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
+                <DatePicker defaultValue={f.val} />
               ) : (
                 <input type="text" placeholder={f.ph} style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }} />
               )}

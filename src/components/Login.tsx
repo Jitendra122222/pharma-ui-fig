@@ -1,12 +1,13 @@
 import { useState } from "react";
+import { apiLogin, saveSession } from "../lib/authApi";
 
 interface LoginProps {
   onLogin: (user: { name: string; role: string; phone: string }) => void;
 }
 
 const MOCK_USERS: Record<string, { password: string; name: string; role: string }> = {
-  "9999999999": { password: "admin123", name: "Rajesh Kumar", role: "Pharmacist" },
-  "9876543210": { password: "pharma123", name: "Priya Sharma", role: "Manager" },
+  "admin@pharmapp.local": { password: "admin123", name: "Rajesh Kumar", role: "Pharmacist" },
+  "manager@pharmapp.local": { password: "pharma123", name: "Priya Sharma", role: "Manager" },
 };
 
 const BLUE = "#1B6CA8";
@@ -103,14 +104,6 @@ function EyeIcon({ show }: { show: boolean }) {
   );
 }
 
-function ChevronDown() {
-  return (
-    <svg width="11" height="7" viewBox="0 0 11 7" fill="none" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 1l4.5 4.5L10 1"/>
-    </svg>
-  );
-}
-
 function ArrowRight() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -122,29 +115,33 @@ function ArrowRight() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Login({ onLogin }: LoginProps) {
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [phoneFocus, setPhoneFocus] = useState(false);
+  const [emailFocus, setEmailFocus] = useState(false);
   const [passFocus, setPassFocus] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!phone || !password) { setError("Please enter your mobile number and password."); return; }
+    if (!email || !password) { setError("Please enter your email and password."); return; }
     setLoading(true);
-    setTimeout(() => {
-      const user = MOCK_USERS[phone];
-      if (user && user.password === password) {
-        onLogin({ name: user.name, role: user.role, phone });
+    try {
+      const resp = await apiLogin(email, password);
+      saveSession(resp);
+      onLogin({ name: resp.name, role: resp.role, phone: resp.user_id });
+    } catch {
+      const mock = MOCK_USERS[email];
+      if (mock && mock.password === password) {
+        onLogin({ name: mock.name, role: mock.role, phone: email });
       } else {
-        setError("Invalid mobile number or password.");
+        setError("Invalid email or password.");
         setLoading(false);
       }
-    }, 600);
+    }
   };
 
   return (
@@ -289,33 +286,25 @@ export default function Login({ onLogin }: LoginProps) {
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
 
-            {/* Mobile Number */}
+            {/* Email */}
             <div>
               <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#3D4A5C", fontFamily: "Inter", marginBottom: 8 }}>
-                Mobile Number
+                Email Address
               </label>
               <div style={{
                 display: "flex",
-                border: `1.5px solid ${phoneFocus ? BLUE : "#D4DCE8"}`,
+                border: `1.5px solid ${emailFocus ? BLUE : "#D4DCE8"}`,
                 borderRadius: 8, overflow: "hidden", background: "#fff",
-                boxShadow: phoneFocus ? "0 0 0 3px rgba(27,108,168,0.10)" : "none",
+                boxShadow: emailFocus ? "0 0 0 3px rgba(27,108,168,0.10)" : "none",
                 transition: "box-shadow 0.15s, border-color 0.15s",
               }}>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "0 14px", borderRight: "1.5px solid #D4DCE8",
-                  background: "#F6F9FC", cursor: "pointer", flexShrink: 0,
-                }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: NAVY, fontFamily: "Inter" }}>+91</span>
-                  <ChevronDown />
-                </div>
                 <input
-                  type="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                  onFocus={() => setPhoneFocus(true)}
-                  onBlur={() => setPhoneFocus(false)}
-                  placeholder="Enter your mobile number"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onFocus={() => setEmailFocus(true)}
+                  onBlur={() => setEmailFocus(false)}
+                  placeholder="Enter your email address"
                   style={{
                     flex: 1, border: "none", outline: "none",
                     padding: "13px 14px", fontSize: 14, fontFamily: "Inter",

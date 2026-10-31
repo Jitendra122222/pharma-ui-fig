@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { patients } from "../../data/mockData";
+import { DatePicker } from "../shared/DatePicker";
+import { patients, type Patient } from "../../data/mockData";
 import { Pill } from "../shared/Pill";
 import { Th } from "../shared/Th";
 import { usePagination, PaginationFooter } from "../shared/usePagination";
@@ -8,8 +9,9 @@ import PrintDialog from "../shared/PrintDialog";
 import type { PrintJobType } from "../shared/PrintDialog";
 import {
   type Alloc, type LineItem,
+  type SaleReturn,
   TODAY, RETURN_REASONS, RETURN_STATUSES,
-  MEDICINES, salesInvoices, patientInvoiceHistory, patientPrevItems,
+  PRODUCTS, salesInvoices, patientInvoiceHistory, patientPrevItems,
   salesReturns, returnPrevItems,
   newEmptyRow, pickBatch, calcAmount,
 } from "./salesData";
@@ -17,7 +19,7 @@ import {
   ChevronDown,
   DateRangePicker,
   InvoiceRefSearch,
-  MedicineSearchCell,
+  ProductSearchCell,
 } from "./salesShared";
 import { PatientSearch, PatientDrawer } from "./SalesInvoices";
 
@@ -57,7 +59,7 @@ function ReturnItemsTable({
       <table style={{ borderCollapse: "collapse", minWidth: 1200, width: "100%" }}>
         <thead>
           <tr>
-            <Th>Medicine Name</Th>
+            <Th>Product Name</Th>
             <Th>Batch No</Th>
             <Th>Exp Date</Th>
             <Th right>Pack</Th>
@@ -75,12 +77,12 @@ function ReturnItemsTable({
           {items.map((item) => (
             <tr key={item.id} style={{ borderBottom: "1px solid #F4F6FA" }}>
               <td style={{ padding: "4px 6px", minWidth: 220 }}>
-                <MedicineSearchCell
-                  value={item.medicineName}
+                <ProductSearchCell
+                  value={item.productName}
                   alloc={alloc}
                   readOnly={readOnly}
                   onSelect={(med, batch) => {
-                    onChange(item.id, "medicineName", med.name);
+                    onChange(item.id, "productName", med.name);
                     onChange(item.id, "barcode", med.barcode);
                     onChange(item.id, "batch", batch);
                     onChange(item.id, "mrp", batch.mrp);
@@ -123,10 +125,10 @@ function ReturnItemsTable({
                   style={{ width: 48, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 12, outline: "none", fontFamily: "JetBrains Mono", textAlign: "right", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
               </td>
               <td style={{ padding: "4px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#C62828", whiteSpace: "nowrap" }}>
-                {item.medicineName ? `-₹${calcAmount(item).toFixed(2)}` : "—"}
+                {item.productName ? `-₹${calcAmount(item).toFixed(2)}` : "—"}
               </td>
               <td style={{ padding: "4px 8px", textAlign: "center" }}>
-                {item.medicineName && (
+                {item.productName && (
                   <ToggleSwitch
                     checked={item.restock ?? true}
                     disabled={readOnly}
@@ -135,7 +137,7 @@ function ReturnItemsTable({
                 )}
               </td>
               <td style={{ padding: "4px 8px" }}>
-                {item.medicineName && !readOnly && (
+                {item.productName && !readOnly && (
                   <button onClick={() => onDelete(item.id)} title="Remove" style={{ border: "none", background: "transparent", cursor: "pointer", color: "#C62828", fontSize: 16, padding: "2px 4px" }}>×</button>
                 )}
               </td>
@@ -149,12 +151,13 @@ function ReturnItemsTable({
 
 // ─── Sales Returns List ───────────────────────────────────────────────────────
 
-function SalesReturnsList({ onNew, onOpen }: { onNew: () => void; onOpen: (r: typeof salesReturns[0]) => void }) {
+function SalesReturnsList({ onNew, onOpen }: { onNew: () => void; onOpen: (r: SaleReturn) => void }) {
+  const [returnList] = useState<SaleReturn[]>(salesReturns);
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const filtered = salesReturns.filter(r => {
+  const filtered = returnList.filter(r => {
     const q = search.trim().toLowerCase();
     const matchSearch = !q
       || r.id.toLowerCase().includes(q)
@@ -247,9 +250,9 @@ function SalesReturnsList({ onNew, onOpen }: { onNew: () => void; onOpen: (r: ty
 
 // ─── New Sales Return (full-screen overlay) ───────────────────────────────────
 
-function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRecord?: typeof salesReturns[0] }) {
+function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRecord?: SaleReturn }) {
   const isExisting = !!returnRecord;
-  const [patient, setPatient] = useState<typeof patients[0] | null>(
+  const [patient, setPatient] = useState<Patient | null>(
     returnRecord ? (patients.find(p => p.id === returnRecord.patientId) ?? null) : null
   );
   const [showDrawer, setShowDrawer] = useState(false);
@@ -272,11 +275,11 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
     if (returnRecord) {
       const seed = returnPrevItems[returnRecord.id] ?? [];
       const rows = seed.map(s => {
-        const med = MEDICINES.find(m => m.name === s.name);
+        const med = PRODUCTS.find(m => m.name === s.name);
         const batch = med?.batches[0] ?? null;
         return {
           ...newEmptyRow(nextId.current++),
-          medicineName: s.name,
+          productName: s.name,
           barcode: med?.barcode ?? "",
           packs: s.packs,
           qty: s.qty,
@@ -292,7 +295,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
     return [{ ...newEmptyRow(nextId.current++), restock: true }];
   });
 
-  const hasItems = items.some(i => i.medicineName !== "");
+  const hasItems = items.some(i => i.productName !== "");
 
   const invoiceOptions = useMemo(() => {
     if (patient) {
@@ -314,11 +317,11 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
     const seed = patientPrevItems[origInvoiceId] ?? [];
     if (seed.length === 0) return;
     const rows = seed.map(s => {
-      const med = MEDICINES.find(m => m.name === s.name);
+      const med = PRODUCTS.find(m => m.name === s.name);
       const batch = med?.batches[0] ?? null;
       return {
         ...newEmptyRow(nextId.current++),
-        medicineName: s.name,
+        productName: s.name,
         barcode: med?.barcode ?? "",
         packs: s.packs,
         qty: s.qty,
@@ -336,7 +339,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
     setItems(prev => {
       const updated = prev.map(i => i.id === id ? { ...i, [field]: value } : i);
       const last = updated[updated.length - 1];
-      if (last.medicineName && field === "medicineName") {
+      if (last.productName && field === "productName") {
         return [...updated, { ...newEmptyRow(nextId.current++), restock: true }];
       }
       return updated;
@@ -346,7 +349,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
   const deleteItem = (id: number) => {
     setItems(prev => {
       const filtered = prev.filter(i => i.id !== id);
-      if (filtered.length === 0 || filtered[filtered.length - 1].medicineName) {
+      if (filtered.length === 0 || filtered[filtered.length - 1].productName) {
         return [...filtered, { ...newEmptyRow(nextId.current++), restock: true }];
       }
       return filtered;
@@ -366,14 +369,14 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
       lastKey = now;
       if (e.key === "Enter") {
         if (buffer.length >= 4) {
-          const med = MEDICINES.find(m => m.barcode === buffer);
+          const med = PRODUCTS.find(m => m.barcode === buffer);
           const batch = med ? pickBatch(med.batches, alloc) : null;
           if (med && batch) {
             setItems(prev => {
-              const filled = prev.filter(i => i.medicineName);
+              const filled = prev.filter(i => i.productName);
               return [...filled, {
                 ...newEmptyRow(nextId.current++),
-                medicineName: med.name, barcode: med.barcode, batch,
+                productName: med.name, barcode: med.barcode, batch,
                 mrp: batch.mrp, saleRate: batch.saleRate, packs: batch.packs,
                 restock: true,
               }, { ...newEmptyRow(nextId.current++), restock: true }];
@@ -390,8 +393,8 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
   }, [alloc]);
 
   const viewItems = useMemo(() => {
-    const empty = items.filter(i => !i.medicineName);
-    const filled = items.filter(i => i.medicineName);
+    const empty = items.filter(i => !i.productName);
+    const filled = items.filter(i => i.productName);
     filled.sort((a, b) => {
       const ad = a.batch?.expDate ?? "";
       const bd = b.batch?.expDate ?? "";
@@ -404,9 +407,9 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
     return [...empty, ...filled];
   }, [items, alloc, readOnly]);
 
-  const subtotal = items.reduce((s, i) => s + (i.medicineName ? i.qty * i.saleRate : 0), 0);
-  const discount = items.reduce((s, i) => s + (i.medicineName ? i.qty * i.saleRate * (i.disc / 100) : 0), 0);
-  const gstAdjustment = items.reduce((s, i) => s + (i.medicineName ? (i.qty * i.saleRate - i.qty * i.saleRate * (i.disc / 100)) * (i.gst / 100) : 0), 0);
+  const subtotal = items.reduce((s, i) => s + (i.productName ? i.qty * i.saleRate : 0), 0);
+  const discount = items.reduce((s, i) => s + (i.productName ? i.qty * i.saleRate * (i.disc / 100) : 0), 0);
+  const gstAdjustment = items.reduce((s, i) => s + (i.productName ? (i.qty * i.saleRate - i.qty * i.saleRate * (i.disc / 100)) * (i.gst / 100) : 0), 0);
   const refundAmount = subtotal - discount + gstAdjustment;
 
   const eligibility = useMemo(() => {
@@ -457,7 +460,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
               <button onClick={onBack} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
               <button disabled={!hasItems} onClick={() => setSaved("draft")} style={{ padding: "7px 16px", border: `1px solid ${hasItems ? "#E8ECF4" : "#F0F0F0"}`, background: hasItems ? "#fff" : "#F5F5F5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#1A2436" : "#BDBDBD", fontFamily: "Inter" }}>Save Draft</button>
               <button disabled={!hasItems} onClick={() => {
-                const restockItems = items.filter(i => i.medicineName !== "" && (i as any).restock);
+                const restockItems = items.filter(i => i.productName !== "" && (i as any).restock);
                 if (restockItems.length > 0) { setShowRestockConfirm(true); }
                 else { setSaved("posted"); setPrintJob({ jobType: "Sales Return", docId: "SRN-2025-0010" }); }
               }} style={{ padding: "7px 20px", border: "none", background: hasItems ? "#1B6CA8" : "#C8D6E5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#fff" : "#8FA3B1", fontFamily: "Inter", fontWeight: 600 }}>Save &amp; Print Return</button>
@@ -481,7 +484,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
       )}
 
       {showRestockConfirm && (() => {
-        const restockItems = items.filter(i => i.medicineName !== "" && (i as any).restock);
+        const restockItems = items.filter(i => i.productName !== "" && (i as any).restock);
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 310, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ background: "#fff", width: 480, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
@@ -493,7 +496,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
                 <div style={{ fontSize: 13, color: "#1A2436", marginBottom: 12 }}>The following items will be <strong>added back to stock</strong> as a Return adjustment:</div>
                 {restockItems.map(i => (
                   <div key={i.id} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #EEF1F6", marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{i.medicineName}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{i.productName}</span>
                     <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: "#2E7D32", fontWeight: 700 }}>+{i.qty}</span>
                   </div>
                 ))}
@@ -544,8 +547,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
 
           <div style={{ flex: "0 0 140px" }}>
             <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Return Date</div>
-            <input type="date" value={returnDate} disabled={readOnly} onChange={e => setReturnDate(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", background: readOnly ? "#F8FAFC" : "#fff", color: readOnly ? "#6B7280" : "#1A2436" }} />
+            <DatePicker value={returnDate} onChange={setReturnDate} disabled={readOnly} />
           </div>
 
           <div style={{ flex: "0 0 240px" }}>
@@ -709,7 +711,7 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
 
 export default function SalesReturns() {
   const [view, setView] = useState<"list" | "new-return">("list");
-  const [openReturn, setOpenReturn] = useState<typeof salesReturns[0] | null>(null);
+  const [openReturn, setOpenReturn] = useState<SaleReturn | null>(null);
 
   if (view === "new-return") {
     return (

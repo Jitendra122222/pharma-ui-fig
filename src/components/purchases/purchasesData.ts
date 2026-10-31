@@ -1,4 +1,20 @@
-import { drugs, suppliers } from "../../data/mockData";
+import { products, suppliers } from "../../data/mockData";
+import {
+  PAY_METHODS, RETURN_REASONS, BANK_ACCOUNTS, CANCEL_REASONS,
+  WAREHOUSES, PAYMENT_TERMS_OPTIONS, COVERAGE_DAYS,
+  DISPOSITION_OPTIONS, RETURN_TYPES,
+  DOSAGE_FORMS, ROUTES, SCHEDULES, PRESCRIPTION_STATUSES, PRODUCT_STATUSES, MANUFACTURER_TYPES,
+  DISTRIBUTOR_TYPES, ACCOUNT_STATUSES, DISTRIBUTOR_PAYMENT_TERMS, INDIAN_STATES, NOTIFY_CHANNEL_OPTIONS,
+  WEEK_DAYS, EXPIRY_PERIODS,
+} from "../../constants/purchaseLOV";
+export {
+  PAY_METHODS, RETURN_REASONS, BANK_ACCOUNTS, CANCEL_REASONS,
+  WAREHOUSES, PAYMENT_TERMS_OPTIONS, COVERAGE_DAYS,
+  DISPOSITION_OPTIONS, RETURN_TYPES,
+  DOSAGE_FORMS, ROUTES, SCHEDULES, PRESCRIPTION_STATUSES, PRODUCT_STATUSES, MANUFACTURER_TYPES,
+  DISTRIBUTOR_TYPES, ACCOUNT_STATUSES, DISTRIBUTOR_PAYMENT_TERMS, INDIAN_STATES, NOTIFY_CHANNEL_OPTIONS,
+  WEEK_DAYS, EXPIRY_PERIODS,
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -7,7 +23,8 @@ export type View = "list" | "new-order" | "view-order" | "new-invoice" | "view-i
 
 export interface POLine {
   id: number;
-  medicineName: string;
+  productId: string;
+  productName: string;
   pack: string;
   currentStock: number;
   avgSales: string;
@@ -27,6 +44,7 @@ export interface POLine {
 
 export interface PurchaseOrderRecord {
   id: string;
+  dbId?: string;
   supplier: string;
   date: string;
   expectedDelivery: string;
@@ -42,7 +60,7 @@ export interface PurchaseOrderRecord {
 
 export interface PurchaseLine {
   id: number;
-  medicineName: string;
+  productName: string;
   batchNo: string;
   mfgDate: string;
   expDate: string;
@@ -60,17 +78,7 @@ export interface PurchaseLine {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-export const TODAY = "2026-08-22";
-export const PAY_METHODS = ["Bank Transfer", "Cheque", "Cash", "UPI", "RTGS"];
-export const RETURN_REASONS = [
-  "Damaged on arrival",
-  "Near-expiry batch",
-  "Incorrect item shipped",
-  "Wrong quantity received",
-  "Quality issue",
-  "Other",
-];
-export const BANK_ACCOUNTS = ["Chase — Main Operating", "Chase — Petty Cash", "Wells Fargo — Savings", "HDFC — Current"];
+export const TODAY = new Date().toISOString().slice(0, 10);
 export const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export const BRAND_ALIASES: Record<string, string> = {
@@ -120,7 +128,7 @@ export function money(n: number): string {
 }
 
 export function newEmptyLine(id: number): PurchaseLine {
-  return { id, medicineName: "", batchNo: "", mfgDate: "", expDate: "", packSize: 1, qty: 0, free: 0, purchaseRate: 0, mrp: 0, disc: 0, gst: 12 };
+  return { id, productName: "", batchNo: "", mfgDate: "", expDate: "", packSize: 1, qty: 0, free: 0, purchaseRate: 0, mrp: 0, disc: 0, gst: 12 };
 }
 
 export function calcLineSubtotal(l: PurchaseLine): number {
@@ -162,10 +170,10 @@ export function calcMarginPct(mrp: number, effectiveCost: number): number {
 }
 
 export function newEmptyPOLine(id: number): POLine {
-  return { id, medicineName: "", pack: "", currentStock: 0, avgSales: "", suggestedQty: 0, orderQty: 0, purchaseRate: 0, scheme: "", freeQty: 0, mrp: 0, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 };
+  return { id, productId: "", productName: "", pack: "", currentStock: 0, avgSales: "", suggestedQty: 0, orderQty: 0, purchaseRate: 0, scheme: "", freeQty: 0, mrp: 0, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 };
 }
 
-// ─── Medicine classification helpers ──────────────────────────────────────────
+// ─── Product classification helpers ───────────────────────────────────────────
 
 function tokenise(s: string): string[] {
   return s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
@@ -217,14 +225,14 @@ export function classifyImportedLine(importedName: string): {
   const q = importedName.trim().toLowerCase();
   if (!q) return { status: "unmatched", systemName: "" };
 
-  const exact = drugs.find(d => d.name.toLowerCase() === q);
+  const exact = products.find(d => d.name.toLowerCase() === q);
   if (exact) return { status: "matched", systemName: exact.name };
 
   const tokens = tokenise(q);
   for (const token of tokens) {
     const aliasTarget = BRAND_ALIASES[token];
     if (aliasTarget) {
-      const drug = drugs.find(d => d.name === aliasTarget);
+      const drug = products.find(d => d.name === aliasTarget);
       if (drug) return { status: "fuzzy", systemName: drug.name };
       return { status: "fuzzy", systemName: aliasTarget };
     }
@@ -232,7 +240,7 @@ export function classifyImportedLine(importedName: string): {
 
   let bestFuzzy = 0;
   let bestFuzzyName = "";
-  for (const d of drugs) {
+  for (const d of products) {
     const score = fuzzyTokenScore(q, d.name.toLowerCase());
     if (score > bestFuzzy) { bestFuzzy = score; bestFuzzyName = d.name; }
   }
@@ -240,7 +248,7 @@ export function classifyImportedLine(importedName: string): {
 
   let bestScore = 0;
   let bestName = "";
-  for (const d of drugs) {
+  for (const d of products) {
     const score = wordOverlapScore(q, d.name.toLowerCase());
     if (score > bestScore) { bestScore = score; bestName = d.name; }
   }
@@ -267,7 +275,7 @@ export interface DrugWithParsed {
   strength: string;
 }
 
-function parseDrug(d: typeof drugs[0]): DrugWithParsed {
+function parseDrug(d: typeof products[0]): DrugWithParsed {
   const tokens = d.name.split(" ");
   let strengthIdx = -1;
   for (let i = tokens.length - 1; i >= 0; i--) {
@@ -280,7 +288,7 @@ function parseDrug(d: typeof drugs[0]): DrugWithParsed {
   return { ...d, generic, strength };
 }
 
-export const parsedDrugs: DrugWithParsed[] = drugs.map(parseDrug);
+export const parsedDrugs: DrugWithParsed[] = products.map(parseDrug);
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -329,24 +337,25 @@ export const purchaseOrders: PurchaseOrderRecord[] = [
 
 export const PO_MOCK_LINES: Record<string, POLine[]> = {
   "PO-2026-0155": [
-    { id: 1, medicineName: "Paracetamol 500mg", pack: "10 Tabs", currentStock: 120, avgSales: "40/day", suggestedQty: 400, orderQty: 400, purchaseRate: 1.80, scheme: "10+1", freeQty: 40, mrp: 3.50, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 2, medicineName: "Amoxicillin 500mg", pack: "10 Caps", currentStock: 45, avgSales: "12/day", suggestedQty: 120, orderQty: 120, purchaseRate: 5.20, scheme: "5+1", freeQty: 20, mrp: 10.00, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 3, medicineName: "Atorvastatin 20mg", pack: "10 Tabs", currentStock: 80, avgSales: "8/day", suggestedQty: 100, orderQty: 100, purchaseRate: 11.40, scheme: "10+1", freeQty: 10, mrp: 23.40, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 4, medicineName: "Metformin 1000mg", pack: "10 Tabs", currentStock: 60, avgSales: "15/day", suggestedQty: 150, orderQty: 150, purchaseRate: 4.50, scheme: "10+1", freeQty: 15, mrp: 9.00, gst: 5, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 5, medicineName: "Omeprazole 20mg", pack: "10 Caps", currentStock: 30, avgSales: "10/day", suggestedQty: 100, orderQty: 100, purchaseRate: 3.20, scheme: "5+1", freeQty: 16, mrp: 6.50, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 6, medicineName: "Amlodipine 5mg", pack: "10 Tabs", currentStock: 50, avgSales: "6/day", suggestedQty: 60, orderQty: 60, purchaseRate: 2.10, scheme: "", freeQty: 0, mrp: 4.80, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 7, medicineName: "Ciprofloxacin 500mg", pack: "10 Tabs", currentStock: 20, avgSales: "8/day", suggestedQty: 80, orderQty: 80, purchaseRate: 6.80, scheme: "10+1", freeQty: 8, mrp: 14.00, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 8, medicineName: "Sertraline 50mg", pack: "10 Tabs", currentStock: 15, avgSales: "4/day", suggestedQty: 40, orderQty: 40, purchaseRate: 9.20, scheme: "", freeQty: 0, mrp: 18.50, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 9, medicineName: "Salbutamol Inhaler", pack: "1 Inhaler", currentStock: 8, avgSales: "2/day", suggestedQty: 20, orderQty: 20, purchaseRate: 68.00, scheme: "5+1", freeQty: 3, mrp: 130.00, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 1, productName: "Paracetamol 500mg", pack: "10 Tabs", currentStock: 120, avgSales: "40/day", suggestedQty: 400, orderQty: 400, purchaseRate: 1.80, scheme: "10+1", freeQty: 40, mrp: 3.50, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 2, productName: "Amoxicillin 500mg", pack: "10 Caps", currentStock: 45, avgSales: "12/day", suggestedQty: 120, orderQty: 120, purchaseRate: 5.20, scheme: "5+1", freeQty: 20, mrp: 10.00, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 3, productName: "Atorvastatin 20mg", pack: "10 Tabs", currentStock: 80, avgSales: "8/day", suggestedQty: 100, orderQty: 100, purchaseRate: 11.40, scheme: "10+1", freeQty: 10, mrp: 23.40, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 4, productName: "Metformin 1000mg", pack: "10 Tabs", currentStock: 60, avgSales: "15/day", suggestedQty: 150, orderQty: 150, purchaseRate: 4.50, scheme: "10+1", freeQty: 15, mrp: 9.00, gst: 5, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 5, productName: "Omeprazole 20mg", pack: "10 Caps", currentStock: 30, avgSales: "10/day", suggestedQty: 100, orderQty: 100, purchaseRate: 3.20, scheme: "5+1", freeQty: 16, mrp: 6.50, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 6, productName: "Amlodipine 5mg", pack: "10 Tabs", currentStock: 50, avgSales: "6/day", suggestedQty: 60, orderQty: 60, purchaseRate: 2.10, scheme: "", freeQty: 0, mrp: 4.80, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 7, productName: "Ciprofloxacin 500mg", pack: "10 Tabs", currentStock: 20, avgSales: "8/day", suggestedQty: 80, orderQty: 80, purchaseRate: 6.80, scheme: "10+1", freeQty: 8, mrp: 14.00, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 8, productName: "Sertraline 50mg", pack: "10 Tabs", currentStock: 15, avgSales: "4/day", suggestedQty: 40, orderQty: 40, purchaseRate: 9.20, scheme: "", freeQty: 0, mrp: 18.50, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 9, productName: "Salbutamol Inhaler", pack: "1 Inhaler", currentStock: 8, avgSales: "2/day", suggestedQty: 20, orderQty: 20, purchaseRate: 68.00, scheme: "5+1", freeQty: 3, mrp: 130.00, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
   ],
   "PO-2026-0153": [
-    { id: 1, medicineName: "Insulin Glargine", pack: "3ml Pen", currentStock: 5, avgSales: "2/day", suggestedQty: 30, orderQty: 30, purchaseRate: 420.00, scheme: "", freeQty: 0, mrp: 850.00, gst: 5, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 2, medicineName: "Paracetamol 500mg", pack: "10 Tabs", currentStock: 80, avgSales: "40/day", suggestedQty: 500, orderQty: 500, purchaseRate: 1.80, scheme: "10+1", freeQty: 50, mrp: 3.50, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
-    { id: 3, medicineName: "Amoxicillin 500mg", pack: "10 Caps", currentStock: 20, avgSales: "12/day", suggestedQty: 150, orderQty: 150, purchaseRate: 5.20, scheme: "5+1", freeQty: 25, mrp: 10.00, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 1, productName: "Insulin Glargine", pack: "3ml Pen", currentStock: 5, avgSales: "2/day", suggestedQty: 30, orderQty: 30, purchaseRate: 420.00, scheme: "", freeQty: 0, mrp: 850.00, gst: 5, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 2, productName: "Paracetamol 500mg", pack: "10 Tabs", currentStock: 80, avgSales: "40/day", suggestedQty: 500, orderQty: 500, purchaseRate: 1.80, scheme: "10+1", freeQty: 50, mrp: 3.50, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
+    { id: 3, productName: "Amoxicillin 500mg", pack: "10 Caps", currentStock: 20, avgSales: "12/day", suggestedQty: 150, orderQty: 150, purchaseRate: 5.20, scheme: "5+1", freeQty: 25, mrp: 10.00, gst: 12, stockOnPO: 0, pendingOrders: 0, branchStock: 0, nearExpiryQty: 0, safetyStock: 0 },
   ],
 };
 
 export interface MedCatalogItem {
+  id: string;
   name: string; pack: string; dosageForm: string; composition: string; totalQty: number;
   cost: number; price: number; gst: number;
   avgSalesPerDay: number;
@@ -354,25 +363,25 @@ export interface MedCatalogItem {
 }
 
 export const PO_MED_CATALOG: MedCatalogItem[] = [
-  { name: "Paracetamol 500mg",      pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Paracetamol 500mg",                    totalQty: 1200, cost: 1.80,  price: 3.50,   gst: 12, avgSalesPerDay: 40, leadTime: 3 },
-  { name: "Amoxicillin 500mg",      pack: "10 Caps",    dosageForm: "Capsule",   composition: "Amoxicillin Trihydrate 500mg",          totalQty: 240,  cost: 5.20,  price: 10.00,  gst: 12, avgSalesPerDay: 8,  leadTime: 4 },
-  { name: "Metformin 500mg",        pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Metformin Hydrochloride 500mg",         totalQty: 320,  cost: 2.10,  price: 4.50,   gst: 5,  avgSalesPerDay: 10, leadTime: 3 },
-  { name: "Metformin 1000mg",       pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Metformin Hydrochloride 1000mg",        totalQty: 180,  cost: 4.50,  price: 9.00,   gst: 5,  avgSalesPerDay: 6,  leadTime: 3 },
-  { name: "Atorvastatin 20mg",      pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Atorvastatin Calcium 20mg",             totalQty: 312,  cost: 11.40, price: 23.40,  gst: 12, avgSalesPerDay: 10, leadTime: 5 },
-  { name: "Omeprazole 20mg",        pack: "10 Caps",    dosageForm: "Capsule",   composition: "Omeprazole 20mg",                      totalQty: 145,  cost: 3.20,  price: 6.50,   gst: 12, avgSalesPerDay: 5,  leadTime: 4 },
-  { name: "Amlodipine 5mg",         pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Amlodipine Besylate 5mg",               totalQty: 380,  cost: 2.10,  price: 4.80,   gst: 12, avgSalesPerDay: 12, leadTime: 3 },
-  { name: "Ciprofloxacin 500mg",    pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Ciprofloxacin Hydrochloride 500mg",     totalQty: 12,   cost: 6.80,  price: 14.00,  gst: 12, avgSalesPerDay: 4,  leadTime: 4 },
-  { name: "Sertraline 50mg",        pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Sertraline Hydrochloride 50mg",         totalQty: 220,  cost: 9.20,  price: 18.50,  gst: 12, avgSalesPerDay: 7,  leadTime: 5 },
-  { name: "Salbutamol Inhaler",     pack: "1 Inhaler",  dosageForm: "Inhaler",   composition: "Salbutamol Sulphate 100mcg/dose",       totalQty: 28,   cost: 68.00, price: 130.00, gst: 12, avgSalesPerDay: 1,  leadTime: 6 },
-  { name: "Insulin Glargine",       pack: "3ml Pen",    dosageForm: "Injection", composition: "Insulin Glargine 100 IU/mL",            totalQty: 45,   cost: 420.00,price: 850.00, gst: 5,  avgSalesPerDay: 1,  leadTime: 7 },
-  { name: "Warfarin 5mg",           pack: "28 Tabs",    dosageForm: "Tablet",    composition: "Warfarin Sodium 5mg",                  totalQty: 6,    cost: 8.50,  price: 18.00,  gst: 12, avgSalesPerDay: 1,  leadTime: 5 },
-  { name: "Lisinopril 10mg",        pack: "14 Tabs",    dosageForm: "Tablet",    composition: "Lisinopril Dihydrate 10mg",             totalQty: 0,    cost: 4.20,  price: 8.50,   gst: 12, avgSalesPerDay: 3,  leadTime: 4 },
-  { name: "Azithromycin 500mg",     pack: "5 Tabs",     dosageForm: "Tablet",    composition: "Azithromycin Dihydrate 500mg",          totalQty: 60,   cost: 18.00, price: 36.00,  gst: 12, avgSalesPerDay: 3,  leadTime: 4 },
-  { name: "Pantoprazole 40mg",      pack: "14 Tabs",    dosageForm: "Tablet",    composition: "Pantoprazole Sodium Sesquihydrate 40mg",totalQty: 90,   cost: 4.50,  price: 9.00,   gst: 12, avgSalesPerDay: 4,  leadTime: 3 },
-  { name: "Cetirizine 10mg",        pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Cetirizine Hydrochloride 10mg",         totalQty: 150,  cost: 1.80,  price: 3.60,   gst: 12, avgSalesPerDay: 6,  leadTime: 3 },
-  { name: "Montelukast 10mg",       pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Montelukast Sodium 10mg",               totalQty: 80,   cost: 7.20,  price: 14.00,  gst: 12, avgSalesPerDay: 3,  leadTime: 4 },
-  { name: "Losartan 50mg",          pack: "28 Tabs",    dosageForm: "Tablet",    composition: "Losartan Potassium 50mg",               totalQty: 112,  cost: 5.50,  price: 11.00,  gst: 12, avgSalesPerDay: 4,  leadTime: 4 },
-  { name: "Ibuprofen 400mg",        pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Ibuprofen 400mg",                      totalQty: 200,  cost: 2.20,  price: 4.80,   gst: 12, avgSalesPerDay: 8,  leadTime: 3 },
+  { id: "6af12a59-272b-476f-9513-c50302b260b0", name: "Paracetamol 500mg",      pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Paracetamol 500mg",                    totalQty: 1200, cost: 1.80,  price: 3.50,   gst: 12, avgSalesPerDay: 40, leadTime: 3 },
+  { id: "cf48afd2-8a9c-4ad0-9f3b-c88640184911", name: "Amoxicillin 500mg",      pack: "10 Caps",    dosageForm: "Capsule",   composition: "Amoxicillin Trihydrate 500mg",          totalQty: 240,  cost: 5.20,  price: 10.00,  gst: 12, avgSalesPerDay: 8,  leadTime: 4 },
+  { id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890", name: "Metformin 500mg",        pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Metformin Hydrochloride 500mg",         totalQty: 320,  cost: 2.10,  price: 4.50,   gst: 5,  avgSalesPerDay: 10, leadTime: 3 },
+  { id: "d91f0edf-79e1-4ceb-a1bb-d29f3291b80a", name: "Metformin 1000mg",       pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Metformin Hydrochloride 1000mg",        totalQty: 180,  cost: 4.50,  price: 9.00,   gst: 5,  avgSalesPerDay: 6,  leadTime: 3 },
+  { id: "8d967d63-35bb-431a-abaf-78299ea30fa3", name: "Atorvastatin 20mg",      pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Atorvastatin Calcium 20mg",             totalQty: 312,  cost: 11.40, price: 23.40,  gst: 12, avgSalesPerDay: 10, leadTime: 5 },
+  { id: "6f243681-de96-42f9-a0c8-2b11b6fb8c33", name: "Omeprazole 20mg",        pack: "10 Caps",    dosageForm: "Capsule",   composition: "Omeprazole 20mg",                      totalQty: 145,  cost: 3.20,  price: 6.50,   gst: 12, avgSalesPerDay: 5,  leadTime: 4 },
+  { id: "3e1e752d-8461-4dfd-8e70-924ba1ed7d0d", name: "Amlodipine 5mg",         pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Amlodipine Besylate 5mg",               totalQty: 380,  cost: 2.10,  price: 4.80,   gst: 12, avgSalesPerDay: 12, leadTime: 3 },
+  { id: "d91a22d6-fe93-46ca-ba09-3fa095a3f4ed", name: "Ciprofloxacin 500mg",    pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Ciprofloxacin Hydrochloride 500mg",     totalQty: 12,   cost: 6.80,  price: 14.00,  gst: 12, avgSalesPerDay: 4,  leadTime: 4 },
+  { id: "6eaebb64-7da0-4d6d-a79b-c5e7d3ffcb1a", name: "Sertraline 50mg",        pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Sertraline Hydrochloride 50mg",         totalQty: 220,  cost: 9.20,  price: 18.50,  gst: 12, avgSalesPerDay: 7,  leadTime: 5 },
+  { id: "6114c36f-8f72-4343-8254-ce22594508a7", name: "Salbutamol Inhaler",     pack: "1 Inhaler",  dosageForm: "Inhaler",   composition: "Salbutamol Sulphate 100mcg/dose",       totalQty: 28,   cost: 68.00, price: 130.00, gst: 12, avgSalesPerDay: 1,  leadTime: 6 },
+  { id: "7aec7bdd-d2c0-4496-8e59-3c48120a1c13", name: "Insulin Glargine",       pack: "3ml Pen",    dosageForm: "Injection", composition: "Insulin Glargine 100 IU/mL",            totalQty: 45,   cost: 420.00,price: 850.00, gst: 5,  avgSalesPerDay: 1,  leadTime: 7 },
+  { id: "b36ae5f2-8f5f-49d9-80b5-4250c361d4e9", name: "Warfarin 5mg",           pack: "28 Tabs",    dosageForm: "Tablet",    composition: "Warfarin Sodium 5mg",                  totalQty: 6,    cost: 8.50,  price: 18.00,  gst: 12, avgSalesPerDay: 1,  leadTime: 5 },
+  { id: "e1b2da77-62df-44f2-a820-3736bb2f40ad", name: "Lisinopril 10mg",        pack: "14 Tabs",    dosageForm: "Tablet",    composition: "Lisinopril Dihydrate 10mg",             totalQty: 0,    cost: 4.20,  price: 8.50,   gst: 12, avgSalesPerDay: 3,  leadTime: 4 },
+  { id: "b2c3d4e5-f6a7-8901-bcde-f12345678901", name: "Azithromycin 500mg",     pack: "5 Tabs",     dosageForm: "Tablet",    composition: "Azithromycin Dihydrate 500mg",          totalQty: 60,   cost: 18.00, price: 36.00,  gst: 12, avgSalesPerDay: 3,  leadTime: 4 },
+  { id: "c3d4e5f6-a7b8-9012-cdef-123456789012", name: "Pantoprazole 40mg",      pack: "14 Tabs",    dosageForm: "Tablet",    composition: "Pantoprazole Sodium Sesquihydrate 40mg",totalQty: 90,   cost: 4.50,  price: 9.00,   gst: 12, avgSalesPerDay: 4,  leadTime: 3 },
+  { id: "d4e5f6a7-b8c9-0123-defa-234567890123", name: "Cetirizine 10mg",        pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Cetirizine Hydrochloride 10mg",         totalQty: 150,  cost: 1.80,  price: 3.60,   gst: 12, avgSalesPerDay: 6,  leadTime: 3 },
+  { id: "e5f6a7b8-c9d0-1234-efab-345678901234", name: "Montelukast 10mg",       pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Montelukast Sodium 10mg",               totalQty: 80,   cost: 7.20,  price: 14.00,  gst: 12, avgSalesPerDay: 3,  leadTime: 4 },
+  { id: "f6a7b8c9-d0e1-2345-fabc-456789012345", name: "Losartan 50mg",          pack: "28 Tabs",    dosageForm: "Tablet",    composition: "Losartan Potassium 50mg",               totalQty: 112,  cost: 5.50,  price: 11.00,  gst: 12, avgSalesPerDay: 4,  leadTime: 4 },
+  { id: "a7b8c9d0-e1f2-3456-abcd-567890123456", name: "Ibuprofen 400mg",        pack: "10 Tabs",    dosageForm: "Tablet",    composition: "Ibuprofen 400mg",                      totalQty: 200,  cost: 2.20,  price: 4.80,   gst: 12, avgSalesPerDay: 8,  leadTime: 3 },
 ];
 
 export const PO_PRICE_HISTORY: Record<string, Array<{ supplier: string; rate: number; date: string }>> = {
@@ -407,7 +416,7 @@ export const SUPPLIER_COMPARISON: Record<string, Array<{ supplier: string; rate:
 };
 
 export interface MedRec { supplier: string; rate: number; mrp: number; scheme: string; expiryAllowed: boolean; expiryReturnPeriod: string; damageReturn: boolean; minExpiry: string; availability: string; score: number; }
-export const MEDICINE_RECS: Record<string, MedRec[]> = {
+export const PRODUCT_RECS: Record<string, MedRec[]> = {
   "Paracetamol 500mg": [
     { supplier: "GenPharm Ltd",   rate: 1.80, mrp: 3.50, scheme: "10+1", expiryAllowed: true,  expiryReturnPeriod: "3 months before expiry", damageReturn: true,  minExpiry: "12 months", availability: "Available", score: 95 },
     { supplier: "MedLine Pharma", rate: 1.95, mrp: 3.50, scheme: "10+1", expiryAllowed: true,  expiryReturnPeriod: "2 months before expiry", damageReturn: true,  minExpiry: "12 months", availability: "Available", score: 91 },
@@ -458,8 +467,6 @@ export const NEAR_EXPIRY_QTY: Record<string, number> = {
   "Metformin 1000mg": 20, "Amoxicillin 500mg": 15, "Omeprazole 20mg": 10,
 };
 
-export const COVERAGE_DAYS = 30;
-
 export interface DistributorPolicy {
   expiryReturn: boolean;
   damageReturn: boolean;
@@ -475,10 +482,6 @@ export const DISTRIBUTOR_POLICIES: Record<string, DistributorPolicy> = {
   "BioPharm AG":    { expiryReturn: true,  damageReturn: false, returnWindow: "15 days", minExpiry: "9 months",  nearExpiryDiscount: "—" },
   "RespiCare Ltd":  { expiryReturn: true,  damageReturn: true,  returnWindow: "45 days", minExpiry: "12 months", nearExpiryDiscount: "5% for < 3 months" },
 };
-
-export const CANCEL_REASONS = ["Distributor unavailable", "Price negotiation pending", "Order placed in error", "Budget constraint", "Alternative distributor selected", "Other"];
-export const WAREHOUSES = ["Main Warehouse", "Cold Store", "Branch Store"];
-export const PAYMENT_TERMS_OPTIONS = ["Cash on Delivery", "Credit 15 Days", "Credit 30 Days", "Credit 45 Days", "Credit 60 Days"];
 
 export const purchaseReturns = [
   { id: "PRN-2026-0014", invoiceRef: "PINV-2026-0070", supplier: "PharmaCo Inc", date: "2026-08-19", reason: "Damaged on arrival", items: 2, qty: 60, total: 342.00, creditNote: "CN-2026-0009", status: "Posted" },
@@ -518,7 +521,7 @@ export const purchasePayments = [
 
 export interface ReturnLine {
   id: number;
-  medicineName: string;
+  productName: string;
   packUnit: string;
   batchNo: string;
   expiryDate: string;
@@ -530,58 +533,55 @@ export interface ReturnLine {
 }
 
 export function newEmptyReturnLine(id: number): ReturnLine {
-  return { id, medicineName: "", packUnit: "1", batchNo: "", expiryDate: "", purchaseRate: 0, mrp: 0, returnQty: 0, freeQty: 0, disposition: "Replacement" };
+  return { id, productName: "", packUnit: "1", batchNo: "", expiryDate: "", purchaseRate: 0, mrp: 0, returnQty: 0, freeQty: 0, disposition: "Replacement" };
 }
 
 export const MOCK_RETURN_LINES: Record<string, ReturnLine[]> = {
   "PRN-2026-0014": [
-    { id: 1, medicineName: "Amoxicillin 500mg", packUnit: "10", batchNo: "AMX-2026-99", expiryDate: "2026-08-15", purchaseRate: 4.50, mrp: 8.50, returnQty: 30, freeQty: 0, disposition: "Replacement" },
-    { id: 2, medicineName: "Paracetamol 500mg", packUnit: "15", batchNo: "PCM-2025-A", expiryDate: "2027-05-15", purchaseRate: 0.60, mrp: 1.20, returnQty: 30, freeQty: 0, disposition: "Credit Note" },
+    { id: 1, productName: "Amoxicillin 500mg", packUnit: "10", batchNo: "AMX-2026-99", expiryDate: "2026-08-15", purchaseRate: 4.50, mrp: 8.50, returnQty: 30, freeQty: 0, disposition: "Replacement" },
+    { id: 2, productName: "Paracetamol 500mg", packUnit: "15", batchNo: "PCM-2025-A", expiryDate: "2027-05-15", purchaseRate: 0.60, mrp: 1.20, returnQty: 30, freeQty: 0, disposition: "Credit Note" },
   ],
   "PRN-2026-0013": [
-    { id: 1, medicineName: "Atorvastatin 20mg", packUnit: "30", batchNo: "ATV-1204X", expiryDate: "2026-09-10", purchaseRate: 11.40, mrp: 23.40, returnQty: 20, freeQty: 0, disposition: "Credit Note" },
+    { id: 1, productName: "Atorvastatin 20mg", packUnit: "30", batchNo: "ATV-1204X", expiryDate: "2026-09-10", purchaseRate: 11.40, mrp: 23.40, returnQty: 20, freeQty: 0, disposition: "Credit Note" },
   ],
   "PRN-2026-0012": [
-    { id: 1, medicineName: "Metformin 500mg", packUnit: "20", batchNo: "MET-2025-C", expiryDate: "2026-11-20", purchaseRate: 2.10, mrp: 4.50, returnQty: 50, freeQty: 0, disposition: "Replacement" },
-    { id: 2, medicineName: "Cetirizine 10mg", packUnit: "10", batchNo: "CET-2025-B", expiryDate: "2027-02-28", purchaseRate: 1.80, mrp: 3.60, returnQty: 60, freeQty: 0, disposition: "Refund" },
-    { id: 3, medicineName: "Omeprazole 20mg", packUnit: "14", batchNo: "OMP-2025-D", expiryDate: "2027-01-10", purchaseRate: 3.20, mrp: 6.80, returnQty: 40, freeQty: 0, disposition: "Credit Note" },
+    { id: 1, productName: "Metformin 500mg", packUnit: "20", batchNo: "MET-2025-C", expiryDate: "2026-11-20", purchaseRate: 2.10, mrp: 4.50, returnQty: 50, freeQty: 0, disposition: "Replacement" },
+    { id: 2, productName: "Cetirizine 10mg", packUnit: "10", batchNo: "CET-2025-B", expiryDate: "2027-02-28", purchaseRate: 1.80, mrp: 3.60, returnQty: 60, freeQty: 0, disposition: "Refund" },
+    { id: 3, productName: "Omeprazole 20mg", packUnit: "14", batchNo: "OMP-2025-D", expiryDate: "2027-01-10", purchaseRate: 3.20, mrp: 6.80, returnQty: 40, freeQty: 0, disposition: "Credit Note" },
   ],
   "PRN-2026-0011": [
-    { id: 1, medicineName: "Losartan 50mg", packUnit: "28", batchNo: "LOS-2025-A", expiryDate: "2027-03-15", purchaseRate: 5.50, mrp: 11.00, returnQty: 28, freeQty: 0, disposition: "Credit Note" },
-    { id: 2, medicineName: "Amlodipine 5mg", packUnit: "30", batchNo: "AML-2025-B", expiryDate: "2027-04-20", purchaseRate: 3.00, mrp: 6.50, returnQty: 12, freeQty: 0, disposition: "Replacement" },
+    { id: 1, productName: "Losartan 50mg", packUnit: "28", batchNo: "LOS-2025-A", expiryDate: "2027-03-15", purchaseRate: 5.50, mrp: 11.00, returnQty: 28, freeQty: 0, disposition: "Credit Note" },
+    { id: 2, productName: "Amlodipine 5mg", packUnit: "30", batchNo: "AML-2025-B", expiryDate: "2027-04-20", purchaseRate: 3.00, mrp: 6.50, returnQty: 12, freeQty: 0, disposition: "Replacement" },
   ],
   "PRN-2026-0010": [
-    { id: 1, medicineName: "Ibuprofen 400mg", packUnit: "10", batchNo: "IBU-2025-C", expiryDate: "2026-10-01", purchaseRate: 2.20, mrp: 4.80, returnQty: 20, freeQty: 0, disposition: "Discard" },
-    { id: 2, medicineName: "Azithromycin 500mg", packUnit: "5", batchNo: "AZI-2025-A", expiryDate: "2026-09-30", purchaseRate: 18.00, mrp: 36.00, returnQty: 20, freeQty: 0, disposition: "Discard" },
-    { id: 3, medicineName: "Pantoprazole 40mg", packUnit: "14", batchNo: "PAN-2025-B", expiryDate: "2027-06-10", purchaseRate: 4.50, mrp: 9.00, returnQty: 20, freeQty: 0, disposition: "Credit Note" },
-    { id: 4, medicineName: "Montelukast 10mg", packUnit: "10", batchNo: "MON-2025-A", expiryDate: "2027-08-15", purchaseRate: 7.20, mrp: 14.00, returnQty: 20, freeQty: 0, disposition: "Credit Note" },
+    { id: 1, productName: "Ibuprofen 400mg", packUnit: "10", batchNo: "IBU-2025-C", expiryDate: "2026-10-01", purchaseRate: 2.20, mrp: 4.80, returnQty: 20, freeQty: 0, disposition: "Discard" },
+    { id: 2, productName: "Azithromycin 500mg", packUnit: "5", batchNo: "AZI-2025-A", expiryDate: "2026-09-30", purchaseRate: 18.00, mrp: 36.00, returnQty: 20, freeQty: 0, disposition: "Discard" },
+    { id: 3, productName: "Pantoprazole 40mg", packUnit: "14", batchNo: "PAN-2025-B", expiryDate: "2027-06-10", purchaseRate: 4.50, mrp: 9.00, returnQty: 20, freeQty: 0, disposition: "Credit Note" },
+    { id: 4, productName: "Montelukast 10mg", packUnit: "10", batchNo: "MON-2025-A", expiryDate: "2027-08-15", purchaseRate: 7.20, mrp: 14.00, returnQty: 20, freeQty: 0, disposition: "Credit Note" },
   ],
   "PRN-2026-0009": [
-    { id: 1, medicineName: "Ciprofloxacin 500mg", packUnit: "10", batchNo: "CIP-2025-D", expiryDate: "2026-08-01", purchaseRate: 7.80, mrp: 15.60, returnQty: 25, freeQty: 0, disposition: "Discard" },
+    { id: 1, productName: "Ciprofloxacin 500mg", packUnit: "10", batchNo: "CIP-2025-D", expiryDate: "2026-08-01", purchaseRate: 7.80, mrp: 15.60, returnQty: 25, freeQty: 0, disposition: "Discard" },
   ],
   "PRN-2026-0008": [
-    { id: 1, medicineName: "Salbutamol 100mcg", packUnit: "200", batchNo: "SAL-2025-A", expiryDate: "2026-09-15", purchaseRate: 45.00, mrp: 90.00, returnQty: 25, freeQty: 0, disposition: "Replacement" },
-    { id: 2, medicineName: "Fluticasone 50mcg", packUnit: "150", batchNo: "FLU-2025-B", expiryDate: "2026-10-20", purchaseRate: 62.00, mrp: 124.00, returnQty: 20, freeQty: 0, disposition: "Credit Note" },
+    { id: 1, productName: "Salbutamol 100mcg", packUnit: "200", batchNo: "SAL-2025-A", expiryDate: "2026-09-15", purchaseRate: 45.00, mrp: 90.00, returnQty: 25, freeQty: 0, disposition: "Replacement" },
+    { id: 2, productName: "Fluticasone 50mcg", packUnit: "150", batchNo: "FLU-2025-B", expiryDate: "2026-10-20", purchaseRate: 62.00, mrp: 124.00, returnQty: 20, freeQty: 0, disposition: "Credit Note" },
   ],
   "PRN-2026-0007": [
-    { id: 1, medicineName: "Atorvastatin 40mg", packUnit: "30", batchNo: "ATV-2025-B", expiryDate: "2026-12-10", purchaseRate: 7.70, mrp: 15.40, returnQty: 12, freeQty: 0, disposition: "Credit Note" },
+    { id: 1, productName: "Atorvastatin 40mg", packUnit: "30", batchNo: "ATV-2025-B", expiryDate: "2026-12-10", purchaseRate: 7.70, mrp: 15.40, returnQty: 12, freeQty: 0, disposition: "Credit Note" },
   ],
   "PRN-2026-0006": [
-    { id: 1, medicineName: "Amoxicillin 250mg", packUnit: "10", batchNo: "AMX-2025-C", expiryDate: "2026-07-20", purchaseRate: 3.20, mrp: 6.50, returnQty: 20, freeQty: 0, disposition: "Discard" },
-    { id: 2, medicineName: "Metronidazole 400mg", packUnit: "14", batchNo: "MTZ-2025-A", expiryDate: "2026-08-05", purchaseRate: 2.50, mrp: 5.00, returnQty: 20, freeQty: 0, disposition: "Discard" },
-    { id: 3, medicineName: "Doxycycline 100mg", packUnit: "10", batchNo: "DOX-2025-B", expiryDate: "2026-09-01", purchaseRate: 6.00, mrp: 12.00, returnQty: 15, freeQty: 0, disposition: "Replacement" },
+    { id: 1, productName: "Amoxicillin 250mg", packUnit: "10", batchNo: "AMX-2025-C", expiryDate: "2026-07-20", purchaseRate: 3.20, mrp: 6.50, returnQty: 20, freeQty: 0, disposition: "Discard" },
+    { id: 2, productName: "Metronidazole 400mg", packUnit: "14", batchNo: "MTZ-2025-A", expiryDate: "2026-08-05", purchaseRate: 2.50, mrp: 5.00, returnQty: 20, freeQty: 0, disposition: "Discard" },
+    { id: 3, productName: "Doxycycline 100mg", packUnit: "10", batchNo: "DOX-2025-B", expiryDate: "2026-09-01", purchaseRate: 6.00, mrp: 12.00, returnQty: 15, freeQty: 0, disposition: "Replacement" },
   ],
   "PRN-2026-0005": [
-    { id: 1, medicineName: "Salbutamol Syrup", packUnit: "100ml", batchNo: "SAL-2025-C", expiryDate: "2026-11-30", purchaseRate: 62.00, mrp: 124.00, returnQty: 10, freeQty: 0, disposition: "Credit Note" },
+    { id: 1, productName: "Salbutamol Syrup", packUnit: "100ml", batchNo: "SAL-2025-C", expiryDate: "2026-11-30", purchaseRate: 62.00, mrp: 124.00, returnQty: 10, freeQty: 0, disposition: "Credit Note" },
   ],
   "PRN-2026-0004": [
-    { id: 1, medicineName: "Atorvastatin 20mg", packUnit: "30", batchNo: "ATV-1104X", expiryDate: "2026-09-05", purchaseRate: 11.40, mrp: 23.40, returnQty: 15, freeQty: 0, disposition: "Credit Note" },
-    { id: 2, medicineName: "Rosuvastatin 10mg", packUnit: "30", batchNo: "ROS-2025-A", expiryDate: "2026-10-15", purchaseRate: 14.00, mrp: 28.00, returnQty: 15, freeQty: 0, disposition: "Credit Note" },
+    { id: 1, productName: "Atorvastatin 20mg", packUnit: "30", batchNo: "ATV-1104X", expiryDate: "2026-09-05", purchaseRate: 11.40, mrp: 23.40, returnQty: 15, freeQty: 0, disposition: "Credit Note" },
+    { id: 2, productName: "Rosuvastatin 10mg", packUnit: "30", batchNo: "ROS-2025-A", expiryDate: "2026-10-15", purchaseRate: 14.00, mrp: 28.00, returnQty: 15, freeQty: 0, disposition: "Credit Note" },
   ],
 };
-
-export const DISPOSITION_OPTIONS = ["Replacement", "Credit Note", "Refund", "Discard"];
-export const RETURN_TYPES = ["Replacement", "Credit Note", "Refund"];
 
 export interface ReturnInitialData {
   id: string;
@@ -610,7 +610,7 @@ export function shiftIsoMonths(iso: string, months: number): string {
   return `${ny}-${String(nm).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
-export function priorBatchesFor(drug: typeof drugs[0]): PriorBatch[] {
+export function priorBatchesFor(drug: typeof products[0]): PriorBatch[] {
   const num = String(drug.id).padStart(4, "0");
   return [
     { id: `BT-${num}A`, qty: 240, packs: 24, mfgDate: shiftIsoMonths(drug.expiry, -24), expDate: drug.expiry, mrp: +(drug.price * 1.15).toFixed(2), rate: drug.cost },
@@ -618,7 +618,7 @@ export function priorBatchesFor(drug: typeof drugs[0]): PriorBatch[] {
   ];
 }
 
-// ─── Add Medicine form ────────────────────────────────────────────────────────
+// ─── Add Product form ─────────────────────────────────────────────────────────
 
 export interface AddMedForm {
   genericName: string; brandName: string; strength: string; dosageForm: string;
@@ -656,13 +656,6 @@ export const emptyMedForm = (): AddMedForm => ({
   productStatus: "Active", effectiveFrom: TODAY,
 });
 
-export const DOSAGE_FORMS = ["Tablet", "Capsule", "Syrup", "Injection", "Cream", "Ointment", "Drops", "Inhaler", "Patch", "Powder", "Suppository"];
-export const ROUTES = ["Oral", "IV", "IM", "SC", "Topical", "Inhaled", "Sublingual", "Rectal", "Ocular", "Nasal"];
-export const SCHEDULES = ["Schedule H", "Schedule H1", "Schedule X", "Schedule G", "Schedule J", "OTC", "None"];
-export const PRESCRIPTION_STATUSES = ["OTC", "Prescription", "Schedule H", "Schedule H1", "Schedule X", "Schedule G"];
-export const PRODUCT_STATUSES = ["Active", "Inactive", "Discontinued", "Under Review"];
-export const MANUFACTURER_TYPES = ["Pharmaceutical", "Biotechnology", "Generic", "OTC", "Ayurvedic", "Veterinary", "Contract Manufacturing"];
-
 export const KNOWN_MANUFACTURERS_SEED = [
   "GSK", "Cipla", "Sun Pharma", "Dr. Reddy's", "Lupin", "Alkem", "Torrent Pharma",
   "Abbott India", "Pfizer India", "Novartis India", "Zydus Cadila", "Mankind Pharma",
@@ -682,11 +675,6 @@ export const KNOWN_COMPOSITIONS_SEED = [
 export interface CompositionEntry { name: string; shortName: string; strength: string; sideEffects: string; description: string; }
 
 // ─── Distributor form data ────────────────────────────────────────────────────
-
-export const DISTRIBUTOR_TYPES = ["Stockist", "Wholesaler", "Manufacturer", "Direct"];
-export const ACCOUNT_STATUSES = ["Active", "Inactive", "On Hold"];
-export const DISTRIBUTOR_PAYMENT_TERMS = ["COD", "Net 15", "Net 30", "Net 45", "Net 60", "Net 90"];
-export const INDIAN_STATES = ["Andhra Pradesh", "Delhi", "Gujarat", "Karnataka", "Kerala", "Maharashtra", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana", "Uttar Pradesh", "West Bengal"];
 
 export interface DistributorFormData {
   name: string;
@@ -719,8 +707,6 @@ export interface DistributorFormData {
   notifyChannel: string;
 }
 
-export const NOTIFY_CHANNEL_OPTIONS = ["Email", "WhatsApp", "Email & WhatsApp"];
-
 export const emptyDistributor: DistributorFormData = {
   name: "", legalName: "", type: "Stockist", accountStatus: "Active",
   gstin: "", drugLicense1: "", drugLicense2: "", pan: "",
@@ -751,7 +737,7 @@ export interface AttachedFile {
 }
 
 export const SYSTEM_FIELDS: { id: string; label: string; required: boolean; aliases: string[] }[] = [
-  { id: "medicine", label: "Medicine", required: true, aliases: ["item_name", "item name", "product", "product_name", "drug", "medicine_name"] },
+  { id: "medicine", label: "Product", required: true, aliases: ["item_name", "item name", "product", "product_name", "drug", "medicine_name"] },
   { id: "batchNo", label: "Batch No.", required: true, aliases: ["batch", "batch_no", "batch_number", "lot", "lot_no"] },
   { id: "expDate", label: "Expiry Date", required: true, aliases: ["expiry", "expiry_date", "exp_date", "exp"] },
   { id: "qty", label: "Quantity", required: true, aliases: ["qty", "quantity", "units", "count", "received_qty"] },
@@ -794,26 +780,26 @@ export const MOCK_EMAILS = [
   { id: 5, sender: "RespiCare Ltd", from: "sales@respicare.co.uk", subject: "Weekly invoice batch", date: "2026-08-12", attachment: "respicare-weekly-08.csv", sizeKb: 5 },
 ];
 
-export const CLEAN_CSV_HEADERS = ["Medicine", "Batch No", "Mfg Date", "Expiry Date", "Pack Size", "Quantity", "Free", "Rate", "MRP", "Discount %", "GST %"];
+export const CLEAN_CSV_HEADERS = ["Product", "Batch No", "Mfg Date", "Expiry Date", "Pack Size", "Quantity", "Free", "Rate", "MRP", "Discount %", "GST %"];
 export const MESSY_CSV_HEADERS = ["Invoice_Number", "Invoice_Date", "Distributor_Name", "Item_Code", "Item_Name", "Batch_No", "Expiry_Date", "Qty", "Rate"];
 
 export const MOCK_INVOICE_LINES: Record<string, PurchaseLine[]> = {
   "PINV-2026-0072": [
-    { id: 1, medicineName: "Amoxicillin 500mg", batchNo: "AMX-2026-99", mfgDate: "2025-05-10", expDate: "2026-08-15", packSize: 10, qty: 50, free: 5, purchaseRate: 4.50, mrp: 8.50, disc: 10, gst: 12 },
-    { id: 2, medicineName: "Atorvastatin 20mg", batchNo: "ATV-1204X", mfgDate: "2025-04-01", expDate: "2027-01-10", packSize: 30, qty: 100, free: 0, purchaseRate: 11.40, mrp: 23.40, disc: 5, gst: 12 },
-    { id: 3, medicineName: "Paracetamol 500mg", batchNo: "PCM-2025-A", mfgDate: "2025-06-01", expDate: "2027-05-15", packSize: 15, qty: 200, free: 20, purchaseRate: 0.60, mrp: 1.20, disc: 15, gst: 5 },
-    { id: 4, medicineName: "Metformin 500mg", batchNo: "MTF-2026-11", mfgDate: "2025-07-01", expDate: "2027-06-30", packSize: 20, qty: 150, free: 10, purchaseRate: 1.20, mrp: 2.80, disc: 8, gst: 12 },
-    { id: 5, medicineName: "Omeprazole 20mg", batchNo: "OMP-2025-B", mfgDate: "2025-03-15", expDate: "2027-03-14", packSize: 14, qty: 80, free: 0, purchaseRate: 3.20, mrp: 6.50, disc: 5, gst: 12 },
+    { id: 1, productName: "Amoxicillin 500mg", batchNo: "AMX-2026-99", mfgDate: "2025-05-10", expDate: "2026-08-15", packSize: 10, qty: 50, free: 5, purchaseRate: 4.50, mrp: 8.50, disc: 10, gst: 12 },
+    { id: 2, productName: "Atorvastatin 20mg", batchNo: "ATV-1204X", mfgDate: "2025-04-01", expDate: "2027-01-10", packSize: 30, qty: 100, free: 0, purchaseRate: 11.40, mrp: 23.40, disc: 5, gst: 12 },
+    { id: 3, productName: "Paracetamol 500mg", batchNo: "PCM-2025-A", mfgDate: "2025-06-01", expDate: "2027-05-15", packSize: 15, qty: 200, free: 20, purchaseRate: 0.60, mrp: 1.20, disc: 15, gst: 5 },
+    { id: 4, productName: "Metformin 500mg", batchNo: "MTF-2026-11", mfgDate: "2025-07-01", expDate: "2027-06-30", packSize: 20, qty: 150, free: 10, purchaseRate: 1.20, mrp: 2.80, disc: 8, gst: 12 },
+    { id: 5, productName: "Omeprazole 20mg", batchNo: "OMP-2025-B", mfgDate: "2025-03-15", expDate: "2027-03-14", packSize: 14, qty: 80, free: 0, purchaseRate: 3.20, mrp: 6.50, disc: 5, gst: 12 },
   ],
   "PINV-2026-0071": [
-    { id: 1, medicineName: "Cetirizine 10mg", batchNo: "CTZ-2026-04", mfgDate: "2025-08-01", expDate: "2027-07-31", packSize: 10, qty: 120, free: 10, purchaseRate: 1.80, mrp: 3.50, disc: 5, gst: 12 },
-    { id: 2, medicineName: "Azithromycin 500mg", batchNo: "AZT-2026-02", mfgDate: "2025-06-10", expDate: "2027-06-09", packSize: 5, qty: 60, free: 5, purchaseRate: 8.40, mrp: 16.00, disc: 10, gst: 12 },
-    { id: 3, medicineName: "Ibuprofen 400mg", batchNo: "IBU-2026-07", mfgDate: "2025-07-20", expDate: "2027-07-19", packSize: 15, qty: 90, free: 0, purchaseRate: 1.50, mrp: 3.00, disc: 0, gst: 12 },
+    { id: 1, productName: "Cetirizine 10mg", batchNo: "CTZ-2026-04", mfgDate: "2025-08-01", expDate: "2027-07-31", packSize: 10, qty: 120, free: 10, purchaseRate: 1.80, mrp: 3.50, disc: 5, gst: 12 },
+    { id: 2, productName: "Azithromycin 500mg", batchNo: "AZT-2026-02", mfgDate: "2025-06-10", expDate: "2027-06-09", packSize: 5, qty: 60, free: 5, purchaseRate: 8.40, mrp: 16.00, disc: 10, gst: 12 },
+    { id: 3, productName: "Ibuprofen 400mg", batchNo: "IBU-2026-07", mfgDate: "2025-07-20", expDate: "2027-07-19", packSize: 15, qty: 90, free: 0, purchaseRate: 1.50, mrp: 3.00, disc: 0, gst: 12 },
   ],
   "PINV-2026-0070": [
-    { id: 1, medicineName: "Amlodipine 5mg", batchNo: "AML-2026-03", mfgDate: "2025-05-01", expDate: "2027-04-30", packSize: 30, qty: 200, free: 20, purchaseRate: 2.10, mrp: 4.20, disc: 5, gst: 12 },
-    { id: 2, medicineName: "Losartan 50mg", batchNo: "LOS-2026-08", mfgDate: "2025-06-15", expDate: "2027-06-14", packSize: 30, qty: 150, free: 15, purchaseRate: 3.80, mrp: 7.50, disc: 8, gst: 12 },
-    { id: 3, medicineName: "Metoprolol 25mg", batchNo: "MTP-2025-C", mfgDate: "2025-04-01", expDate: "2027-03-31", packSize: 30, qty: 100, free: 0, purchaseRate: 2.60, mrp: 5.20, disc: 5, gst: 12 },
+    { id: 1, productName: "Amlodipine 5mg", batchNo: "AML-2026-03", mfgDate: "2025-05-01", expDate: "2027-04-30", packSize: 30, qty: 200, free: 20, purchaseRate: 2.10, mrp: 4.20, disc: 5, gst: 12 },
+    { id: 2, productName: "Losartan 50mg", batchNo: "LOS-2026-08", mfgDate: "2025-06-15", expDate: "2027-06-14", packSize: 30, qty: 150, free: 15, purchaseRate: 3.80, mrp: 7.50, disc: 8, gst: 12 },
+    { id: 3, productName: "Metoprolol 25mg", batchNo: "MTP-2025-C", mfgDate: "2025-04-01", expDate: "2027-03-31", packSize: 30, qty: 100, free: 0, purchaseRate: 2.60, mrp: 5.20, disc: 5, gst: 12 },
   ],
 };
 
@@ -857,7 +843,7 @@ export interface RecommendedQtyResult {
 
 export function calcRecommendedQty(medName: string, currentStock: number, distributorName?: string): RecommendedQtyResult {
   const catalog = PO_MED_CATALOG.find(m => m.name === medName);
-  const drugInfo = drugs.find(d => d.name === medName);
+  const drugInfo = products.find(d => d.name === medName);
   const coverageDays = COVERAGE_DAYS;
   const avgSalesPerDay = catalog?.avgSalesPerDay ?? 1;
   const leadTime = catalog?.leadTime ?? 3;

@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { DatePicker } from "../shared/DatePicker";
 import { suppliers } from "../../data/mockData";
 import { Pill } from "../shared/Pill";
 import { Th } from "../shared/Th";
@@ -12,14 +13,32 @@ import {
   purchaseReturns, formatDMY, money, newEmptyReturnLine,
   MOCK_RETURN_LINES, DISPOSITION_OPTIONS, RETURN_TYPES, RETURN_REASONS, TODAY,
 } from "./purchasesData";
+import { MSG_RETURN_DRAFT, MSG_RETURN_SUBMIT } from "../../constants/purchaseMessages";
+import { fetchPurchaseReturns, createPurchaseReturn, updateReturnStatus } from "../../lib/purchaseApi";
 import {
   Td, TableRow, PrimaryBtn, GhostBtn,
   FilterSearch, FilterDropdown, ClearFiltersButton, NewButton,
   BackConfirmDialog, EmptyTableRow,
-  MedicineNameCell, DistributorSearch, AddDistributorDrawer, DistributorDrawer,
+  ProductNameCell, DistributorSearch, AddDistributorDrawer, DistributorDrawer,
 } from "./purchasesShared";
 
-function PurchaseReturnList({ onNew, onView, returns }: { onNew: () => void; onView: (id: string) => void; returns: typeof purchaseReturns }) {
+function ReturnLoadingRows() {
+  return (
+    <>
+      {[1, 2, 3, 4, 5].map(i => (
+        <tr key={i}>
+          {[90, 100, 100, 80, 120, 40, 50, 70, 80, 60].map((w, j) => (
+            <td key={j} style={{ padding: "10px 14px" }}>
+              <div style={{ height: 14, borderRadius: 4, background: "#F0F3F7", width: w }} />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function PurchaseReturnList({ onNew, onView, returns, loading = false }: { onNew: () => void; onView: (id: string) => void; returns: typeof purchaseReturns; loading?: boolean }) {
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [reasonFilter, setReasonFilter] = useState("All");
@@ -36,7 +55,7 @@ function PurchaseReturnList({ onNew, onView, returns }: { onNew: () => void; onV
     const mFrom = !fromDate || r.date >= fromDate;
     const mTo = !toDate || r.date <= toDate;
     return mSearch && mSupplier && mReason && mStatus && mFrom && mTo;
-  }), [search, supplierFilter, reasonFilter, statusFilter, fromDate, toDate]);
+  }), [returns, search, supplierFilter, reasonFilter, statusFilter, fromDate, toDate]);
 
   const { sortCol, sortDir, handleSort, sorted } = useTableSort(filtered);
   const { pageRows, footerProps } = usePagination(sorted, 10);
@@ -78,7 +97,8 @@ function PurchaseReturnList({ onNew, onView, returns }: { onNew: () => void; onV
               </tr>
             </thead>
             <tbody>
-              {pageRows.map(r => (
+              {loading && <ReturnLoadingRows />}
+              {!loading && pageRows.map(r => (
                 <TableRow key={r.id}>
                   <Td mono color="#1B6CA8" bold><span onClick={() => onView(r.id)} style={{ cursor: "pointer", textDecoration: "none" }} onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")} onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}>{r.id}</span></Td>
                   <Td mono color="#9CA3AF">{r.invoiceRef}</Td>
@@ -92,7 +112,7 @@ function PurchaseReturnList({ onNew, onView, returns }: { onNew: () => void; onV
                   <Td><Pill status={r.status} /></Td>
                 </TableRow>
               ))}
-              {pageRows.length === 0 && (
+              {!loading && pageRows.length === 0 && (
                 <EmptyTableRow colSpan={10} message="No returns match your filters." />
               )}
             </tbody>
@@ -140,13 +160,13 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
   const [creditNoteRef, setCreditNoteRef] = useState("");
   const [notes, setNotes] = useState("");
 
-  const hasItems = items.some(i => i.medicineName !== "");
+  const hasItems = items.some(i => i.productName !== "");
 
   const updateItem = (id: number, field: keyof ReturnLine, value: string | number) => {
     setItems(prev => {
       const updated = prev.map(i => i.id === id ? { ...i, [field]: value } : i);
-      const hasEmpty = updated.some(i => !i.medicineName);
-      if (!hasEmpty && field === "medicineName") {
+      const hasEmpty = updated.some(i => !i.productName);
+      if (!hasEmpty && field === "productName") {
         return [newEmptyReturnLine(nextId.current++), ...updated];
       }
       return updated;
@@ -157,13 +177,13 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
     setItems(prev => {
       const filtered = prev.filter(i => i.id !== id);
       if (filtered.length === 0) return [newEmptyReturnLine(nextId.current++)];
-      const hasEmpty = filtered.some(i => !i.medicineName);
+      const hasEmpty = filtered.some(i => !i.productName);
       if (!hasEmpty) return [newEmptyReturnLine(nextId.current++), ...filtered];
       return filtered;
     });
   };
 
-  const filledItems = items.filter(i => i.medicineName);
+  const filledItems = items.filter(i => i.productName);
   const totalUnits = filledItems.reduce((s, i) => s + i.returnQty, 0);
   const supplierCredit = filledItems.reduce((s, i) => s + (i.purchaseRate * i.returnQty), 0);
 
@@ -265,8 +285,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
             {viewMode ? (
               <div style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, fontFamily: "Inter", background: "#FAFBFD", color: "#1A2436" }}>{originalInvoiceDate ? formatDMY(originalInvoiceDate) : "—"}</div>
             ) : (
-              <input type="date" value={originalInvoiceDate} onChange={e => setOriginalInvoiceDate(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const, background: "#fff" }} />
+              <DatePicker value={originalInvoiceDate} onChange={setOriginalInvoiceDate} />
             )}
           </div>
 
@@ -298,7 +317,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
             <table style={{ borderCollapse: "collapse", minWidth: 1200, width: "100%" }}>
               <thead>
                 <tr>
-                  <Th>Medicine</Th>
+                  <Th>Product</Th>
                   <Th>Batch #</Th>
                   <Th>Exp Date</Th>
                   <Th right>Pack/Unit</Th>
@@ -312,17 +331,17 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                 </tr>
               </thead>
               <tbody>
-                {items.filter(item => viewMode ? item.medicineName !== "" : true).map(item => (
+                {items.filter(item => viewMode ? item.productName !== "" : true).map(item => (
                   <tr key={item.id} style={{ borderBottom: "1px solid #F4F6FA" }}>
                     <td style={{ padding: "6px 10px", textAlign: "left" }}>
                       {viewMode ? (
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{item.medicineName}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{item.productName}</span>
                       ) : (
-                        <MedicineNameCell
-                          value={item.medicineName}
+                        <ProductNameCell
+                          value={item.productName}
                           alloc="FEFO"
                           onSelect={(name, batch) => {
-                            updateItem(item.id, "medicineName", name);
+                            updateItem(item.id, "productName", name);
                             updateItem(item.id, "batchNo", batch.id);
                             updateItem(item.id, "expiryDate", batch.expDate);
                             updateItem(item.id, "mrp", batch.mrp);
@@ -343,8 +362,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                       {viewMode ? (
                         <span style={{ fontFamily: "JetBrains Mono", fontSize: 11, color: item.expiryDate && item.expiryDate < "2026-12-31" ? "#E65100" : "#1A2436" }}>{item.expiryDate ? formatDMY(item.expiryDate) : "—"}</span>
                       ) : (
-                        <input type="date" value={item.expiryDate} onChange={e => updateItem(item.id, "expiryDate", e.target.value)}
-                          style={{ width: 130, padding: "5px 6px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 11, outline: "none", fontFamily: "JetBrains Mono", background: "#fff", color: item.expiryDate && item.expiryDate < "2026-12-31" ? "#E65100" : "#1A2436" }} />
+                        <DatePicker value={item.expiryDate} onChange={v => updateItem(item.id, "expiryDate", v)} style={{ width: 130 }} inputStyle={{ padding: "4px 6px", fontSize: 11 }} />
                       )}
                     </td>
                     <td style={{ padding: "6px 10px", textAlign: "right" }}>
@@ -388,7 +406,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                       )}
                     </td>
                     <td style={{ padding: "6px 10px", fontSize: 13, fontFamily: "JetBrains Mono", fontWeight: 600, textAlign: "right", color: "#1A2436", whiteSpace: "nowrap" }}>
-                      {item.medicineName ? `₹${(item.purchaseRate * item.returnQty).toFixed(2)}` : "—"}
+                      {item.productName ? `₹${(item.purchaseRate * item.returnQty).toFixed(2)}` : "—"}
                     </td>
                     <td style={{ padding: "6px 10px" }}>
                       {viewMode ? (
@@ -402,7 +420,7 @@ function NewPurchaseReturn({ onBack, onSaveDraft, onSubmit, initialData, default
                     </td>
                     {!viewMode && (
                       <td style={{ padding: "6px 10px", textAlign: "center" }}>
-                        {item.medicineName && (
+                        {item.productName && (
                           <button onClick={() => deleteItem(item.id)} title="Remove"
                             style={{ border: "none", background: "transparent", cursor: "pointer", color: "#C62828", fontSize: 16, padding: "2px 4px" }}>×</button>
                         )}
@@ -570,6 +588,7 @@ export default function PurchaseReturns({ initialViewId, onDeepLinkConsumed }: {
   const [view, setView] = useState<"list" | "new-return" | "view-return">("list");
   const [openReturn, setOpenReturn] = useState<typeof purchaseReturns[0] | null>(null);
   const [returns, setReturns] = useState([...purchaseReturns]);
+  const [loadingReturns, setLoadingReturns] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
@@ -579,6 +598,14 @@ export default function PurchaseReturns({ initialViewId, onDeepLinkConsumed }: {
   }, [toast]);
 
   useEffect(() => {
+    setLoadingReturns(true);
+    fetchPurchaseReturns()
+      .then(res => setReturns(res.items as typeof purchaseReturns))
+      .catch(() => { /* keep mock data */ })
+      .finally(() => setLoadingReturns(false));
+  }, []);
+
+  useEffect(() => {
     if (!initialViewId) return;
     const ret = returns.find(r => r.id === initialViewId) ?? null;
     setOpenReturn(ret);
@@ -586,8 +613,28 @@ export default function PurchaseReturns({ initialViewId, onDeepLinkConsumed }: {
     onDeepLinkConsumed?.();
   }, [initialViewId]);
 
-  const addReturn = (data: ReturnFormData, status: "Draft" | "Posted") => {
-    const filledItems = data.items.filter(i => i.medicineName);
+  const addReturn = async (data: ReturnFormData, status: "Draft" | "Posted") => {
+    const filledItems = data.items.filter(i => i.productName);
+    const distEntry = suppliers.find(s => s.name === data.supplier);
+    try {
+      await createPurchaseReturn({
+        global_distributor_id: distEntry?.id ?? data.supplier,
+        distributor_name: data.supplier,
+        grn_number: data.originalInvoice || null,
+        return_date: data.originalInvoiceDate || TODAY,
+        reason: data.reason,
+        items: filledItems.map(i => ({
+          global_product_id: i.productName.toLowerCase().replace(/\s+/g, "-"),
+          product_name: i.productName,
+          batch_number: i.batchNo,
+          expiry_date: i.expiryDate,
+          quantity: i.returnQty,
+          purchase_rate: i.purchaseRate,
+          mrp: i.mrp,
+          disposition: i.disposition,
+        })),
+      });
+    } catch { /* API unavailable — save locally */ }
     const newReturn = {
       id: `PRN-2026-${String(returns.length + 1).padStart(4, "0")}`,
       invoiceRef: data.originalInvoice || "—",
@@ -605,14 +652,14 @@ export default function PurchaseReturns({ initialViewId, onDeepLinkConsumed }: {
     setOpenReturn(null);
   };
 
-  const handleSaveDraft = (data: ReturnFormData) => {
-    addReturn(data, "Draft");
-    setToast({ type: "success", message: "Purchase Return saved as Draft successfully." });
+  const handleSaveDraft = async (data: ReturnFormData) => {
+    await addReturn(data, "Draft");
+    setToast({ type: "success", message: MSG_RETURN_DRAFT });
   };
 
-  const handleSubmit = (data: ReturnFormData) => {
-    addReturn(data, "Posted");
-    setToast({ type: "success", message: "Purchase Return submitted successfully." });
+  const handleSubmit = async (data: ReturnFormData) => {
+    await addReturn(data, "Posted");
+    setToast({ type: "success", message: MSG_RETURN_SUBMIT });
   };
 
   const Toast = toast && (
@@ -668,6 +715,7 @@ export default function PurchaseReturns({ initialViewId, onDeepLinkConsumed }: {
     <>
       <PurchaseReturnList
         returns={returns}
+        loading={loadingReturns}
         onNew={() => setView("new-return")}
         onView={(id) => {
           const ret = returns.find(r => r.id === id) ?? null;

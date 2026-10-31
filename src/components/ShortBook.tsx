@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { drugs } from "../data/mockData";
+import { products } from "../data/mockData";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -8,7 +8,7 @@ export type SBStatus = "Ready" | "Pending" | "Ordered";
 
 export interface ShortBookItem {
   id: string;
-  medicine: string;
+  product: string;
   manufacturer: string;
   reason: Reason;
   currentStock: number;
@@ -48,21 +48,21 @@ interface SupplierOption {
 
 export const MOCK_SHORT_BOOK: ShortBookItem[] = [
   {
-    id: "SB-001", medicine: "Dolo 650", manufacturer: "Micro Labs", reason: "Low Stock",
+    id: "SB-001", product: "Dolo 650", manufacturer: "Micro Labs", reason: "Low Stock",
     currentStock: 8, minStock: 30, avgDailySales: 4.2, salesTrend: [3, 5, 4, 6, 4, 5, 4],
     suggestedQty: 42, orderQty: 42, bestSupplier: "ABC Pharma", status: "Ready",
     addedOn: "2026-09-28", source: "Stock Count",
     critical: true, lastPurchasePrice: 20, currentPrice: 22,
   },
   {
-    id: "SB-002", medicine: "Pantoprazole 40mg", manufacturer: "Sun Pharma", reason: "Today's Sales",
+    id: "SB-002", product: "Pantoprazole 40mg", manufacturer: "Sun Pharma", reason: "Today's Sales",
     currentStock: 12, minStock: 25, avgDailySales: 2.1, salesTrend: [2, 3, 2, 4, 2, 2, 3],
     suggestedQty: 30, orderQty: 30, bestSupplier: "XYZ Pharma", status: "Ready",
     addedOn: "2026-09-28", source: "Stock Management",
     pendingOrderQty: 20, lastPurchasePrice: 21, currentPrice: 21,
   },
   {
-    id: "SB-003", medicine: "Azithromycin 500mg", manufacturer: "Cipla", reason: "Out of Stock",
+    id: "SB-003", product: "Azithromycin 500mg", manufacturer: "Cipla", reason: "Out of Stock",
     currentStock: 0, minStock: 20, avgDailySales: 3.5, salesTrend: [3, 4, 3, 4, 3, 4, 3],
     suggestedQty: 50, orderQty: 50, bestSupplier: "Medico", status: "Ready",
     addedOn: "2026-09-27", source: "Stock Management",
@@ -70,35 +70,35 @@ export const MOCK_SHORT_BOOK: ShortBookItem[] = [
     lastPurchasePrice: 25, currentPrice: 23,
   },
   {
-    id: "SB-004", medicine: "Metformin 500mg", manufacturer: "USV Ltd", reason: "Low Stock",
+    id: "SB-004", product: "Metformin 500mg", manufacturer: "USV Ltd", reason: "Low Stock",
     currentStock: 15, minStock: 50, avgDailySales: 8.1, salesTrend: [7, 9, 8, 8, 7, 9, 8],
     suggestedQty: 100, orderQty: 80, bestSupplier: "ABC Pharma", status: "Ready",
     addedOn: "2026-09-27", source: "Purchase GRN",
     nearExpiry: true, lastPurchasePrice: 18, currentPrice: 20,
   },
   {
-    id: "SB-005", medicine: "Cetirizine 10mg", manufacturer: "Lupin", reason: "Customer Demand",
+    id: "SB-005", product: "Cetirizine 10mg", manufacturer: "Lupin", reason: "Customer Demand",
     currentStock: 22, minStock: 30, avgDailySales: 1.8, salesTrend: [1, 2, 2, 1, 2, 2, 1],
     suggestedQty: 40, orderQty: 40, bestSupplier: "XYZ Pharma", status: "Pending",
     addedOn: "2026-09-26", source: "Manual",
     addedTimestamp: "2026-09-26T10:00:00", lastPurchasePrice: 14, currentPrice: 14,
   },
   {
-    id: "SB-006", medicine: "Atorvastatin 20mg", manufacturer: "Dr. Reddy's", reason: "Low Stock",
+    id: "SB-006", product: "Atorvastatin 20mg", manufacturer: "Dr. Reddy's", reason: "Low Stock",
     currentStock: 18, minStock: 40, avgDailySales: 2.8, salesTrend: [3, 2, 3, 3, 2, 3, 3],
     suggestedQty: 60, orderQty: 60, bestSupplier: "ABC Pharma", status: "Ready",
     addedOn: "2026-09-26", source: "Stock Count",
     critical: true, lastPurchasePrice: 32, currentPrice: 35,
   },
   {
-    id: "SB-007", medicine: "Omeprazole 20mg", manufacturer: "Cipla", reason: "Manual",
+    id: "SB-007", product: "Omeprazole 20mg", manufacturer: "Cipla", reason: "Manual",
     currentStock: 45, minStock: 30, avgDailySales: 3.0, salesTrend: [3, 3, 2, 3, 4, 3, 2],
     suggestedQty: 50, orderQty: 50, bestSupplier: "Medico", status: "Pending",
     addedOn: "2026-09-25", source: "Manual",
     addedTimestamp: "2026-09-25T14:00:00", lastPurchasePrice: 19, currentPrice: 19,
   },
   {
-    id: "SB-008", medicine: "Amlodipine 5mg", manufacturer: "Torrent Pharma", reason: "Today's Sales",
+    id: "SB-008", product: "Amlodipine 5mg", manufacturer: "Torrent Pharma", reason: "Today's Sales",
     currentStock: 5, minStock: 20, avgDailySales: 2.2, salesTrend: [2, 2, 3, 2, 2, 3, 2],
     suggestedQty: 30, orderQty: 30, bestSupplier: "XYZ Pharma", status: "Ready",
     addedOn: "2026-09-25", source: "Sales Return",
@@ -114,7 +114,7 @@ const SUPPLIER_OPTIONS: Record<string, SupplierOption[]> = {
   ],
 };
 
-const ALL_MEDICINES = [
+const ALL_PRODUCTS = [
   "Dolo 650", "Pantoprazole 40mg", "Azithromycin 500mg", "Metformin 500mg",
   "Cetirizine 10mg", "Atorvastatin 20mg", "Omeprazole 20mg", "Amlodipine 5mg",
   "Paracetamol 500mg", "Amoxicillin 500mg", "Ibuprofen 400mg", "Aspirin 75mg",
@@ -387,8 +387,8 @@ function AlternativesDrawer({ item, onClose }: { item: ShortBookItem; onClose: (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#C62828", letterSpacing: "0.12em", textTransform: "uppercase" as const, marginBottom: 4 }}>Out of Stock</div>
-              <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>Alternative Medicines</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Same-salt substitutes for {item.medicine}</div>
+              <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>Alternative Products</div>
+              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Same-salt substitutes for {item.product}</div>
             </div>
             <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round" /></svg>
@@ -517,7 +517,7 @@ function SupplierComparisonDrawer({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase" as const, marginBottom: 4 }}>Supplier Comparison</div>
-              <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>{item.medicine}</div>
+              <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>{item.product}</div>
               <div style={{ fontSize: 12, color: "#6B7280", marginTop: 3, display: "flex", gap: 12 }}>
                 <span>Qty: <span style={{ fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1A2436" }}>{item.orderQty} units</span></span>
                 {estCost != null && (
@@ -650,9 +650,9 @@ function SupplierComparisonDrawer({
   );
 }
 
-// ─── Add Medicine Drawer ───────────────────────────────────────────────────────
+// ─── Add Product Drawer ────────────────────────────────────────────────────────
 
-function AddMedicineDrawer({
+function AddProductDrawer({
   onClose, onAdd, onUpdateQty, existingItems, initialSearch = "",
 }: {
   onClose: () => void; onAdd: (item: ShortBookItem) => void;
@@ -669,16 +669,16 @@ function AddMedicineDrawer({
   const [updateQtyMode, setUpdateQtyMode] = useState(false);
   const [updateQtyInput, setUpdateQtyInput] = useState("");
 
-  const matches = search.length >= 1 ? ALL_MEDICINES.filter(m => m.toLowerCase().includes(search.toLowerCase())) : [];
-  const isDuplicate = existingItems.some(i => i.medicine.toLowerCase() === selected.toLowerCase());
-  const existingItem = existingItems.find(i => i.medicine.toLowerCase() === selected.toLowerCase());
+  const matches = search.length >= 1 ? ALL_PRODUCTS.filter(m => m.toLowerCase().includes(search.toLowerCase())) : [];
+  const isDuplicate = existingItems.some(i => i.product.toLowerCase() === selected.toLowerCase());
+  const existingItem = existingItems.find(i => i.product.toLowerCase() === selected.toLowerCase());
   const canAdd = selected.length > 0 && !isDuplicate && Number(orderQty) > 0;
 
   const handleAdd = () => {
     if (!canAdd) return;
     const newItem: ShortBookItem = {
       id: `SB-${String(existingItems.length + 9).padStart(3, "0")}`,
-      medicine: selected, manufacturer: "Various", reason,
+      product: selected, manufacturer: "Various", reason,
       currentStock: Math.floor(Math.random() * 20), avgDailySales: 2,
       salesTrend: [2, 2, 2, 2, 2, 2, 2],
       suggestedQty: Number(orderQty), orderQty: Number(orderQty),
@@ -728,9 +728,9 @@ function AddMedicineDrawer({
 
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#4A5875", marginBottom: 6 }}>Medicine <span style={{ color: "#C62828" }}>*</span></div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#4A5875", marginBottom: 6 }}>Product <span style={{ color: "#C62828" }}>*</span></div>
             <div style={{ position: "relative" }}>
-              <input type="text" placeholder="Search medicine..." value={search}
+              <input type="text" placeholder="Search product..." value={search}
                 onChange={e => { setSearch(e.target.value); setSelected(e.target.value); setShowDropdown(true); }}
                 onFocus={() => setShowDropdown(true)}
                 style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #E8ECF4", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" as const }}
@@ -892,7 +892,7 @@ function PurchasePlanDrawer({
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase" as const, marginBottom: 4 }}>Purchase Plan</div>
               <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>Create Purchase Orders</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{items.length} medicines across {Object.keys(bySupplier).length} suppliers</div>
+              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{items.length} products across {Object.keys(bySupplier).length} suppliers</div>
             </div>
             <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round" /></svg>
@@ -936,7 +936,7 @@ function PurchasePlanDrawer({
                   <div key={item.id} style={{ padding: "11px 16px", borderBottom: i < arr.length - 1 ? "1px solid #F4F6FA" : "none", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2436", display: "flex", alignItems: "center", gap: 6 }}>
-                        {item.medicine}
+                        {item.product}
                         {item.critical && <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", background: "#FFEBEE", color: "#C62828" }}>Critical</span>}
                       </div>
                       <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{item.orderQty} units</div>
@@ -998,9 +998,9 @@ function InventoryPickerDrawer({
   const [filter, setFilter] = useState<"All" | "Need Reorder" | "Out of Stock">("All");
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
 
-  const existingMeds = new Set(existingItems.map(i => i.medicine.toLowerCase()));
+  const existingMeds = new Set(existingItems.map(i => i.product.toLowerCase()));
 
-  const filtered = drugs
+  const filtered = products
     .filter(d => {
       const q = search.toLowerCase();
       const matchSearch = q === "" || d.name.toLowerCase().includes(q) || d.manufacturer.toLowerCase().includes(q);
@@ -1016,12 +1016,12 @@ function InventoryPickerDrawer({
       return aPct - bPct;
     });
 
-  const handleAdd = (drug: (typeof drugs)[0]) => {
+  const handleAdd = (drug: (typeof products)[0]) => {
     const suggested = Math.max(drug.minStock - drug.stock, 10);
     const reason: Reason = drug.stock === 0 ? "Out of Stock" : "Low Stock";
     const newItem: ShortBookItem = {
       id: `SB-INV-${drug.id}-${Date.now().toString(36)}`,
-      medicine: drug.name,
+      product: drug.name,
       manufacturer: drug.manufacturer,
       reason,
       currentStock: drug.stock,
@@ -1052,7 +1052,7 @@ function InventoryPickerDrawer({
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#00ACC1", letterSpacing: "0.12em", textTransform: "uppercase" as const, marginBottom: 4 }}>Inventory</div>
               <div style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 700, color: "#0C1B33" }}>Add from Inventory</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Select medicines to add to the Short Book</div>
+              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Select products to add to the Short Book</div>
             </div>
             <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round" /></svg>
@@ -1064,7 +1064,7 @@ function InventoryPickerDrawer({
         <div style={{ padding: "12px 16px", borderBottom: "1px solid #EEF1F6", flexShrink: 0, display: "flex", gap: 8, alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", borderRadius: 6, border: "1px solid #DDE3EC", padding: "8px 12px", flex: 1 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" placeholder="Search medicine or manufacturer..." value={search} onChange={e => setSearch(e.target.value)}
+            <input type="text" placeholder="Search product or manufacturer..." value={search} onChange={e => setSearch(e.target.value)}
               style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%" }} />
             {search.length > 0 && (
               <button onClick={() => setSearch("")} style={{ border: "none", background: "none", cursor: "pointer", padding: 0, color: "#C4CAD6", fontSize: 14, flexShrink: 0, lineHeight: 1 }}>&#215;</button>
@@ -1090,12 +1090,12 @@ function InventoryPickerDrawer({
         {/* List */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {filtered.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>No medicines found</div>
+            <div style={{ padding: 40, textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>No products found</div>
           ) : (
             <>
               {/* Column headings */}
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 22px 6px", borderBottom: "1px solid #F4F6FA", background: "#FAFBFD" }}>
-                <div style={{ flex: 1, fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Medicine</div>
+                <div style={{ flex: 1, fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Product</div>
                 <div style={{ width: 64, fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" as const, textAlign: "right" as const }}>Stock</div>
                 <div style={{ width: 80, fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" as const, textAlign: "right" as const }}>Reorder</div>
                 <div style={{ width: 62 }} />
@@ -1109,7 +1109,7 @@ function InventoryPickerDrawer({
                   <div key={drug.id}
                     style={{ padding: "11px 22px", borderBottom: i < filtered.length - 1 ? "1px solid #F4F6FA" : "none", display: "flex", alignItems: "center", gap: 14, background: alreadyAdded ? "#FAFBFD" : "#fff" }}>
 
-                    {/* Medicine info */}
+                    {/* Product info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: alreadyAdded ? "#9CA3AF" : "#1A2436", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }}>{drug.name}</span>
@@ -1163,8 +1163,8 @@ function InventoryPickerDrawer({
         <div style={{ padding: "12px 22px", borderTop: "1px solid #EEF1F6", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 12, color: "#9CA3AF" }}>
             {addedIds.size > 0
-              ? `${addedIds.size} medicine${addedIds.size > 1 ? "s" : ""} added to Short Book`
-              : `${filtered.length} medicine${filtered.length !== 1 ? "s" : ""} shown`}
+              ? `${addedIds.size} product${addedIds.size > 1 ? "s" : ""} added to Short Book`
+              : `${filtered.length} product${filtered.length !== 1 ? "s" : ""} shown`}
           </span>
           <button onClick={onClose} style={{ padding: "8px 20px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>
             Done
@@ -1238,7 +1238,7 @@ export default function ShortBook({
 
   const filtered = items.filter(item => {
     const matchSearch = search === "" ||
-      item.medicine.toLowerCase().includes(search.toLowerCase()) ||
+      item.product.toLowerCase().includes(search.toLowerCase()) ||
       item.manufacturer.toLowerCase().includes(search.toLowerCase());
     const matchTab = activeTab === "All" || item.reason === activeTab;
     return matchSearch && matchTab;
@@ -1292,7 +1292,7 @@ export default function ShortBook({
 
   const handleToggleCritical = (id: string, current: boolean) => {
     setItems(prev => prev.map(i => i.id === id ? { ...i, critical: !current } : i));
-    showToast(current ? "Removed from critical list" : "Marked as critical medicine");
+    showToast(current ? "Removed from critical list" : "Marked as critical product");
   };
 
   const summary = {
@@ -1325,7 +1325,7 @@ export default function ShortBook({
             <span style={{ color: "#1A2436", fontWeight: 600 }}> Short Book</span>
           </div>
           <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", margin: 0, letterSpacing: "-0.01em" }}>Short Book</h1>
-          <div style={{ fontSize: 13, color: "#6B7280", marginTop: 4 }}>Medicines pending purchase</div>
+          <div style={{ fontSize: 13, color: "#6B7280", marginTop: 4 }}>Products pending purchase</div>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <button onClick={() => { setBulkPlanItems(null); setShowPlan(true); }}
@@ -1334,7 +1334,7 @@ export default function ShortBook({
           </button>
           <button onClick={() => { setAddDrawerPreSearch(""); setShowAdd(true); }}
             style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
-            + Add Medicine
+            + Add Product
           </button>
         </div>
       </div>
@@ -1363,7 +1363,7 @@ export default function ShortBook({
           {/* Search bar */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", borderRadius: 6, border: "1px solid #DDE3EC", padding: "8px 12px", width: 300, flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" placeholder="Search medicine, barcode..." value={search} onChange={e => setSearch(e.target.value)}
+            <input type="text" placeholder="Search product, barcode..." value={search} onChange={e => setSearch(e.target.value)}
               style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#0C1B33", fontFamily: "Inter", width: "100%", minWidth: 0 }} />
             {search.length > 0 && (
               <button onClick={() => setSearch("")} style={{ border: "none", background: "none", cursor: "pointer", padding: 0, lineHeight: 1, color: "#C4CAD6", fontSize: 14, flexShrink: 0 }}>&#215;</button>
@@ -1470,7 +1470,7 @@ export default function ShortBook({
           <div style={{ padding: "48px 24px", textAlign: "center" }}>
             <div style={{ fontSize: 32, marginBottom: 12, color: "#D1D5DB" }}>&#9776;</div>
             <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#6B7280", marginBottom: 8 }}>Your Short Book is empty</div>
-            <div style={{ fontSize: 13, color: "#9CA3AF" }}>Add medicines from Inventory or Today's Sales.</div>
+            <div style={{ fontSize: 13, color: "#9CA3AF" }}>Add products from Inventory or Today's Sales.</div>
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
@@ -1484,7 +1484,7 @@ export default function ShortBook({
                       onChange={handleSelectAll}
                       style={{ width: 15, height: 15, cursor: "pointer", accentColor: "#1B6CA8" }} />
                   </th>
-                  <Th>Medicine</Th>
+                  <Th>Product</Th>
                   <Th>Reason</Th>
                   <Th right>Curr. Stock</Th>
                   <Th center>Days</Th>
@@ -1519,14 +1519,14 @@ export default function ShortBook({
                           style={{ width: 15, height: 15, cursor: "pointer", accentColor: "#1B6CA8" }} />
                       </td>
 
-                      {/* Medicine */}
+                      {/* Product */}
                       <Td>
                         <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
                           <div>
                             <div style={{ fontWeight: 600, color: "#1A2436", fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}>
-                              {item.medicine}
+                              {item.product}
                               {item.critical && (
-                                <span title="Critical medicine" style={{ cursor: "default", fontSize: 12, color: "#E65100" }}>&#9733;</span>
+                                <span title="Critical product" style={{ cursor: "default", fontSize: 12, color: "#E65100" }}>&#9733;</span>
                               )}
                             </div>
                             <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{item.manufacturer}</div>
@@ -1689,10 +1689,10 @@ export default function ShortBook({
 
       {/* Drawers */}
       {showAdd && (
-        <AddMedicineDrawer
+        <AddProductDrawer
           initialSearch={addDrawerPreSearch}
           onClose={() => { setShowAdd(false); setAddDrawerPreSearch(""); }}
-          onAdd={item => { setItems(prev => [...prev, item]); showToast(`${item.medicine} added to Short Book`); }}
+          onAdd={item => { setItems(prev => [...prev, item]); showToast(`${item.product} added to Short Book`); }}
           onUpdateQty={(id, qty) => setItems(prev => prev.map(i => i.id === id ? { ...i, orderQty: qty } : i))}
           existingItems={items}
         />
@@ -1719,7 +1719,7 @@ export default function ShortBook({
           existingItems={items}
           onAdd={item => {
             setItems(prev => [...prev, item]);
-            showToast(`${item.medicine} added to Short Book`);
+            showToast(`${item.product} added to Short Book`);
           }}
           onClose={() => setShowInventoryPicker(false)}
         />

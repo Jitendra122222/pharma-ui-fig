@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { PrinterProvider } from "./components/shared/PrinterContext";
 import type { StorageType } from "./components/stock/stockData";
 import Login from "./components/Login";
+import { getSavedUser, clearSession } from "./lib/authApi";
 import LoadingScreen from "./components/LoadingScreen";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
@@ -20,11 +21,12 @@ import ExpiryManagement from "./components/ExpiryManagement";
 import Accounts from "./components/Accounts";
 import HR from "./components/HR";
 import Insurance from "./components/Insurance";
+import Masters from "./components/Masters";
 
 type Module =
   | "dashboard" | "inventory" | "stock" | "shortbook" | "expiry" | "sales" | "prescriptions"
   | "patients" | "purchases" | "suppliers" | "accounts" | "insurance"
-  | "reports" | "hr" | "settings";
+  | "reports" | "hr" | "masters" | "settings";
 
 const MODULE_LABELS: Record<Module, string> = {
   dashboard: "Dashboard",
@@ -41,6 +43,7 @@ const MODULE_LABELS: Record<Module, string> = {
   insurance: "Insurance & Claims",
   reports: "Reports & Analytics",
   hr: "HR & Payroll",
+  masters: "Masters & Config",
   settings: "Settings",
 };
 
@@ -50,7 +53,7 @@ export interface PurchasesDeepLink { tab: "orders" | "invoices" | "returns" | "p
 
 export default function App() {
   const [module, setModule] = useState<Module>("dashboard");
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => getSavedUser());
   const [storageType, setStorageType] = useState<StorageType>("alphabetical");
   const [loading, setLoading] = useState(false);
   const [exiting, setExiting] = useState(false);
@@ -172,7 +175,7 @@ export default function App() {
                 <span style={{ fontSize: 10, color: "#9CA3AF", fontFamily: "Inter" }}>{user.role}</span>
               </div>
               <button
-                onClick={() => setUser(null)}
+                onClick={() => { clearSession(); setUser(null); }}
                 style={{ border: "1px solid #E8ECF4", borderRadius: 4, background: "#fff", padding: "4px 10px", fontSize: 11, color: "#6B7280", fontFamily: "Inter", cursor: "pointer", marginLeft: 4 }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#FFF0F0"; (e.currentTarget as HTMLButtonElement).style.color = "#C62828"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff"; (e.currentTarget as HTMLButtonElement).style.color = "#6B7280"; }}
@@ -186,8 +189,8 @@ export default function App() {
         {/* Main */}
         <main style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", minHeight: 0 }}>
           {module === "dashboard" && <Dashboard />}
-          {module === "inventory" && <Inventory onEditDistributor={navigateToEditDistributor} />}
-          {module === "stock" && <StockManagement storageType={storageType} onNavigate={(m) => navigateTo(m as Module)} onAddToShortBook={(item) => setShortBookItems(prev => prev.some(i => i.medicine === item.medicine) ? prev : [...prev, item])} />}
+          {module === "inventory" && <Inventory onEditDistributor={navigateToEditDistributor} isSuperAdmin={user.role === "super_admin"} />}
+          {module === "stock" && <StockManagement storageType={storageType} onNavigate={(m) => navigateTo(m as Module)} onAddToShortBook={(item) => setShortBookItems(prev => prev.some(i => i.product === item.product) ? prev : [...prev, item])} />}
           {module === "shortbook" && <ShortBook items={shortBookItems} onItemsChange={setShortBookItems} />}
           {module === "expiry" && <ExpiryManagement />}
           {module === "sales" && <Sales />}
@@ -199,6 +202,7 @@ export default function App() {
           {module === "insurance" && <Insurance />}
           {module === "reports" && <Reports />}
           {module === "hr" && <HR />}
+          {module === "masters" && <Masters />}
           {module === "settings" && <Settings storageType={storageType} onStorageTypeChange={setStorageType} />}
         </main>
       </div>
