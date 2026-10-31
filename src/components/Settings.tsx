@@ -1,10 +1,18 @@
 import { useState } from "react";
+import { S } from "../styles/common";
+import { ST } from "../styles/settings";
 import { usePrinterSettings } from "./shared/PrinterContext";
 import type { PrinterType } from "./shared/PrinterContext";
+import type { StorageType } from "./stock/stockData";
 
-const sections = ["General", "Users & Roles", "Billing", "Notifications", "Integrations", "Printer", "Backup"];
+const sections = ["General", "Users & Roles", "Billing", "Notifications", "Integrations", "Printer", "Storage & Location", "Backup"];
 
-export default function Settings() {
+interface SettingsProps {
+  storageType: StorageType;
+  onStorageTypeChange: (t: StorageType) => void;
+}
+
+export default function Settings({ storageType, onStorageTypeChange }: SettingsProps) {
   const [activeSection, setActiveSection] = useState("General");
   const [saved, setSaved] = useState(false);
   const { settings: printer, updateSettings: updatePrinter } = usePrinterSettings();
@@ -30,10 +38,26 @@ export default function Settings() {
     }, 1200);
   };
 
+  const [localStorageType, setLocalStorageType] = useState<StorageType>(storageType);
+  const [storageSaved, setStorageSaved] = useState(false);
+
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
+
+  const handleStorageSave = () => {
+    onStorageTypeChange(localStorageType);
+    setStorageSaved(true);
+    setTimeout(() => setStorageSaved(false), 2000);
+  };
+
+  const STORAGE_OPTIONS: { id: StorageType; label: string; desc: string; detail: string }[] = [
+    { id: "alphabetical", label: "Alphabetical", desc: "A → Z by product name", detail: "Bins are assigned based on the first letter of the drug name. Easy to find any product without memorising shelf codes." },
+    { id: "company",      label: "By Company",   desc: "Grouped by manufacturer", detail: "All products from the same manufacturer are stored together. Ideal when you receive stock from a small set of suppliers." },
+    { id: "category",     label: "By Category",  desc: "Grouped by drug category", detail: "Antibiotics, Antidiabetics, etc. share bins. Best when staff think in therapeutic categories." },
+    { id: "custom",       label: "Custom / Manual", desc: "You assign each bin yourself", detail: "No automatic suggestion. You choose the target bin every time you move or receive stock. Full manual control." },
+  ];
 
   const USERS = [
     { name: "Jane Doe", email: "jane.doe@citycentralpharmacy.com", role: "Head Pharmacist", login: "Today 09:12", status: "Active" },
@@ -56,26 +80,19 @@ export default function Settings() {
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#0C1B33", margin: 0, letterSpacing: "-0.02em" }}>Settings</h1>
-          <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>System configuration</div>
+          <h1 style={S.pageTitle}>Settings</h1>
+          <div style={{ ...S.mutedText, marginTop: 2 }}>System configuration</div>
         </div>
       </div>
 
       <div className="grid gap-5" style={{ gridTemplateColumns: "200px 1fr" }}>
         {/* Side nav */}
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: "8px 0", height: "fit-content" }}>
+        <div style={ST.sideNav}>
           {sections.map((s) => (
             <button
               key={s}
               onClick={() => setActiveSection(s)}
-              style={{
-                width: "100%", padding: "10px 18px", textAlign: "left", border: "none",
-                background: activeSection === s ? "#EFF6FF" : "transparent",
-                color: activeSection === s ? "#1B6CA8" : "#6B7280",
-                fontSize: 13, fontFamily: "Inter", cursor: "pointer",
-                borderLeft: activeSection === s ? "2px solid #1B6CA8" : "2px solid transparent",
-                fontWeight: activeSection === s ? 500 : 400,
-              }}
+              style={ST.navBtn(activeSection === s)}
             >
               {s}
             </button>
@@ -83,11 +100,11 @@ export default function Settings() {
         </div>
 
         {/* Content */}
-        <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", padding: 24 }}>
+        <div style={ST.contentCard}>
           {activeSection === "General" && (
             <div className="flex flex-col gap-6">
               <div>
-                <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 16 }}>Pharmacy Information</div>
+                <div style={ST.sectionTitle}>Pharmacy Information</div>
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     { label: "Pharmacy Name", value: "City Central Pharmacy" },
@@ -98,18 +115,18 @@ export default function Settings() {
                     { label: "City / State / ZIP", value: "Chicago, IL 60601" },
                   ].map((f) => (
                     <div key={f.label}>
-                      <label style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>{f.label}</label>
+                      <label style={ST.formLabel}>{f.label}</label>
                       <input
                         defaultValue={f.value}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }}
+                        style={ST.formInput}
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
-                <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 16 }}>Tax & Pricing</div>
+              <div style={ST.saveBar}>
+                <div style={ST.sectionTitle}>Tax & Pricing</div>
                 <div className="grid grid-cols-3 gap-4">
                   {[
                     { label: "Tax Rate (%)", value: "8.75" },
@@ -117,18 +134,18 @@ export default function Settings() {
                     { label: "Currency", value: "USD" },
                   ].map((f) => (
                     <div key={f.label}>
-                      <label style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>{f.label}</label>
+                      <label style={ST.formLabel}>{f.label}</label>
                       <input
                         defaultValue={f.value}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box" }}
+                        style={ST.formInput}
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
-                <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 16 }}>System Preferences</div>
+              <div style={ST.saveBar}>
+                <div style={ST.sectionTitle}>System Preferences</div>
                 <div className="flex flex-col gap-4">
                   {[
                     { label: "Auto-reorder when stock reaches minimum level", enabled: true },
@@ -137,7 +154,7 @@ export default function Settings() {
                     { label: "Enable insurance billing integration", enabled: false },
                     { label: "Daily sales report via email", enabled: false },
                   ].map((pref) => (
-                    <div key={pref.label} className="flex items-center justify-between" style={{ padding: "12px 16px", background: "#F8FAFC" }}>
+                    <div key={pref.label} className="flex items-center justify-between" style={ST.prefRow}>
                       <span style={{ fontSize: 13, color: "#0C1B33" }}>{pref.label}</span>
                       <Toggle defaultOn={pref.enabled} />
                     </div>
@@ -149,7 +166,7 @@ export default function Settings() {
 
           {activeSection === "Users & Roles" && (
             <div>
-              <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 16 }}>Users & Access Control</div>
+              <div style={ST.sectionTitle}>Users & Access Control</div>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#F8FAFC" }}>
@@ -164,14 +181,14 @@ export default function Settings() {
                 <tbody>
                   {sortedUsers.map((u) => (
                     <tr key={u.email} style={{ borderBottom: "1px solid #F0F3F7" }}>
-                      <td style={{ padding: "11px 14px", fontSize: 13, color: "#0C1B33", fontWeight: 500 }}>{u.name}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#6B7280" }}>{u.email}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#6B7280" }}>{u.role}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#6B7280" }}>{u.login}</td>
+                      <td style={ST.tdName}>{u.name}</td>
+                      <td style={ST.tdMuted}>{u.email}</td>
+                      <td style={ST.tdMuted}>{u.role}</td>
+                      <td style={ST.tdMuted}>{u.login}</td>
                       <td style={{ padding: "11px 14px" }}>
                         <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", background: u.status === "Active" ? "#E8F5E9" : "#F5F5F5", color: u.status === "Active" ? "#2E7D32" : "#9E9E9E" }}>{u.status}</span>
                       </td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#1B6CA8", cursor: "pointer" }}>Edit</td>
+                      <td style={ST.tdEdit}>Edit</td>
                     </tr>
                   ))}
                 </tbody>
@@ -222,35 +239,35 @@ export default function Settings() {
 
                 {/* Printer Name */}
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 5 }}>Printer Name / Model</label>
+                  <label style={ST.formLabel}>Printer Name / Model</label>
                   <input
                     value={printer.printerName}
                     onChange={(e) => updatePrinter({ printerName: e.target.value })}
-                    style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid #DDE3EC", fontSize: 13, outline: "none", fontFamily: "Inter", boxSizing: "border-box", maxWidth: 380 }}
+                    style={{ ...ST.formInput, maxWidth: 380 }}
                   />
                 </div>
 
                 {/* Enable / Disable */}
-                <div style={{ padding: "14px 16px", background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, border: "1px solid #EEF1F6" }}>
+                <div style={{ ...ST.printerToggleRow, marginBottom: 12 }}>
                   <div>
-                    <div style={{ fontSize: 13, color: "#0C1B33", fontWeight: 500 }}>Enable Printer</div>
-                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>Allow the system to send print jobs to this printer.</div>
+                    <div style={ST.printerToggleTitle}>Enable Printer</div>
+                    <div style={ST.printerToggleSub}>Allow the system to send print jobs to this printer.</div>
                   </div>
                   <Toggle defaultOn={printer.enabled} onChange={(v) => updatePrinter({ enabled: v })} />
                 </div>
 
                 {/* Connected toggle */}
-                <div style={{ padding: "14px 16px", background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, border: "1px solid #EEF1F6" }}>
+                <div style={{ ...ST.printerToggleRow, marginBottom: 20 }}>
                   <div>
-                    <div style={{ fontSize: 13, color: "#0C1B33", fontWeight: 500 }}>Printer Connected</div>
-                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>Mark as connected when printer cable/network is active.</div>
+                    <div style={ST.printerToggleTitle}>Printer Connected</div>
+                    <div style={ST.printerToggleSub}>Mark as connected when printer cable/network is active.</div>
                   </div>
                   <Toggle defaultOn={printer.connected} onChange={(v) => updatePrinter({ connected: v })} />
                 </div>
 
                 {/* Status summary */}
-                <div style={{ padding: "12px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Current Printer Status</div>
+                <div style={ST.statusBox}>
+                  <div style={ST.statusBoxLabel}>Current Printer Status</div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", background: printer.printerType === "Laser" ? "#EFF6FF" : printer.printerType === "DOT" ? "#F0FDF4" : "#FFF7ED", color: printer.printerType === "Laser" ? "#1B6CA8" : printer.printerType === "DOT" ? "#15803D" : "#C2410C", letterSpacing: "0.05em", textTransform: "uppercase" }}>
                       {printer.printerType}
@@ -280,7 +297,7 @@ export default function Settings() {
               </div>
 
               {/* Save bar */}
-              <div className="flex justify-end mt-2 gap-3" style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
+              <div className="flex justify-end mt-2 gap-3" style={ST.saveBar}>
                 <button style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Discard</button>
                 <button
                   onClick={handlePrinterSave}
@@ -292,7 +309,85 @@ export default function Settings() {
             </div>
           )}
 
-          {!["General", "Users & Roles", "Printer"].includes(activeSection) && (
+          {activeSection === "Storage & Location" && (
+            <div className="flex flex-col gap-6">
+              <div>
+                <div style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 600, color: "#0C1B33", marginBottom: 4 }}>Storage Organisation Type</div>
+                <div style={{ fontSize: 13, color: "#6B7280" }}>
+                  This setting controls how the system suggests bin locations when you move or receive stock.
+                  Applied pharmacy-wide — set it once and the Locations tab uses it automatically.
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                {STORAGE_OPTIONS.map(opt => {
+                  const active = localStorageType === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setLocalStorageType(opt.id)}
+                      style={{
+                        textAlign: "left", padding: "16px 18px", borderRadius: 8, cursor: "pointer",
+                        border: active ? "2px solid #1B6CA8" : "1.5px solid #DDE3EC",
+                        background: active ? "#EFF6FF" : "#fff",
+                        transition: "border 0.15s, background 0.15s",
+                        display: "flex", flexDirection: "column", gap: 6,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{
+                          width: 18, height: 18, borderRadius: "50%", border: active ? "5px solid #1B6CA8" : "2px solid #DDE3EC",
+                          background: active ? "#fff" : "#F8FAFC", display: "inline-block", flexShrink: 0,
+                        }} />
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: active ? "#1B6CA8" : "#0C1B33", fontFamily: "Inter" }}>{opt.label}</div>
+                          <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter" }}>{opt.desc}</div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#6B7280", fontFamily: "Inter", lineHeight: 1.5, paddingLeft: 28 }}>{opt.detail}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{ background: "#F8FAFC", border: "1px solid #E8ECF4", borderRadius: 6, padding: "12px 16px", fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>
+                <span style={{ fontWeight: 600, color: "#1A2436" }}>Current setting: </span>
+                {STORAGE_OPTIONS.find(o => o.id === storageType)?.label ?? storageType}
+                {localStorageType !== storageType && (
+                  <span style={{ marginLeft: 8, color: "#E65100", fontWeight: 600 }}>
+                    {" "}&rarr; will change to {STORAGE_OPTIONS.find(o => o.id === localStorageType)?.label}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ background: "#FFF3E0", border: "1px solid #FFB74D", borderRadius: 6, padding: "10px 16px", fontSize: 12, color: "#E65100", fontFamily: "Inter" }}>
+                Changing storage type affects bin suggestions in the Locations tab. Existing stock placement is not moved automatically.
+              </div>
+
+              <div className="flex justify-end gap-3" style={ST.saveBar}>
+                <button
+                  onClick={() => setLocalStorageType(storageType)}
+                  style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}
+                >
+                  Discard
+                </button>
+                <button
+                  onClick={handleStorageSave}
+                  disabled={localStorageType === storageType}
+                  style={{
+                    padding: "9px 24px", border: "none", borderRadius: 6, fontSize: 13,
+                    cursor: localStorageType === storageType ? "default" : "pointer",
+                    fontWeight: 600, color: "#fff", transition: "background 0.2s",
+                    background: storageSaved ? "#2E7D32" : localStorageType === storageType ? "#A0AEC0" : "#1B6CA8",
+                  }}
+                >
+                  {storageSaved ? "Saved!" : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!["General", "Users & Roles", "Printer", "Storage & Location"].includes(activeSection) && (
             <div style={{ padding: 60, textAlign: "center", color: "#9CA3AF" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>⚙</div>
               <div style={{ fontFamily: "Outfit", fontSize: 16, color: "#6B7280" }}>{activeSection} settings coming soon</div>
@@ -300,7 +395,7 @@ export default function Settings() {
           )}
 
           {activeSection === "General" && (
-            <div className="flex justify-end mt-6 gap-3" style={{ borderTop: "1px solid #DDE3EC", paddingTop: 20 }}>
+            <div className="flex justify-end mt-6 gap-3" style={ST.saveBar}>
               <button style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 13, cursor: "pointer", color: "#0C1B33" }}>Discard</button>
               <button
                 onClick={handleSave}

@@ -1,0 +1,364 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e476]:
+    - complementary [ref=e477]:
+      - generic [ref=e478]:
+        - generic [ref=e479]:
+          - generic [ref=e480]: Rx
+          - generic [ref=e481]:
+            - generic [ref=e482]: PharmERP
+            - generic [ref=e483]: City Central Pharmacy
+        - button "Collapse sidebar" [ref=e484] [cursor=pointer]: «
+      - navigation [ref=e485]:
+        - generic [ref=e486]:
+          - generic [ref=e487]: Core Operations
+          - button "Dashboard" [ref=e488] [cursor=pointer]
+          - button "Sales 2" [ref=e493] [cursor=pointer]:
+            - generic [ref=e497]: Sales
+            - generic [ref=e498]: "2"
+          - button "Prescriptions 2" [ref=e499] [cursor=pointer]:
+            - generic [ref=e503]: Prescriptions
+            - generic [ref=e504]: "2"
+          - button "Patients" [ref=e505] [cursor=pointer]
+        - generic [ref=e510]:
+          - generic [ref=e511]: Inventory & Stock
+          - button "Inventory 3" [ref=e512] [cursor=pointer]:
+            - generic [ref=e516]: Inventory
+            - generic [ref=e517]: "3"
+          - button "Stock Management" [ref=e518] [cursor=pointer]
+          - button "Short Book 8" [ref=e523] [cursor=pointer]:
+            - generic [ref=e527]: Short Book
+            - generic [ref=e528]: "8"
+          - button "Expiry Management 12" [ref=e530] [cursor=pointer]:
+            - generic [ref=e535]: Expiry Management
+            - generic [ref=e536]: "12"
+        - generic [ref=e537]:
+          - generic [ref=e538]: Purchasing
+          - button "Purchasing" [ref=e539] [cursor=pointer]
+          - button "Distributors" [ref=e546] [cursor=pointer]
+        - generic [ref=e552]:
+          - generic [ref=e553]: Finance
+          - button "Accounts" [ref=e554] [cursor=pointer]
+          - button "Insurance & Claims" [ref=e560] [cursor=pointer]
+        - generic [ref=e565]:
+          - generic [ref=e566]: Analytics
+          - button "Reports" [ref=e567] [cursor=pointer]
+        - generic [ref=e572]:
+          - generic [ref=e573]: Administration
+          - button "HR & Payroll" [ref=e574] [cursor=pointer]
+          - button "Settings" [ref=e579] [cursor=pointer]
+      - generic [ref=e585]:
+        - generic [ref=e586]: JD
+        - generic [ref=e587]:
+          - generic [ref=e588]: Jane Doe
+          - generic [ref=e589]: Head Pharmacist
+    - generic [ref=e590]:
+      - banner [ref=e591]:
+        - generic [ref=e592]:
+          - generic [ref=e593]: PharmERP
+          - generic [ref=e594]: ›
+          - generic [ref=e595]: Short Book
+        - generic [ref=e596]:
+          - generic [ref=e597]:
+            - textbox "Quick search..." [ref=e598]
+            - generic [ref=e599]: ⌕
+          - generic [ref=e600] [cursor=pointer]:
+            - text: 🔔
+            - generic [ref=e601]: "5"
+          - generic [ref=e602]: 28 Jul 2025
+          - generic [ref=e604]:
+            - generic [ref=e605]: RK
+            - generic [ref=e607]:
+              - generic [ref=e608]: Rajesh Kumar
+              - generic [ref=e609]: Pharmacist
+            - button "Logout" [ref=e610] [cursor=pointer]
+      - main [ref=e611]:
+        - generic [ref=e1270]:
+          - generic [ref=e1271]:
+            - generic [ref=e1272]:
+              - generic [ref=e1273]: PharmERP › Inventory › Short Book
+              - heading "Short Book" [level=1] [ref=e1274]
+              - generic [ref=e1275]: Medicines pending purchase
+            - generic [ref=e1276]:
+              - button "Purchase Plan" [ref=e1277] [cursor=pointer]
+              - button "+ Add Medicine" [ref=e1278] [cursor=pointer]
+          - generic [ref=e1279]:
+            - generic [ref=e1280]:
+              - generic [ref=e1281]: Items
+              - generic [ref=e1282]: "9"
+            - generic [ref=e1283]:
+              - generic [ref=e1284]: Estimated Purchase
+              - generic [ref=e1285]: ₹10,000
+            - generic [ref=e1286]:
+              - generic [ref=e1287]: Low Stock
+              - generic [ref=e1288]: "3"
+            - generic [ref=e1289]:
+              - generic [ref=e1290]: Today's Sales
+              - generic [ref=e1291]: "2"
+            - generic [ref=e1292]:
+              - generic [ref=e1293]: Manual
+              - generic [ref=e1294]: "1"
+          - generic [ref=e1295]:
+            - generic [ref=e1296]:
+              - textbox "Search medicine, barcode..." [ref=e1301]
+              - generic [ref=e1302]:
+                - button "All" [ref=e1303] [cursor=pointer]
+                - button "Low Stock" [ref=e1304] [cursor=pointer]
+                - button "Out of Stock" [ref=e1305] [cursor=pointer]
+                - button "Today's Sales" [ref=e1306] [cursor=pointer]
+                - button "Manual" [ref=e1307] [cursor=pointer]
+              - button "Add from Inventory" [ref=e1308] [cursor=pointer]
+              - button "Bulk Order" [ref=e1311] [cursor=pointer]
+              - button "Qty Count" [ref=e1745] [cursor=pointer]
+            - table [ref=e1321]:
+              - rowgroup [ref=e1322]:
+                - row [ref=e1749]:
+                  - columnheader [ref=e1324]:
+                    - checkbox [ref=e1325] [cursor=pointer]
+                  - columnheader "Medicine" [ref=e1326]
+                  - columnheader "Reason" [ref=e1327]
+                  - columnheader "Curr. Stock" [ref=e1328]
+                  - columnheader "Days" [ref=e1329]
+                  - columnheader "Sug. Qty" [ref=e1330]
+                  - columnheader "Ord. Qty" [ref=e1750]
+                  - columnheader "Supplier" [ref=e1332]
+                  - columnheader "Source" [ref=e1333]
+                  - columnheader "Added" [ref=e1334]
+                  - columnheader "Status" [ref=e1335]
+                  - columnheader "Action" [ref=e1336]
+              - rowgroup [ref=e1337]:
+                - row [ref=e1751]:
+                  - cell [ref=e1339]:
+                    - checkbox [ref=e1340] [cursor=pointer]
+                  - cell "Dolo 650 ★ Micro Labs" [ref=e1341]:
+                    - generic [ref=e1343]:
+                      - generic [ref=e1344]:
+                        - text: Dolo 650
+                        - generic "Critical medicine" [ref=e1345]: ★
+                      - generic [ref=e1346]: Micro Labs
+                  - cell "Low Stock" [ref=e1347]
+                  - cell "8 4.2/day avg" [ref=e1351]:
+                    - generic [ref=e1352]:
+                      - text: "8"
+                      - generic [ref=e1353]: 4.2/day avg
+                  - cell "1d" [ref=e1354]
+                  - cell "42" [ref=e1356]
+                  - cell "60 ✎" [ref=e1752]:
+                    - generic [ref=e1754] [cursor=pointer]:
+                      - generic [ref=e1755]: "60"
+                      - generic [ref=e1756]: ✎
+                  - cell "ABC Pharma" [ref=e1362]
+                  - cell "Stock Count" [ref=e1363]
+                  - cell "Sep 28" [ref=e1364]
+                  - cell "Ready" [ref=e1365]
+                  - cell [ref=e1370]:
+                    - button [ref=e1372] [cursor=pointer]
+                - row [ref=e1757]:
+                  - cell [ref=e1377]:
+                    - checkbox [ref=e1378] [cursor=pointer]
+                  - cell "Pantoprazole 40mg Sun Pharma" [ref=e1379]:
+                    - generic [ref=e1381]:
+                      - generic [ref=e1382]: Pantoprazole 40mg
+                      - generic [ref=e1383]: Sun Pharma
+                  - cell "Today's Sales" [ref=e1384]
+                  - cell "12 2.1/day avg" [ref=e1389]:
+                    - generic [ref=e1390]:
+                      - text: "12"
+                      - generic [ref=e1391]: 2.1/day avg
+                  - cell "5d" [ref=e1392]
+                  - cell "30" [ref=e1394]
+                  - cell "30 ✎ 20 on order" [ref=e1758]:
+                    - generic [ref=e1759]:
+                      - generic [ref=e1760] [cursor=pointer]:
+                        - generic [ref=e1761]: "30"
+                        - generic [ref=e1762]: ✎
+                      - generic [ref=e1763]: 20 on order
+                  - cell "XYZ Pharma" [ref=e1401]
+                  - cell "Stock Management" [ref=e1402]
+                  - cell "Sep 28" [ref=e1403]
+                  - cell "Ready" [ref=e1404]
+                  - cell [ref=e1409]:
+                    - button [ref=e1411] [cursor=pointer]
+                - row [ref=e1764]:
+                  - cell [ref=e1416]:
+                    - checkbox [ref=e1417] [cursor=pointer]
+                  - cell "Azithromycin 500mg ★ Cipla" [ref=e1418]:
+                    - generic [ref=e1420]:
+                      - generic [ref=e1421]:
+                        - text: Azithromycin 500mg
+                        - generic "Critical medicine" [ref=e1422]: ★
+                      - generic [ref=e1423]: Cipla
+                  - cell "Out of Stock" [ref=e1424]
+                  - cell "0 3.5/day avg" [ref=e1430]:
+                    - generic [ref=e1431]:
+                      - text: "0"
+                      - generic [ref=e1432]: 3.5/day avg
+                  - cell "OOS" [ref=e1433]
+                  - cell "50" [ref=e1434]
+                  - cell "50 ✎" [ref=e1765]:
+                    - generic [ref=e1767] [cursor=pointer]:
+                      - generic [ref=e1768]: "50"
+                      - generic [ref=e1769]: ✎
+                  - cell "Medico" [ref=e1440]
+                  - cell "Stock Management" [ref=e1441]
+                  - cell "Sep 27" [ref=e1442]
+                  - cell "Ready" [ref=e1443]
+                  - cell [ref=e1448]:
+                    - button [ref=e1450] [cursor=pointer]
+                - row [ref=e1770]:
+                  - cell [ref=e1455]:
+                    - checkbox [ref=e1456] [cursor=pointer]
+                  - cell "Metformin 500mg USV Ltd Near Expiry" [ref=e1457]:
+                    - generic [ref=e1459]:
+                      - generic [ref=e1460]: Metformin 500mg
+                      - generic [ref=e1461]: USV Ltd
+                      - generic [ref=e1462]: Near Expiry
+                  - cell "Low Stock" [ref=e1466]
+                  - cell "15 8.1/day avg" [ref=e1470]:
+                    - generic [ref=e1471]:
+                      - text: "15"
+                      - generic [ref=e1472]: 8.1/day avg
+                  - cell "1d" [ref=e1473]
+                  - cell "100" [ref=e1475]
+                  - cell "80 ✎" [ref=e1771]:
+                    - generic [ref=e1773] [cursor=pointer]:
+                      - generic [ref=e1774]: "80"
+                      - generic [ref=e1775]: ✎
+                  - cell "ABC Pharma" [ref=e1481]
+                  - cell "Purchase GRN" [ref=e1482]
+                  - cell "Sep 27" [ref=e1483]
+                  - cell "Ready" [ref=e1484]
+                  - cell [ref=e1489]:
+                    - button [ref=e1491] [cursor=pointer]
+                - row [ref=e1776]:
+                  - cell [ref=e1496]:
+                    - checkbox [ref=e1497] [cursor=pointer]
+                  - cell "Cetirizine 10mg Lupin" [ref=e1498]:
+                    - generic [ref=e1500]:
+                      - generic [ref=e1501]: Cetirizine 10mg
+                      - generic [ref=e1502]: Lupin
+                  - cell "Customer Demand" [ref=e1503]
+                  - cell "22 1.8/day avg" [ref=e1509]:
+                    - generic [ref=e1510]:
+                      - text: "22"
+                      - generic [ref=e1511]: 1.8/day avg
+                  - cell "12d" [ref=e1512]
+                  - cell "40" [ref=e1514]
+                  - cell "40 ✎" [ref=e1777]:
+                    - generic [ref=e1779] [cursor=pointer]:
+                      - generic [ref=e1780]: "40"
+                      - generic [ref=e1781]: ✎
+                  - cell "XYZ Pharma" [ref=e1520]
+                  - cell "Manual" [ref=e1521]
+                  - cell "Sep 26" [ref=e1522]
+                  - cell [ref=e1523]:
+                    - generic [ref=e1524]:
+                      - generic [ref=e1525]: Pending
+                      - generic [ref=e1529]: Overdue
+                  - cell [ref=e1533]:
+                    - button [ref=e1535] [cursor=pointer]
+                - row [ref=e1782]:
+                  - cell [ref=e1540]:
+                    - checkbox [ref=e1541] [cursor=pointer]
+                  - cell "Atorvastatin 20mg ★ Dr. Reddy's" [ref=e1542]:
+                    - generic [ref=e1544]:
+                      - generic [ref=e1545]:
+                        - text: Atorvastatin 20mg
+                        - generic "Critical medicine" [ref=e1546]: ★
+                      - generic [ref=e1547]: Dr. Reddy's
+                  - cell "Low Stock" [ref=e1548]
+                  - cell "18 2.8/day avg" [ref=e1552]:
+                    - generic [ref=e1553]:
+                      - text: "18"
+                      - generic [ref=e1554]: 2.8/day avg
+                  - cell "6d" [ref=e1555]
+                  - cell "60" [ref=e1557]
+                  - cell "60 ✎" [ref=e1783]:
+                    - generic [ref=e1785] [cursor=pointer]:
+                      - generic [ref=e1786]: "60"
+                      - generic [ref=e1787]: ✎
+                  - cell "ABC Pharma" [ref=e1563]
+                  - cell "Stock Count" [ref=e1564]
+                  - cell "Sep 26" [ref=e1565]
+                  - cell "Ready" [ref=e1566]
+                  - cell [ref=e1571]:
+                    - button [ref=e1573] [cursor=pointer]
+                - row [ref=e1788]:
+                  - cell [ref=e1578]:
+                    - checkbox [ref=e1579] [cursor=pointer]
+                  - cell "Omeprazole 20mg Cipla" [ref=e1580]:
+                    - generic [ref=e1582]:
+                      - generic [ref=e1583]: Omeprazole 20mg
+                      - generic [ref=e1584]: Cipla
+                  - cell "Manual" [ref=e1585]
+                  - cell "45 3/day avg" [ref=e1590]:
+                    - generic [ref=e1591]:
+                      - text: "45"
+                      - generic [ref=e1592]: 3/day avg
+                  - cell "15d" [ref=e1593]
+                  - cell "50" [ref=e1595]
+                  - cell "50 ✎" [ref=e1789]:
+                    - generic [ref=e1791] [cursor=pointer]:
+                      - generic [ref=e1792]: "50"
+                      - generic [ref=e1793]: ✎
+                  - cell "Medico" [ref=e1601]
+                  - cell "Manual" [ref=e1602]
+                  - cell "Sep 25" [ref=e1603]
+                  - cell [ref=e1604]:
+                    - generic [ref=e1605]:
+                      - generic [ref=e1606]: Pending
+                      - generic [ref=e1610]: Overdue
+                  - cell [ref=e1614]:
+                    - button [ref=e1616] [cursor=pointer]
+                - row [ref=e1794]:
+                  - cell [ref=e1621]:
+                    - checkbox [ref=e1622] [cursor=pointer]
+                  - cell "Amlodipine 5mg Torrent Pharma Near Expiry" [ref=e1623]:
+                    - generic [ref=e1625]:
+                      - generic [ref=e1626]: Amlodipine 5mg
+                      - generic [ref=e1627]: Torrent Pharma
+                      - generic [ref=e1628]: Near Expiry
+                  - cell "Today's Sales" [ref=e1632]
+                  - cell "5 2.2/day avg" [ref=e1637]:
+                    - generic [ref=e1638]:
+                      - text: "5"
+                      - generic [ref=e1639]: 2.2/day avg
+                  - cell "2d" [ref=e1640]
+                  - cell "30" [ref=e1642]
+                  - cell "30 ✎" [ref=e1795]:
+                    - generic [ref=e1797] [cursor=pointer]:
+                      - generic [ref=e1798]: "30"
+                      - generic [ref=e1799]: ✎
+                  - cell "XYZ Pharma" [ref=e1648]
+                  - cell "Sales Return" [ref=e1649]
+                  - cell "Sep 25" [ref=e1650]
+                  - cell "Ready" [ref=e1651]
+                  - cell [ref=e1656]:
+                    - button [ref=e1658] [cursor=pointer]
+                - row [ref=e1800]:
+                  - cell [ref=e1663]:
+                    - checkbox [ref=e1664] [cursor=pointer]
+                  - cell "Lisinopril 10mg Abbott" [ref=e1665]:
+                    - generic [ref=e1667]:
+                      - generic [ref=e1668]: Lisinopril 10mg
+                      - generic [ref=e1669]: Abbott
+                  - cell "Out of Stock" [ref=e1670]
+                  - cell "0 2/day avg" [ref=e1676]:
+                    - generic [ref=e1677]:
+                      - text: "0"
+                      - generic [ref=e1678]: 2/day avg
+                  - cell "OOS" [ref=e1679]
+                  - cell "40" [ref=e1680]
+                  - cell "40 ✎" [ref=e1801]:
+                    - generic [ref=e1803] [cursor=pointer]:
+                      - generic [ref=e1804]: "40"
+                      - generic [ref=e1805]: ✎
+                  - cell "PharmaCo Inc" [ref=e1686]
+                  - cell "Stock Count" [ref=e1687]
+                  - cell "Oct 2" [ref=e1688]
+                  - cell "Ready" [ref=e1689]
+                  - cell [ref=e1694]:
+                    - button [ref=e1696] [cursor=pointer]
+          - generic [ref=e1807]:
+            - generic [ref=e1808]: 1 order quantity updated
+            - button "✕" [ref=e1809] [cursor=pointer]
+  - generic [aria-hidden] [ref=e471]: ₹0k

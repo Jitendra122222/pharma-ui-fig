@@ -1,0 +1,268 @@
+- generic [ref=e1]:
+  - generic [ref=e482]:
+    - complementary [ref=e483]:
+      - generic [ref=e484]:
+        - generic [ref=e485]:
+          - generic [ref=e486]: Rx
+          - generic [ref=e487]:
+            - generic [ref=e488]: PharmERP
+            - generic [ref=e489]: City Central Pharmacy
+        - button "Collapse sidebar" [ref=e490] [cursor=pointer]: «
+      - navigation [ref=e491]:
+        - generic [ref=e492]:
+          - generic [ref=e493]: Core Operations
+          - button "Dashboard" [ref=e494] [cursor=pointer]
+          - button "Sales 2" [ref=e499] [cursor=pointer]:
+            - generic [ref=e503]: Sales
+            - generic [ref=e504]: "2"
+          - button "Prescriptions 2" [ref=e505] [cursor=pointer]:
+            - generic [ref=e509]: Prescriptions
+            - generic [ref=e510]: "2"
+          - button "Patients" [ref=e511] [cursor=pointer]
+        - generic [ref=e516]:
+          - generic [ref=e517]: Inventory & Stock
+          - button "Inventory 3" [ref=e518] [cursor=pointer]:
+            - generic [ref=e522]: Inventory
+            - generic [ref=e523]: "3"
+          - button "Stock Management" [ref=e524] [cursor=pointer]
+          - button "Short Book 8" [ref=e530] [cursor=pointer]:
+            - generic [ref=e534]: Short Book
+            - generic [ref=e535]: "8"
+          - button "Expiry Management 12" [ref=e536] [cursor=pointer]:
+            - generic [ref=e541]: Expiry Management
+            - generic [ref=e542]: "12"
+        - generic [ref=e543]:
+          - generic [ref=e544]: Purchasing
+          - button "Purchasing" [ref=e545] [cursor=pointer]
+          - button "Distributors" [ref=e552] [cursor=pointer]
+        - generic [ref=e558]:
+          - generic [ref=e559]: Finance
+          - button "Accounts" [ref=e560] [cursor=pointer]
+          - button "Insurance & Claims" [ref=e566] [cursor=pointer]
+        - generic [ref=e571]:
+          - generic [ref=e572]: Analytics
+          - button "Reports" [ref=e573] [cursor=pointer]
+        - generic [ref=e578]:
+          - generic [ref=e579]: Administration
+          - button "HR & Payroll" [ref=e580] [cursor=pointer]
+          - button "Settings" [ref=e585] [cursor=pointer]
+      - generic [ref=e591]:
+        - generic [ref=e592]: JD
+        - generic [ref=e593]:
+          - generic [ref=e594]: Jane Doe
+          - generic [ref=e595]: Head Pharmacist
+    - generic [ref=e596]:
+      - banner [ref=e597]:
+        - generic [ref=e598]:
+          - generic [ref=e599]: PharmERP
+          - generic [ref=e600]: ›
+          - generic [ref=e601]: Stock Management
+        - generic [ref=e602]:
+          - generic [ref=e603]:
+            - textbox "Quick search..." [ref=e604]
+            - generic [ref=e605]: ⌕
+          - generic [ref=e606] [cursor=pointer]:
+            - text: 🔔
+            - generic [ref=e607]: "5"
+          - generic [ref=e608]: 28 Jul 2025
+          - generic [ref=e610]:
+            - generic [ref=e611]: RK
+            - generic [ref=e613]:
+              - generic [ref=e614]: Rajesh Kumar
+              - generic [ref=e615]: Pharmacist
+            - button "Logout" [ref=e616] [cursor=pointer]
+      - main [ref=e617]:
+        - generic [ref=e618]:
+          - generic [ref=e619]:
+            - generic [ref=e620]:
+              - heading "Stock Management" [level=1] [ref=e621]
+              - generic [ref=e622]: Monitor near-expiry items and manage quarantine
+            - button "Export" [ref=e623] [cursor=pointer]
+          - generic [ref=e624]:
+            - button "Stock Overview" [ref=e625] [cursor=pointer]
+            - button "Locations" [ref=e626] [cursor=pointer]
+            - button "Adjustments" [ref=e627] [cursor=pointer]
+            - button "Batch Tracking" [ref=e628] [cursor=pointer]
+            - button "Expiry Management" [active] [ref=e629] [cursor=pointer]
+            - button "Stock Transfer" [ref=e630] [cursor=pointer]
+            - button "Investigation" [ref=e631] [cursor=pointer]
+            - button "Narcotic Register" [ref=e632] [cursor=pointer]
+            - button "Drug Recall" [ref=e633] [cursor=pointer]
+          - generic [ref=e634]:
+            - generic [ref=e635]:
+              - generic [ref=e636]:
+                - generic [ref=e637]: Expired — Write-off Required
+                - generic [ref=e638]: ₹1545
+                - generic [ref=e639]: 8 SKUs
+              - generic [ref=e640]:
+                - generic [ref=e641]: Critical Risk (≤ 30 days)
+                - generic [ref=e642]: ₹0
+                - generic [ref=e643]: 0 SKUs
+              - generic [ref=e644]:
+                - generic [ref=e645]: Warning Zone (≤ 90 days)
+                - generic [ref=e646]: ₹84
+                - generic [ref=e647]: 1 SKUs
+              - generic [ref=e648]:
+                - generic [ref=e649]: Total Capital at Risk
+                - generic [ref=e650]: ₹1628
+                - generic [ref=e651]: Combined exposure
+            - generic [ref=e652]:
+              - generic [ref=e653]:
+                - button "Expiry Alerts 9" [ref=e654] [cursor=pointer]:
+                  - text: Expiry Alerts
+                  - generic [ref=e655]: "9"
+                - button "Quarantine 2" [ref=e656] [cursor=pointer]:
+                  - text: Quarantine
+                  - generic [ref=e657]: "2"
+              - textbox "Search by drug or category..." [ref=e663]
+              - table [ref=e665]:
+                - rowgroup [ref=e666]:
+                  - row [ref=e667]:
+                    - columnheader "Drug" [ref=e668] [cursor=pointer]
+                    - columnheader "Category" [ref=e675] [cursor=pointer]
+                    - columnheader "Location" [ref=e682] [cursor=pointer]
+                    - columnheader "Stock" [ref=e689] [cursor=pointer]
+                    - columnheader "Expiry Date" [ref=e696] [cursor=pointer]
+                    - columnheader "Days Left" [ref=e703] [cursor=pointer]
+                    - columnheader "Action Needed" [ref=e710]
+                    - columnheader "Supplier" [ref=e712]
+                    - columnheader "Return Status" [ref=e714]
+                    - columnheader "Actions" [ref=e716]
+                - rowgroup [ref=e718]:
+                  - row [ref=e719]:
+                    - cell "Insulin Glargine" [ref=e720]
+                    - cell "Hormones" [ref=e721]
+                    - cell "COLD-01" [ref=e722]
+                    - cell "45" [ref=e723]
+                    - cell "2025-10-15" [ref=e724]
+                    - cell "EXPIRED" [ref=e725]
+                    - cell "Dispose immediately" [ref=e726]
+                    - cell "BioPharm AG" [ref=e727]
+                    - cell "Non-returnable" [ref=e728]
+                    - cell "In Quarantine" [ref=e729]
+                  - row [ref=e732]:
+                    - cell "Ciprofloxacin 500mg" [ref=e733]
+                    - cell "Antibiotics" [ref=e734]
+                    - cell "A1-02" [ref=e735]
+                    - cell "12" [ref=e736]
+                    - cell "2025-11-20" [ref=e737]
+                    - cell "EXPIRED" [ref=e738]
+                    - cell "Dispose immediately" [ref=e739]
+                    - cell "PharmaCo Inc" [ref=e740]
+                    - cell "Window Closed" [ref=e741]
+                    - cell "In Quarantine" [ref=e742]
+                  - row [ref=e745]:
+                    - cell "Metformin 1000mg" [ref=e746]
+                    - cell "Antidiabetics" [ref=e747]
+                    - cell "B3-05" [ref=e748]
+                    - cell "18" [ref=e749]
+                    - cell "2025-12-31" [ref=e750]
+                    - cell "EXPIRED" [ref=e751]
+                    - cell "Dispose immediately" [ref=e752]
+                    - cell "GenPharm Ltd" [ref=e753]
+                    - cell "Window Closed" [ref=e754]
+                    - cell [ref=e755]:
+                      - button "Quarantine" [ref=e757] [cursor=pointer]
+                  - row [ref=e758]:
+                    - cell "Lisinopril 10mg" [ref=e759]
+                    - cell "Antihypertensives" [ref=e760]
+                    - cell "B2-01" [ref=e761]
+                    - cell "0" [ref=e762]
+                    - cell "2026-03-20" [ref=e763]
+                    - cell "EXPIRED" [ref=e764]
+                    - cell "Dispose immediately" [ref=e765]
+                    - cell "PharmaCo Inc" [ref=e766]
+                    - cell "Window Closed" [ref=e767]
+                    - cell [ref=e768]:
+                      - button "Quarantine" [ref=e770] [cursor=pointer]
+                  - row [ref=e771]:
+                    - cell "Warfarin 5mg" [ref=e772]
+                    - cell "Anticoagulants" [ref=e773]
+                    - cell "B4-02" [ref=e774]
+                    - cell "6" [ref=e775]
+                    - cell "2026-04-01" [ref=e776]
+                    - cell "EXPIRED" [ref=e777]
+                    - cell "Dispose immediately" [ref=e778]
+                    - cell "PharmaCo Inc" [ref=e779]
+                    - cell "Non-returnable" [ref=e780]
+                    - cell [ref=e781]:
+                      - button "Quarantine" [ref=e783] [cursor=pointer]
+                  - row [ref=e784]:
+                    - cell "Salbutamol Inhaler" [ref=e785]
+                    - cell "Bronchodilators" [ref=e786]
+                    - cell "D1-01" [ref=e787]
+                    - cell "28" [ref=e788]
+                    - cell "2026-06-30" [ref=e789]
+                    - cell "EXPIRED" [ref=e790]
+                    - cell "Dispose immediately" [ref=e791]
+                    - cell "RespiCare Ltd" [ref=e792]
+                    - cell "Window Closed" [ref=e793]
+                    - cell [ref=e794]:
+                      - button "Quarantine" [ref=e796] [cursor=pointer]
+                  - row [ref=e797]:
+                    - cell "Amoxicillin 500mg" [ref=e798]
+                    - cell "Antibiotics" [ref=e799]
+                    - cell "A1-02" [ref=e800]
+                    - cell "240" [ref=e801]
+                    - cell "2026-08-15" [ref=e802]
+                    - cell "EXPIRED" [ref=e803]
+                    - cell "Dispose immediately" [ref=e804]
+                    - cell "MedLine Pharma" [ref=e805]
+                    - cell "Window Closed" [ref=e806]
+                    - cell [ref=e807]:
+                      - button "Quarantine" [ref=e809] [cursor=pointer]
+                  - row [ref=e810]:
+                    - cell "Omeprazole 20mg" [ref=e811]
+                    - cell "Antacids" [ref=e812]
+                    - cell "A3-01" [ref=e813]
+                    - cell "145" [ref=e814]
+                    - cell "2026-09-05" [ref=e815]
+                    - cell "EXPIRED" [ref=e816]
+                    - cell "Dispose immediately" [ref=e817]
+                    - cell "BioPharm AG" [ref=e818]
+                    - cell "Eligible" [ref=e819]
+                    - cell [ref=e820]:
+                      - generic [ref=e821]:
+                        - button "Return" [ref=e822] [cursor=pointer]
+                        - button "Quarantine" [ref=e823] [cursor=pointer]
+                  - row [ref=e824]:
+                    - cell "Amlodipine 5mg" [ref=e825]
+                    - cell "Antihypertensives" [ref=e826]
+                    - cell "B2-03" [ref=e827]
+                    - cell "380" [ref=e828]
+                    - cell "2026-11-30" [ref=e829]
+                    - cell "59d" [ref=e830]
+                    - cell "Monitor & prioritise sales" [ref=e831]
+                    - cell "MedLine Pharma" [ref=e832]
+                    - cell "Eligible" [ref=e833]
+                    - cell [ref=e834]:
+                      - button "Return" [ref=e836] [cursor=pointer]
+                  - row [ref=e837]:
+                    - cell "Atorvastatin 20mg" [ref=e838]
+                    - cell "Statins" [ref=e839]
+                    - cell "C1-04" [ref=e840]
+                    - cell "312" [ref=e841]
+                    - cell "2027-01-10" [ref=e842]
+                    - cell "100d" [ref=e843]
+                    - cell "No action required" [ref=e844]
+                    - cell "MedLine Pharma" [ref=e845]
+                    - cell "Eligible" [ref=e846]
+                    - cell [ref=e847]:
+                      - button "Return" [ref=e849] [cursor=pointer]
+              - generic [ref=e850]:
+                - generic [ref=e851]: Showing 1–10 of 12
+                - generic [ref=e852]:
+                  - generic [ref=e853]:
+                    - generic [ref=e854]: "Rows per page:"
+                    - combobox [ref=e855]:
+                      - option "5"
+                      - option "10" [selected]
+                      - option "25"
+                      - option "50"
+                  - generic [ref=e856]:
+                    - button "«" [disabled] [ref=e857]
+                    - button "‹" [disabled] [ref=e858]
+                    - generic [ref=e859]: 1 / 2
+                    - button "›" [ref=e860] [cursor=pointer]
+                    - button "»" [ref=e861] [cursor=pointer]
+  - generic [aria-hidden] [ref=e481]: ₹0k

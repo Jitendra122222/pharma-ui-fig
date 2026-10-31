@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { S } from "../styles/common";
 import { TabBar } from "./shared/TabBar";
 import { SubTab, TABS } from "./accounts/accountsData";
 import AccountsOverview from "./accounts/AccountsOverview";
@@ -12,8 +13,8 @@ export default function Accounts() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#1A2436", margin: 0, letterSpacing: "-0.02em" }}>Accounts & Finance</h1>
-        <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 3 }}>Chart of accounts · Ledger · Journal · Receivables · Payables</div>
+        <h1 style={S.pageTitleAlt}>Accounts & Finance</h1>
+        <div style={S.subtitleMuted}>Chart of accounts · Ledger · Journal · Receivables · Payables</div>
       </div>
       <TabBar tabs={TABS} active={tab} onChange={(id) => setTab(id as SubTab)} />
       {tab === "overview" && <AccountsOverview />}

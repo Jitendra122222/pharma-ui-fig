@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { S } from "../styles/common";
 import { TabBar } from "./shared/TabBar";
 import { SubTab, TABS } from "./hr/hrData";
 import StaffDirectory from "./hr/StaffDirectory";
@@ -11,8 +12,8 @@ export default function HR() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 style={{ fontFamily: "Outfit", fontSize: 22, fontWeight: 700, color: "#1A2436", margin: 0, letterSpacing: "-0.02em" }}>HR & Payroll</h1>
-        <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 3 }}>Staff directory · Attendance · Payroll · Leave management</div>
+        <h1 style={S.pageTitleAlt}>HR & Payroll</h1>
+        <div style={S.subtitleMuted}>Staff directory · Attendance · Payroll · Leave management</div>
       </div>
       <TabBar tabs={TABS} active={tab} onChange={(id) => setTab(id as SubTab)} />
       {tab === "staff" && <StaffDirectory />}

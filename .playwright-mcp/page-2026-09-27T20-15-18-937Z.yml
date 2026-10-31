@@ -1,0 +1,246 @@
+- generic [ref=f8e1]:
+  - generic [ref=f8e99]:
+    - complementary [ref=f8e100]:
+      - generic [ref=f8e101]:
+        - generic [ref=f8e102]:
+          - generic [ref=f8e103]: Rx
+          - generic [ref=f8e104]:
+            - generic [ref=f8e105]: PharmERP
+            - generic [ref=f8e106]: City Central Pharmacy
+        - button "Collapse sidebar" [ref=f8e107] [cursor=pointer]: «
+      - navigation [ref=f8e108]:
+        - generic [ref=f8e109]:
+          - generic [ref=f8e110]: Core Operations
+          - button "Dashboard" [ref=f8e111] [cursor=pointer]
+          - button "Sales 2" [ref=f8e116] [cursor=pointer]:
+            - generic [ref=f8e120]: Sales
+            - generic [ref=f8e121]: "2"
+          - button "Prescriptions 2" [ref=f8e122] [cursor=pointer]:
+            - generic [ref=f8e126]: Prescriptions
+            - generic [ref=f8e127]: "2"
+          - button "Patients" [ref=f8e128] [cursor=pointer]
+        - generic [ref=f8e133]:
+          - generic [ref=f8e134]: Inventory & Stock
+          - button "Inventory 3" [ref=f8e135] [cursor=pointer]:
+            - generic [ref=f8e139]: Inventory
+            - generic [ref=f8e140]: "3"
+          - button "Stock Management" [ref=f8e141] [cursor=pointer]
+          - button "Short Book 8" [ref=f8e147] [cursor=pointer]:
+            - generic [ref=f8e151]: Short Book
+            - generic [ref=f8e152]: "8"
+          - button "Expiry Management 12" [ref=f8e153] [cursor=pointer]:
+            - generic [ref=f8e158]: Expiry Management
+            - generic [ref=f8e159]: "12"
+        - generic [ref=f8e160]:
+          - generic [ref=f8e161]: Purchasing
+          - button "Purchasing" [ref=f8e162] [cursor=pointer]
+          - button "Distributors" [ref=f8e169] [cursor=pointer]
+        - generic [ref=f8e175]:
+          - generic [ref=f8e176]: Finance
+          - button "Accounts" [ref=f8e177] [cursor=pointer]
+          - button "Insurance & Claims" [ref=f8e183] [cursor=pointer]
+        - generic [ref=f8e188]:
+          - generic [ref=f8e189]: Analytics
+          - button "Reports" [ref=f8e190] [cursor=pointer]
+        - generic [ref=f8e195]:
+          - generic [ref=f8e196]: Administration
+          - button "HR & Payroll" [ref=f8e197] [cursor=pointer]
+          - button "Settings" [ref=f8e202] [cursor=pointer]
+      - generic [ref=f8e208]:
+        - generic [ref=f8e209]: JD
+        - generic [ref=f8e210]:
+          - generic [ref=f8e211]: Jane Doe
+          - generic [ref=f8e212]: Head Pharmacist
+    - generic [ref=f8e213]:
+      - banner [ref=f8e214]:
+        - generic [ref=f8e215]:
+          - generic [ref=f8e216]: PharmERP
+          - generic [ref=f8e217]: ›
+          - generic [ref=f8e218]: Stock Management
+        - generic [ref=f8e219]:
+          - generic [ref=f8e220]:
+            - textbox "Quick search..." [ref=f8e221]
+            - generic [ref=f8e222]: ⌕
+          - generic [ref=f8e223] [cursor=pointer]:
+            - text: 🔔
+            - generic [ref=f8e224]: "5"
+          - generic [ref=f8e225]: 28 Jul 2025
+          - generic [ref=f8e227]:
+            - generic [ref=f8e228]: RK
+            - generic [ref=f8e230]:
+              - generic [ref=f8e231]: Rajesh Kumar
+              - generic [ref=f8e232]: Pharmacist
+            - button "Logout" [ref=f8e233] [cursor=pointer]
+      - main [ref=f8e234]:
+        - generic [ref=f8e235]:
+          - generic [ref=f8e236]:
+            - generic [ref=f8e237]:
+              - heading "Stock Management" [level=1] [ref=f8e238]
+              - generic [ref=f8e239]: Investigate and resolve stock count discrepancies
+            - button "Export" [ref=f8e240] [cursor=pointer]
+          - generic [ref=f8e242]:
+            - generic [ref=f8e243]:
+              - generic [ref=f8e244]: Total SKUs
+              - generic [ref=f8e245]: "12"
+            - generic [ref=f8e246]:
+              - generic [ref=f8e247]: Stock Value
+              - generic [ref=f8e248]: ₹1.9K
+            - generic [ref=f8e249]:
+              - generic [ref=f8e250]: Stock Alerts
+              - generic [ref=f8e251]: "4"
+            - generic [ref=f8e252]:
+              - generic [ref=f8e253]: Critical Expiry
+              - generic [ref=f8e254]: "0"
+            - generic [ref=f8e255]:
+              - generic [ref=f8e256]: Adjustments / Mo
+              - generic [ref=f8e257]: "5"
+          - generic [ref=f8e258]:
+            - button "Stock Overview" [ref=f8e259] [cursor=pointer]
+            - button "Adjustments" [ref=f8e260] [cursor=pointer]
+            - button "Batch Tracking" [ref=f8e261] [cursor=pointer]
+            - button "Expiry Management" [ref=f8e262] [cursor=pointer]
+            - button "Stock Transfer" [ref=f8e263] [cursor=pointer]
+            - button "Investigation" [active] [ref=f8e264] [cursor=pointer]
+          - generic [ref=f8e697]:
+            - generic [ref=f8e698]:
+              - generic [ref=f8e699]:
+                - generic [ref=f8e700]: Variance Resolution Center
+                - generic [ref=f8e701]: 2 of 5 cases resolved
+              - generic [ref=f8e702]:
+                - generic [ref=f8e703]:
+                  - generic [ref=f8e704]: Resolution Rate
+                  - generic [ref=f8e705]: 40%
+                - generic [ref=f8e706]:
+                  - generic [ref=f8e707]: Total Qty Adjusted
+                  - generic [ref=f8e708]: "5"
+                - generic [ref=f8e709]:
+                  - generic [ref=f8e710]: Top Root Cause
+                  - generic [ref=f8e711]: Purchase Entry Error
+                - generic [ref=f8e712]:
+                  - generic [ref=f8e713]: Rejected
+                  - generic [ref=f8e714]: "0"
+              - generic [ref=f8e715]:
+                - generic [ref=f8e716]: Root Cause Breakdown
+                - generic [ref=f8e717]:
+                  - generic [ref=f8e718]:
+                    - generic [ref=f8e719]: Purchase Entry Error
+                    - generic [ref=f8e722]: "1"
+                  - generic [ref=f8e723]:
+                    - generic [ref=f8e724]: Unrecorded Sale
+                    - generic [ref=f8e727]: "1"
+              - generic [ref=f8e728]:
+                - generic [ref=f8e729]: Recent Resolutions
+                - generic [ref=f8e730]:
+                  - generic [ref=f8e731]:
+                    - generic [ref=f8e732]:
+                      - generic [ref=f8e733]: Metformin 1000mg
+                      - generic [ref=f8e734]: Purchase Entry Error
+                    - generic [ref=f8e735]:
+                      - generic [ref=f8e736]: Approved
+                      - generic [ref=f8e737]: "+3"
+                  - generic [ref=f8e738]:
+                    - generic [ref=f8e739]:
+                      - generic [ref=f8e740]: Warfarin 5mg
+                      - generic [ref=f8e741]: Unrecorded SaleADJ-2026-0042
+                    - generic [ref=f8e742]:
+                      - generic [ref=f8e743]: Adjusted
+                      - generic [ref=f8e744]: "-2"
+            - generic [ref=f8e745]:
+              - generic [ref=f8e746]:
+                - textbox "Search cases..." [ref=f8e751]
+                - generic [ref=f8e752]:
+                  - button "All" [ref=f8e753] [cursor=pointer]
+                  - button "Open" [ref=f8e754] [cursor=pointer]
+                  - button "In Progress" [ref=f8e755] [cursor=pointer]
+                  - button "Pending Approval" [ref=f8e756] [cursor=pointer]
+                  - button "Approved" [ref=f8e757] [cursor=pointer]
+                  - button "Rejected" [ref=f8e758] [cursor=pointer]
+                  - button "Adjusted" [ref=f8e759] [cursor=pointer]
+                - generic [ref=f8e760]:
+                  - button "Audit Trail" [ref=f8e761] [cursor=pointer]
+                  - button "+ New Investigation" [ref=f8e765] [cursor=pointer]
+              - table [ref=f8e767]:
+                - rowgroup [ref=f8e768]:
+                  - row [ref=f8e769]:
+                    - 'columnheader "Case #" [ref=f8e770] [cursor=pointer]'
+                    - columnheader "Drug" [ref=f8e777] [cursor=pointer]
+                    - columnheader "Reported" [ref=f8e784] [cursor=pointer]
+                    - columnheader "Variance" [ref=f8e791] [cursor=pointer]
+                    - columnheader "Priority" [ref=f8e798] [cursor=pointer]
+                    - columnheader "Stage" [ref=f8e805] [cursor=pointer]
+                    - columnheader "Assigned To" [ref=f8e812] [cursor=pointer]
+                    - columnheader "Status" [ref=f8e819] [cursor=pointer]
+                    - columnheader "Actions" [ref=f8e826]
+                - rowgroup [ref=f8e828]:
+                  - row [ref=f8e829] [cursor=pointer]:
+                    - cell "INV-2026-0001" [ref=f8e830]
+                    - cell "Amoxicillin 500mg" [ref=f8e831]
+                    - cell "2026-09-15" [ref=f8e832]
+                    - cell "-6" [ref=f8e833]
+                    - cell "High" [ref=f8e834]
+                    - cell "Approval" [ref=f8e835]
+                    - cell "Dr. R. Sharma" [ref=f8e836]
+                    - cell "Pending Approval" [ref=f8e837]
+                    - cell [ref=f8e838]:
+                      - button "View" [ref=f8e839]
+                  - row [ref=f8e840] [cursor=pointer]:
+                    - cell "INV-2026-0002" [ref=f8e841]
+                    - cell "Paracetamol 500mg" [ref=f8e842]
+                    - cell "2026-09-18" [ref=f8e843]
+                    - cell "-5" [ref=f8e844]
+                    - cell "Medium" [ref=f8e845]
+                    - cell "Batch Investigation" [ref=f8e846]
+                    - cell "Mark Stevens" [ref=f8e847]
+                    - cell "In Progress" [ref=f8e848]
+                    - cell [ref=f8e849]:
+                      - button "Investigate" [ref=f8e850]
+                  - row [ref=f8e851] [cursor=pointer]:
+                    - cell "INV-2026-0003" [ref=f8e852]
+                    - cell "Metformin 1000mg" [ref=f8e853]
+                    - cell "2026-09-10" [ref=f8e854]
+                    - cell "+3" [ref=f8e855]
+                    - cell "Low" [ref=f8e856]
+                    - cell "Adjustment" [ref=f8e857]
+                    - cell "Admin" [ref=f8e858]
+                    - cell "Approved" [ref=f8e859]
+                    - cell [ref=f8e860]:
+                      - button "View" [ref=f8e861]
+                  - row [ref=f8e862] [cursor=pointer]:
+                    - cell "INV-2026-0004" [ref=f8e863]
+                    - cell "Atorvastatin 20mg" [ref=f8e864]
+                    - cell "2026-09-20" [ref=f8e865]
+                    - cell "-7" [ref=f8e866]
+                    - cell "High" [ref=f8e867]
+                    - cell "Stock Difference" [ref=f8e868]
+                    - cell "Unassigned" [ref=f8e869]
+                    - cell "Open" [ref=f8e870]
+                    - cell [ref=f8e871]:
+                      - button "Investigate" [ref=f8e872]
+                  - row [ref=f8e873] [cursor=pointer]:
+                    - cell "INV-2026-0005" [ref=f8e874]
+                    - cell "Warfarin 5mg" [ref=f8e875]
+                    - cell "2026-08-25" [ref=f8e876]
+                    - cell "-2" [ref=f8e877]
+                    - cell "Medium" [ref=f8e878]
+                    - cell "Adjustment" [ref=f8e879]
+                    - cell "Jane Doe" [ref=f8e880]
+                    - cell "Adjusted" [ref=f8e881]
+                    - cell [ref=f8e882]:
+                      - button "View" [ref=f8e883]
+              - generic [ref=f8e884]:
+                - generic [ref=f8e885]: Showing 1–5 of 5
+                - generic [ref=f8e886]:
+                  - generic [ref=f8e887]:
+                    - generic [ref=f8e888]: "Rows per page:"
+                    - combobox [ref=f8e889]:
+                      - option "5"
+                      - option "10" [selected]
+                      - option "25"
+                      - option "50"
+                  - generic [ref=f8e890]:
+                    - button "«" [disabled] [ref=f8e891]
+                    - button "‹" [disabled] [ref=f8e892]
+                    - generic [ref=f8e893]: 1 / 1
+                    - button "›" [disabled] [ref=f8e894]
+                    - button "»" [disabled] [ref=f8e895]
+  - generic [aria-hidden] [ref=f8e512]: ₹0k

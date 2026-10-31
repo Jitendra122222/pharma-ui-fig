@@ -235,14 +235,13 @@ function DrawerHeader({ onClose }: { onClose: () => void }) {
         style={{
           border: "none",
           background: "transparent",
-          fontSize: 22,
-          color: MUTED,
           cursor: "pointer",
           padding: 4,
-          lineHeight: 1,
+          display: "flex",
+          alignItems: "center",
         }}
       >
-        ×
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round"/></svg>
       </button>
     </div>
   );

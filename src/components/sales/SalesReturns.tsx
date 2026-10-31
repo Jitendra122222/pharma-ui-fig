@@ -265,6 +265,8 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
   const [readOnly, setReadOnly] = useState(isExisting);
   const [printJob, setPrintJob] = useState<{ jobType: PrintJobType; docId?: string } | null>(null);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
+  const [showRestockConfirm, setShowRestockConfirm] = useState(false);
+  const [restockToast, setRestockToast] = useState<string | null>(null);
   const nextId = useRef(1);
   const [items, setItems] = useState<LineItem[]>(() => {
     if (returnRecord) {
@@ -454,7 +456,11 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
             <>
               <button onClick={onBack} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 13, cursor: "pointer", color: "#1A2436", fontFamily: "Inter" }}>Cancel</button>
               <button disabled={!hasItems} onClick={() => setSaved("draft")} style={{ padding: "7px 16px", border: `1px solid ${hasItems ? "#E8ECF4" : "#F0F0F0"}`, background: hasItems ? "#fff" : "#F5F5F5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#1A2436" : "#BDBDBD", fontFamily: "Inter" }}>Save Draft</button>
-              <button disabled={!hasItems} onClick={() => { setSaved("posted"); setPrintJob({ jobType: "Sales Return", docId: "SRN-2025-0010" }); }} style={{ padding: "7px 20px", border: "none", background: hasItems ? "#1B6CA8" : "#C8D6E5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#fff" : "#8FA3B1", fontFamily: "Inter", fontWeight: 600 }}>Save &amp; Print Return</button>
+              <button disabled={!hasItems} onClick={() => {
+                const restockItems = items.filter(i => i.medicineName !== "" && (i as any).restock);
+                if (restockItems.length > 0) { setShowRestockConfirm(true); }
+                else { setSaved("posted"); setPrintJob({ jobType: "Sales Return", docId: "SRN-2025-0010" }); }
+              }} style={{ padding: "7px 20px", border: "none", background: hasItems ? "#1B6CA8" : "#C8D6E5", fontSize: 13, cursor: hasItems ? "pointer" : "not-allowed", color: hasItems ? "#fff" : "#8FA3B1", fontFamily: "Inter", fontWeight: 600 }}>Save &amp; Print Return</button>
             </>
           )}
         </div>
@@ -471,6 +477,47 @@ function NewSalesReturn({ onBack, returnRecord }: { onBack: () => void; returnRe
               <button onClick={onBack} style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #E8ECF4", background: "#fff", fontSize: 12, cursor: "pointer", color: "#C62828", fontFamily: "Inter" }}>Discard</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showRestockConfirm && (() => {
+        const restockItems = items.filter(i => i.medicineName !== "" && (i as any).restock);
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.55)", zIndex: 310, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: "#fff", width: 480, borderRadius: 6, border: "1px solid #E8ECF4", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+              <div style={{ padding: "16px 22px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontFamily: "Outfit", fontSize: 16, fontWeight: 700, color: "#1A2436" }}>Confirm Restock</span>
+                <button onClick={() => setShowRestockConfirm(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#9CA3AF", fontSize: 22 }}>&times;</button>
+              </div>
+              <div style={{ padding: "16px 22px" }}>
+                <div style={{ fontSize: 13, color: "#1A2436", marginBottom: 12 }}>The following items will be <strong>added back to stock</strong> as a Return adjustment:</div>
+                {restockItems.map(i => (
+                  <div key={i.id} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #EEF1F6", marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{i.medicineName}</span>
+                    <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: "#2E7D32", fontWeight: 700 }}>+{i.qty}</span>
+                  </div>
+                ))}
+                <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 8, marginBottom: 16 }}>Items with "Restock" toggled off will not be added to inventory.</div>
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                  <button onClick={() => setShowRestockConfirm(false)} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #DDE3EC", background: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "Inter" }}>Cancel</button>
+                  <button onClick={() => {
+                    setShowRestockConfirm(false);
+                    setSaved("posted");
+                    setPrintJob({ jobType: "Sales Return", docId: "SRN-2025-0010" });
+                    const ref = `RET-${Date.now()}`;
+                    setRestockToast(`${restockItems.length} item${restockItems.length !== 1 ? "s" : ""} returned to stock. Ref: ${ref}`);
+                    setTimeout(() => setRestockToast(null), 4000);
+                  }} style={{ padding: "8px 20px", borderRadius: 6, border: "none", background: "#1B6CA8", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter" }}>Confirm &amp; Post</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {restockToast && (
+        <div style={{ position: "fixed", bottom: 28, right: 28, background: "#1A2436", color: "#fff", padding: "10px 20px", borderRadius: 8, fontSize: 13, fontFamily: "Inter", zIndex: 400, boxShadow: "0 4px 16px rgba(0,0,0,0.25)" }}>
+          {restockToast}
         </div>
       )}
 

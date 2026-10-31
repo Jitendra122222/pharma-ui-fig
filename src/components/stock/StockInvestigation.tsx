@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { SK } from "../../styles/stock";
 import { drugs } from "../../data/mockData";
-import { StatTile } from "../shared/StatTile";
 import { Pill } from "../shared/Pill";
 import { Th } from "../shared/Th";
 import { useTableSort } from "../shared/useTableSort";
+import { usePagination, PaginationFooter } from "../shared/usePagination";
 
 type InvStatus = "Open" | "In Progress" | "Pending Approval" | "Approved" | "Rejected" | "Adjusted";
 type InvPriority = "High" | "Medium" | "Low";
@@ -123,6 +124,37 @@ const SEED: Investigation[] = [
   },
 ];
 
+interface AuditEvent {
+  id: string;
+  caseId: string;
+  drugName: string;
+  datetime: string;
+  actor: string;
+  action: string;
+  fromStep?: string;
+  toStep?: string;
+  detail?: string;
+  eventType: "opened" | "progressed" | "decision" | "evidence" | "adjusted" | "closed";
+}
+
+const AUDIT_TRAIL: AuditEvent[] = [
+  { id: "AE-001", caseId: "INV-2026-0001", drugName: "Amoxicillin 500mg", datetime: "2026-09-15 08:12", actor: "Cashier", action: "Case Opened", toStep: "Stock Difference", detail: "Physical count: 374, System: 380, Variance: -6", eventType: "opened" },
+  { id: "AE-002", caseId: "INV-2026-0001", drugName: "Amoxicillin 500mg", datetime: "2026-09-15 09:30", actor: "Dr. R. Sharma", action: "Case Assigned", detail: "Priority set to High", eventType: "decision" },
+  { id: "AE-003", caseId: "INV-2026-0001", drugName: "Amoxicillin 500mg", datetime: "2026-09-15 10:15", actor: "Dr. R. Sharma", action: "Step Advanced", fromStep: "Stock Difference", toStep: "Identify Transaction", eventType: "progressed" },
+  { id: "AE-004", caseId: "INV-2026-0001", drugName: "Amoxicillin 500mg", datetime: "2026-09-16 09:14", actor: "Jane Doe", action: "Evidence Added", detail: "Physical Evidence: damage_shelf_b2.jpg", eventType: "evidence" },
+  { id: "AE-005", caseId: "INV-2026-0002", drugName: "Paracetamol 500mg", datetime: "2026-09-18 11:00", actor: "Staff", action: "Case Opened", toStep: "Stock Difference", detail: "Physical count: 1195, System: 1200, Variance: -5", eventType: "opened" },
+  { id: "AE-006", caseId: "INV-2026-0001", drugName: "Amoxicillin 500mg", datetime: "2026-09-16 14:30", actor: "Mark Stevens", action: "Evidence Added", detail: "System Logs: pos_log_sep.csv", eventType: "evidence" },
+  { id: "AE-007", caseId: "INV-2026-0001", drugName: "Amoxicillin 500mg", datetime: "2026-09-17 09:00", actor: "Dr. R. Sharma", action: "Step Advanced", fromStep: "Batch Investigation", toStep: "Location Investigation", eventType: "progressed" },
+  { id: "AE-008", caseId: "INV-2026-0002", drugName: "Paracetamol 500mg", datetime: "2026-09-18 14:00", actor: "Mark Stevens", action: "Step Advanced", fromStep: "Stock Difference", toStep: "Identify Transaction", eventType: "progressed" },
+  { id: "AE-009", caseId: "INV-2026-0001", drugName: "Amoxicillin 500mg", datetime: "2026-09-18 10:30", actor: "Dr. R. Sharma", action: "Reason Recorded", detail: "Root cause: Damaged / Broken", eventType: "decision" },
+  { id: "AE-010", caseId: "INV-2026-0003", drugName: "Metformin 1000mg", datetime: "2026-09-10 08:45", actor: "Admin", action: "Case Opened", toStep: "Stock Difference", detail: "Physical count: 33, System: 30, Variance: +3", eventType: "opened" },
+  { id: "AE-011", caseId: "INV-2026-0001", drugName: "Amoxicillin 500mg", datetime: "2026-09-19 15:00", actor: "Dr. R. Sharma", action: "Submitted for Approval", fromStep: "Reason", toStep: "Approval", eventType: "decision" },
+  { id: "AE-012", caseId: "INV-2026-0003", drugName: "Metformin 1000mg", datetime: "2026-09-11 10:00", actor: "Admin", action: "Adjustment Applied", detail: "ADJ-2026-0039 — +3 units recorded", eventType: "adjusted" },
+  { id: "AE-013", caseId: "INV-2026-0004", drugName: "Atorvastatin 20mg", datetime: "2026-09-20 09:20", actor: "Pharmacist", action: "Case Opened", toStep: "Stock Difference", detail: "Physical count: 305, System: 312, Variance: -7", eventType: "opened" },
+  { id: "AE-014", caseId: "INV-2026-0005", drugName: "Warfarin 5mg", datetime: "2026-08-25 11:00", actor: "Jane Doe", action: "Case Opened", toStep: "Stock Difference", detail: "Physical count: 8, System: 10, Variance: -2", eventType: "opened" },
+  { id: "AE-015", caseId: "INV-2026-0005", drugName: "Warfarin 5mg", datetime: "2026-08-27 16:00", actor: "Jane Doe", action: "Adjustment Applied", detail: "ADJ-2026-0042 — -2 units recorded. Case closed.", eventType: "adjusted" },
+];
+
 function statusPillProps(s: InvStatus): { bg: string; color: string } {
   const m: Record<InvStatus, { bg: string; color: string }> = {
     "Open": { bg: "#EFF6FF", color: "#1B6CA8" },
@@ -171,6 +203,10 @@ export default function StockInvestigation() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drawerStep, setDrawerStep] = useState(1);
   const [statusFilter, setStatusFilter] = useState("All");
+  const [invSearch, setInvSearch] = useState("");
+  const [showAuditReplay, setShowAuditReplay] = useState(false);
+  const [replayIdx, setReplayIdx] = useState(0);
+  const [replayRunning, setReplayRunning] = useState(false);
 
   // Form state
   const [drugId, setDrugId] = useState(drugs[0]?.id ?? 0);
@@ -192,9 +228,18 @@ export default function StockInvestigation() {
   const [reasonNotes, setReasonNotes] = useState("");
   const [approverName, setApproverName] = useState("");
   const [approvalNotes, setApprovalNotes] = useState("");
+  const [evidenceRecords, setEvidenceRecords] = useState<{ id: string; type: string; desc: string; file?: string; addedBy: string; addedAt: string }[]>([
+    { id: "EV-001", type: "Physical Evidence", desc: "Photographs of damaged shelf B2 units (3 capsule strips)", file: "damage_shelf_b2.jpg", addedBy: "Jane Doe", addedAt: "2026-09-16 09:14" },
+    { id: "EV-002", type: "System Logs", desc: "POS transaction log export for Sept 10–22", file: "pos_log_sep.csv", addedBy: "Mark Stevens", addedAt: "2026-09-17 14:30" },
+  ]);
+  const [evType, setEvType] = useState("");
+  const [evDesc, setEvDesc] = useState("");
+  const [evFile, setEvFile] = useState("");
 
   const { sortCol, sortDir, handleSort, sorted: sortedAll } = useTableSort(cases);
-  const displayRows = statusFilter === "All" ? sortedAll : sortedAll.filter(c => c.status === statusFilter);
+  const displayRows = (statusFilter === "All" ? sortedAll : sortedAll.filter(c => c.status === statusFilter))
+    .filter(c => !invSearch || c.id.toLowerCase().includes(invSearch.toLowerCase()) || c.drugName.toLowerCase().includes(invSearch.toLowerCase()) || c.assignedTo.toLowerCase().includes(invSearch.toLowerCase()));
+  const { pageRows: invPageRows, footerProps: invFooterProps } = usePagination(displayRows, 10);
 
   useEffect(() => {
     if (!open) return;
@@ -202,6 +247,13 @@ export default function StockInvestigation() {
     document.addEventListener("keydown", h);
     return () => document.removeEventListener("keydown", h);
   }, [open]);
+
+  useEffect(() => {
+    if (!replayRunning) return;
+    if (replayIdx >= AUDIT_TRAIL.length - 1) { setReplayRunning(false); return; }
+    const t = setTimeout(() => setReplayIdx(i => i + 1), 800);
+    return () => clearTimeout(t);
+  }, [replayRunning, replayIdx]);
 
   const currentDrug = drugs.find(d => d.id === drugId) ?? drugs[0];
   const sysQty = currentDrug?.stock ?? 0;
@@ -356,41 +408,122 @@ export default function StockInvestigation() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* KPI Tiles */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-        <StatTile label="Open Cases" value={openCount} color="#C62828" accentBorder />
-        <StatTile label="In Progress" value={inProgressCount} color="#E65100" accentBorder />
-        <StatTile label="Pending Approval" value={pendingCount} color="#F57F17" accentBorder />
-        <StatTile label="Adjusted This Month" value={adjustedCount} color="#2E7D32" accentBorder />
-      </div>
 
-      {/* Table card */}
-      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #E8ECF4" }}>
-        {/* Toolbar */}
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Stock Difference Investigations</div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: 3 }}>
-              {STATUS_FILTERS.map(f => (
-                <button key={f} onClick={() => setStatusFilter(f)}
-                  style={{
-                    padding: "5px 11px", border: `1px solid ${statusFilter === f ? "#1B6CA8" : "#DDE3EC"}`,
-                    background: statusFilter === f ? "#1B6CA8" : "#fff",
-                    color: statusFilter === f ? "#fff" : "#6B7280",
-                    fontSize: 11, cursor: "pointer", fontFamily: "Inter", fontWeight: 600,
-                  }}>
-                  {f}
-                </button>
+
+      {/* Variance Resolution Center */}
+      {(() => {
+        const resolved = cases.filter(c => c.status === "Adjusted" || c.status === "Approved");
+        const totalQtyAdj = resolved.reduce((s, c) => s + Math.abs(c.variance), 0);
+        const rootCauseCounts: Record<string, number> = {};
+        resolved.forEach(c => {
+          if (c.reason) rootCauseCounts[c.reason] = (rootCauseCounts[c.reason] ?? 0) + 1;
+        });
+        const rcEntries = Object.entries(rootCauseCounts).sort((a, b) => b[1] - a[1]);
+        const maxRC = rcEntries[0]?.[1] ?? 1;
+        const topCause = rcEntries[0];
+        const rejectedCount = cases.filter(c => c.status === "Rejected").length;
+        const resolutionRate = cases.length > 0 ? Math.round((resolved.length / cases.length) * 100) : 0;
+
+        return (
+          <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC" }}>
+
+            {/* Header */}
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#1A2436" }}>Variance Resolution Center</div>
+              <span style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "Inter" }}>{resolved.length} of {cases.length} cases resolved</span>
+            </div>
+
+            {/* KPI row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", borderBottom: "1px solid #EEF1F6" }}>
+              {[
+                { label: "Resolution Rate",    value: `${resolutionRate}%`,       color: resolutionRate >= 60 ? "#2E7D32" : "#E65100", mono: true  },
+                { label: "Total Qty Adjusted", value: String(totalQtyAdj),        color: "#1B6CA8",                                    mono: true  },
+                { label: "Top Root Cause",     value: topCause ? topCause[0] : "—", color: "#1A2436",                                 mono: false },
+                { label: "Rejected",           value: String(rejectedCount),      color: rejectedCount > 0 ? "#C62828" : "#9CA3AF",    mono: true  },
+              ].map((k, i) => (
+                <div key={k.label} style={{ padding: "16px 20px", borderRight: i < 3 ? "1px solid #EEF1F6" : "none" }}>
+                  <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 8, fontFamily: "Inter" }}>{k.label}</div>
+                  <div style={{ fontSize: k.mono ? 26 : 14, fontFamily: k.mono ? "JetBrains Mono" : "Inter", fontWeight: 700, color: k.color, lineHeight: 1.2 }}>{k.value}</div>
+                </div>
               ))}
             </div>
-            <button onClick={openNewCase}
-              style={{ padding: "8px 18px", border: "none", borderRadius: 6, background: "#1B6CA8", fontSize: 13, cursor: "pointer", color: "#fff", fontFamily: "Inter", fontWeight: 600 }}>
+
+            {/* Root Cause Breakdown */}
+            {rcEntries.length > 0 && (
+              <div style={{ padding: "16px 20px 18px", borderBottom: "1px solid #EEF1F6" }}>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 14, fontFamily: "Inter" }}>Root Cause Breakdown</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+                  {rcEntries.map(([cause, count]) => (
+                    <div key={cause} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{ flex: "0 0 200px", fontSize: 12, color: "#6B7280", fontFamily: "Inter" }}>{cause}</div>
+                      <div style={{ flex: 1, height: 6, background: "#F0F3F7", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round((count / maxRC) * 100)}%`, height: "100%", background: "#1B6CA8", borderRadius: 3 }} />
+                      </div>
+                      <div style={{ flex: "0 0 24px", fontSize: 12, fontFamily: "JetBrains Mono", fontWeight: 700, color: "#1B6CA8", textAlign: "right" as const }}>{count}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Resolutions */}
+            <div style={{ padding: "16px 20px 18px" }}>
+              <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12, fontFamily: "Inter" }}>Recent Resolutions</div>
+              {resolved.length > 0 ? resolved.slice(0, 3).map((c, idx, arr) => {
+                const sc = statusPillProps(c.status);
+                return (
+                  <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: idx < Math.min(arr.length, 3) - 1 ? "1px solid #F0F3F7" : "none" }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2436", fontFamily: "Inter", marginBottom: 4 }}>{c.drugName}</div>
+                      <div style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "Inter", display: "flex", alignItems: "center", gap: 8 }}>
+                        {c.reason ?? "No root cause recorded"}
+                        {c.adjustmentRef && <span style={{ fontFamily: "JetBrains Mono", color: "#9CA3AF" }}>{c.adjustmentRef}</span>}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+                      <span style={{ fontSize: 10, padding: "2px 10px", borderRadius: 10, background: sc.bg, color: sc.color, fontWeight: 700, fontFamily: "Inter", whiteSpace: "nowrap" as const }}>{c.status}</span>
+                      <span style={{ fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700, color: c.variance < 0 ? "#C62828" : "#2E7D32" }}>{c.variance > 0 ? `+${c.variance}` : c.variance}</span>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div style={{ fontSize: 13, color: "#9CA3AF", textAlign: "center" as const, padding: "10px 0" }}>No resolved cases yet.</div>
+              )}
+            </div>
+
+          </div>
+        );
+      })()}
+
+      {/* Table card */}
+      <div style={{ background: "#fff", borderRadius: 6, border: "1px solid #DDE3EC", overflow: "hidden" }}>
+        {/* Toolbar */}
+        <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const }}>
+          <div style={SK.searchWrapper}>
+            <svg width="14" height="14" fill="none" stroke="#9CA3AF" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input value={invSearch} onChange={e => setInvSearch(e.target.value)} placeholder="Search cases..." style={SK.searchInput} />
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {STATUS_FILTERS.map(f => (
+              <button key={f} onClick={() => setStatusFilter(f)} style={SK.filterPill(statusFilter === f)}>
+                {f}
+              </button>
+            ))}
+          </div>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <button onClick={() => { setShowAuditReplay(true); setReplayIdx(0); setReplayRunning(false); }}
+              style={{ ...SK.btnSecondary, display: "flex", alignItems: "center", gap: 6 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Audit Trail
+            </button>
+            <button onClick={openNewCase} style={SK.btnPrimary}>
               + New Investigation
             </button>
           </div>
         </div>
 
         {/* Table */}
+        <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
@@ -406,12 +539,12 @@ export default function StockInvestigation() {
             </tr>
           </thead>
           <tbody>
-            {displayRows.map(inv => {
+            {invPageRows.map(inv => {
               const sc = statusPillProps(inv.status);
               const pc = priorityPillProps(inv.priority);
               return (
-                <tr key={inv.id} style={{ borderBottom: "1px solid #F4F6FA", cursor: "pointer" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#F7F9FC")}
+                <tr key={inv.id} style={{ borderBottom: "1px solid #F0F3F7", cursor: "pointer" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                   <td style={{ padding: "11px 14px", fontSize: 12, fontFamily: "JetBrains Mono", color: "#1B6CA8" }}>{inv.id}</td>
                   <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 600, color: "#1A2436" }}>{inv.drugName}</td>
@@ -434,7 +567,7 @@ export default function StockInvestigation() {
                 </tr>
               );
             })}
-            {displayRows.length === 0 && (
+            {invPageRows.length === 0 && (
               <tr>
                 <td colSpan={9} style={{ padding: "36px 14px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>
                   No investigations found for the selected filter.
@@ -443,6 +576,8 @@ export default function StockInvestigation() {
             )}
           </tbody>
         </table>
+        </div>
+        <PaginationFooter {...invFooterProps} />
       </div>
 
       {/* ── Investigation Drawer ─────────────────────────────────────────────── */}
@@ -795,6 +930,90 @@ export default function StockInvestigation() {
                       rows={4}
                       style={{ ...inputSty, resize: "vertical" as const }} />
                   </div>
+
+                  {/* Evidence Viewer */}
+                  <div style={{ borderRadius: 6, border: "1px solid #E8ECF4", overflow: "hidden" }}>
+                    <div style={{ padding: "10px 14px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#FAFBFD" }}>
+                      <span style={{ fontFamily: "Outfit", fontSize: 13, fontWeight: 700, color: "#1A2436" }}>Evidence Viewer</span>
+                      <span style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#9CA3AF" }}>{evidenceRecords.length} record{evidenceRecords.length !== 1 ? "s" : ""}</span>
+                    </div>
+
+                    {/* Add evidence form */}
+                    <div style={{ padding: "12px 14px", borderBottom: "1px solid #EEF1F6", background: "#fff" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+                        <div>
+                          <label style={{ ...FL, marginBottom: 4 }}>Evidence Type</label>
+                          <select value={evType} onChange={e => setEvType(e.target.value)}
+                            style={{ ...inputSty, fontSize: 12 }}>
+                            <option value="">— Select type —</option>
+                            {EVIDENCE_TYPES.map(et => <option key={et}>{et}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ ...FL, marginBottom: 4 }}>Filename / Reference</label>
+                          <input value={evFile} onChange={e => setEvFile(e.target.value)}
+                            placeholder="e.g. photo.jpg or log.csv"
+                            style={{ ...inputSty, fontSize: 12 }} />
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: 8 }}>
+                        <label style={{ ...FL, marginBottom: 4 }}>Description</label>
+                        <input value={evDesc} onChange={e => setEvDesc(e.target.value)}
+                          placeholder="Brief description of the evidence..."
+                          style={{ ...inputSty, fontSize: 12 }} />
+                      </div>
+                      {/* File drop zone */}
+                      <div style={{ border: "2px dashed #DDE3EC", borderRadius: 4, padding: "10px 14px", textAlign: "center" as const, background: "#F8FAFC", marginBottom: 8, cursor: "pointer" }}>
+                        <div style={{ fontSize: 12, color: "#9CA3AF" }}>Drop a file here or <span style={{ color: "#1B6CA8", fontWeight: 600, cursor: "pointer" }}>browse</span></div>
+                        <div style={{ fontSize: 10, color: "#C0C8D4", marginTop: 3 }}>PDF, JPEG, PNG, CSV — max 10MB</div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (!evType && !evDesc) return;
+                          const id = `EV-${String(evidenceRecords.length + 1).padStart(3, "0")}`;
+                          setEvidenceRecords(r => [...r, { id, type: evType || "Physical Evidence", desc: evDesc || "No description", file: evFile || undefined, addedBy: "Current User", addedAt: "2026-09-27 " + new Date().toTimeString().slice(0, 5) }]);
+                          setEvType(""); setEvDesc(""); setEvFile("");
+                        }}
+                        style={{ padding: "7px 16px", border: "none", borderRadius: 4, background: "#1B6CA8", color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "Inter", fontWeight: 600 }}>
+                        + Add Evidence
+                      </button>
+                    </div>
+
+                    {/* Evidence list */}
+                    {evidenceRecords.length > 0 ? evidenceRecords.map((ev, i, arr) => {
+                      const typeColor: Record<string, { bg: string; color: string }> = {
+                        "Physical Evidence": { bg: "#E8F5E9", color: "#2E7D32" },
+                        "System Logs": { bg: "#EFF6FF", color: "#1B6CA8" },
+                        "Witness Account": { bg: "#FFF3E0", color: "#E65100" },
+                        "CCTV / Footage": { bg: "#F3E5F5", color: "#7B1FA2" },
+                        "No Evidence": { bg: "#F5F5F5", color: "#9CA3AF" },
+                      };
+                      const tc = typeColor[ev.type] ?? { bg: "#F0F3F7", color: "#6B7280" };
+                      return (
+                        <div key={ev.id} style={{ padding: "11px 14px", borderBottom: i < arr.length - 1 ? "1px solid #F4F6FA" : "none", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+                              <span style={{ fontSize: 10, fontFamily: "JetBrains Mono", color: "#9CA3AF" }}>{ev.id}</span>
+                              <span style={{ fontSize: 10, padding: "1px 7px", background: tc.bg, color: tc.color, fontWeight: 700 }}>{ev.type}</span>
+                            </div>
+                            <div style={{ fontSize: 12, color: "#1A2436", marginBottom: 3 }}>{ev.desc}</div>
+                            {ev.file && (
+                              <div style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#1B6CA8", display: "flex", alignItems: "center", gap: 4 }}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                                {ev.file}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
+                            <div style={{ fontSize: 11, fontFamily: "JetBrains Mono", color: "#9CA3AF" }}>{ev.addedAt}</div>
+                            <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>by {ev.addedBy}</div>
+                          </div>
+                        </div>
+                      );
+                    }) : (
+                      <div style={{ padding: "16px 14px", fontSize: 12, color: "#9CA3AF", textAlign: "center" as const }}>No evidence records added yet.</div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -942,6 +1161,135 @@ export default function StockInvestigation() {
           </aside>
         </>
       )}
+      {/* Audit Trail Modal */}
+      {showAuditReplay && (() => {
+        const visibleEvents = AUDIT_TRAIL.slice(0, replayIdx + 1);
+        const EVENT_STYLE: Record<string, { bg: string; color: string; icon: string }> = {
+          "opened":     { bg: "#EFF6FF", color: "#1B6CA8", icon: "+" },
+          "progressed": { bg: "#E8F5E9", color: "#2E7D32", icon: "→" },
+          "decision":   { bg: "#FFF3E0", color: "#E65100", icon: "!" },
+          "evidence":   { bg: "#F3E5F5", color: "#7B1FA2", icon: "#" },
+          "adjusted":   { bg: "#E8F5E9", color: "#1B6CA8", icon: "✓" },
+          "closed":     { bg: "#F0F3F7", color: "#6B7280", icon: "■" },
+        };
+        const caseSummary: Record<string, typeof visibleEvents> = {};
+        visibleEvents.forEach(e => {
+          if (!caseSummary[e.caseId]) caseSummary[e.caseId] = [];
+          caseSummary[e.caseId].push(e);
+        });
+        return (
+          <>
+            <div onClick={() => { setShowAuditReplay(false); setReplayRunning(false); }}
+              style={{ position: "fixed", inset: 0, background: "rgba(10,22,44,0.6)", zIndex: 200 }} />
+            <div style={{ position: "fixed", top: "5%", left: "50%", transform: "translateX(-50%)", width: "min(900px, 92vw)", maxHeight: "88vh", background: "#fff", borderRadius: 8, border: "1px solid #DDE3EC", zIndex: 201, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              {/* Modal header */}
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid #EEF1F6", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span style={{ fontFamily: "Outfit", fontSize: 15, fontWeight: 700, color: "#0C1B33" }}>Stock Audit Replay</span>
+                  <span style={{ fontSize: 11, padding: "1px 7px", background: "#EFF6FF", color: "#1B6CA8", fontFamily: "JetBrains Mono", fontWeight: 700 }}>{AUDIT_TRAIL.length} events</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button onClick={() => { setReplayIdx(0); setReplayRunning(false); }}
+                    style={{ padding: "5px 10px", border: "1px solid #DDE3EC", borderRadius: 4, background: "#F8FAFC", fontSize: 11, cursor: "pointer", color: "#6B7280", fontFamily: "Inter" }}>
+                    Reset
+                  </button>
+                  <button onClick={() => setReplayRunning(v => !v)}
+                    style={{ padding: "5px 14px", border: "none", borderRadius: 4, background: replayRunning ? "#E65100" : "#1B6CA8", fontSize: 11, cursor: "pointer", color: "#fff", fontWeight: 700, minWidth: 60, fontFamily: "Inter" }}>
+                    {replayRunning ? "Pause" : replayIdx === AUDIT_TRAIL.length - 1 ? "Replay" : "Play"}
+                  </button>
+                  <button onClick={() => { setShowAuditReplay(false); setReplayRunning(false); }}
+                    style={{ padding: "5px 9px", border: "1px solid #DDE3EC", borderRadius: 4, background: "#F8FAFC", fontSize: 16, cursor: "pointer", color: "#6B7280", lineHeight: 1 }}>
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ padding: "10px 20px", borderBottom: "1px solid #EEF1F6", flexShrink: 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#9CA3AF", marginBottom: 5 }}>
+                  <span>Event {replayIdx + 1} of {AUDIT_TRAIL.length}</span>
+                  <span style={{ fontFamily: "JetBrains Mono" }}>{AUDIT_TRAIL[replayIdx]?.datetime}</span>
+                </div>
+                <div style={{ height: 4, background: "#EEF1F6", borderRadius: 2 }}>
+                  <div style={{ height: 4, width: `${((replayIdx + 1) / AUDIT_TRAIL.length) * 100}%`, background: "#1B6CA8", borderRadius: 2, transition: "width 0.4s ease" }} />
+                </div>
+              </div>
+
+              {/* Body */}
+              <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                {/* Left: Timeline feed */}
+                <div>
+                  <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 10 }}>Event Timeline</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                    {visibleEvents.slice().reverse().map((ev, i, arr) => {
+                      const es = EVENT_STYLE[ev.eventType] ?? EVENT_STYLE["opened"];
+                      const isLatest = i === 0;
+                      return (
+                        <div key={ev.id} style={{ display: "flex", gap: 10, padding: "9px 10px", background: isLatest ? "#F0F9FF" : "transparent", borderBottom: i < arr.length - 1 ? "1px solid #F4F6FA" : "none", transition: "background 0.3s" }}>
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                            <span style={{ width: 22, height: 22, borderRadius: "50%", background: es.bg, color: es.color, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{es.icon}</span>
+                            {i < arr.length - 1 && <div style={{ width: 1, flex: 1, minHeight: 10, background: "#EEF1F6", marginTop: 2 }} />}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginBottom: 2 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: "#1A2436" }}>{ev.action}</span>
+                              <span style={{ fontFamily: "JetBrains Mono", fontSize: 9, color: "#9CA3AF", flexShrink: 0 }}>{ev.datetime.split(" ")[0]}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>
+                              <span style={{ fontFamily: "JetBrains Mono", fontSize: 10, color: "#1B6CA8" }}>{ev.caseId}</span>
+                              {" — "}{ev.drugName}
+                            </div>
+                            {ev.detail && <div style={{ fontSize: 11, color: "#9CA3AF", fontStyle: "italic" as const }}>{ev.detail}</div>}
+                            {ev.fromStep && ev.toStep && (
+                              <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
+                                {ev.fromStep} <span style={{ color: "#00ACC1" }}>→</span> {ev.toStep}
+                              </div>
+                            )}
+                            <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>by {ev.actor}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right: Per-case summary */}
+                <div>
+                  <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 10 }}>Case Activity Summary</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {Object.entries(caseSummary).map(([caseId, events]) => {
+                      const last = events[events.length - 1];
+                      const uniqueActors = [...new Set(events.map(e => e.actor))];
+                      const hasEvidence = events.some(e => e.eventType === "evidence");
+                      const hasDecision = events.some(e => e.eventType === "decision");
+                      return (
+                        <div key={caseId} style={{ padding: "11px 14px", border: "1px solid #E8ECF4", borderRadius: 5, background: "#FAFBFD" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                            <div>
+                              <span style={{ fontFamily: "JetBrains Mono", fontSize: 11, fontWeight: 700, color: "#1B6CA8" }}>{caseId}</span>
+                              <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{last.drugName}</div>
+                            </div>
+                            <span style={{ fontSize: 10, padding: "2px 7px", background: "#EFF6FF", color: "#1B6CA8", fontFamily: "JetBrains Mono", fontWeight: 700 }}>{events.length} events</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 6 }}>
+                            Last: <span style={{ color: "#1A2436", fontWeight: 600 }}>{last.action}</span> by {last.actor}
+                          </div>
+                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" as const }}>
+                            {hasEvidence && <span style={{ fontSize: 9, padding: "2px 7px", background: "#F3E5F5", color: "#7B1FA2", fontWeight: 700 }}>Evidence</span>}
+                            {hasDecision && <span style={{ fontSize: 9, padding: "2px 7px", background: "#FFF3E0", color: "#E65100", fontWeight: 700 }}>Decision</span>}
+                            <span style={{ fontSize: 9, padding: "2px 7px", background: "#EFF6FF", color: "#1B6CA8", fontWeight: 700 }}>{uniqueActors.length} actor{uniqueActors.length !== 1 ? "s" : ""}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }

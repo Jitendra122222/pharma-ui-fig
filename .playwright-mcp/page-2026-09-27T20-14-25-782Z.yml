@@ -1,0 +1,309 @@
+- generic [active] [ref=f8e1]:
+  - generic [ref=f8e99]:
+    - complementary [ref=f8e100]:
+      - generic [ref=f8e101]:
+        - generic [ref=f8e102]:
+          - generic [ref=f8e103]: Rx
+          - generic [ref=f8e104]:
+            - generic [ref=f8e105]: PharmERP
+            - generic [ref=f8e106]: City Central Pharmacy
+        - button "Collapse sidebar" [ref=f8e107] [cursor=pointer]: «
+      - navigation [ref=f8e108]:
+        - generic [ref=f8e109]:
+          - generic [ref=f8e110]: Core Operations
+          - button "Dashboard" [ref=f8e111] [cursor=pointer]
+          - button "Sales 2" [ref=f8e116] [cursor=pointer]:
+            - generic [ref=f8e120]: Sales
+            - generic [ref=f8e121]: "2"
+          - button "Prescriptions 2" [ref=f8e122] [cursor=pointer]:
+            - generic [ref=f8e126]: Prescriptions
+            - generic [ref=f8e127]: "2"
+          - button "Patients" [ref=f8e128] [cursor=pointer]
+        - generic [ref=f8e133]:
+          - generic [ref=f8e134]: Inventory & Stock
+          - button "Inventory 3" [ref=f8e135] [cursor=pointer]:
+            - generic [ref=f8e139]: Inventory
+            - generic [ref=f8e140]: "3"
+          - button "Stock Management" [ref=f8e141] [cursor=pointer]
+          - button "Short Book 8" [ref=f8e147] [cursor=pointer]:
+            - generic [ref=f8e151]: Short Book
+            - generic [ref=f8e152]: "8"
+          - button "Expiry Management 12" [ref=f8e153] [cursor=pointer]:
+            - generic [ref=f8e158]: Expiry Management
+            - generic [ref=f8e159]: "12"
+        - generic [ref=f8e160]:
+          - generic [ref=f8e161]: Purchasing
+          - button "Purchasing" [ref=f8e162] [cursor=pointer]
+          - button "Distributors" [ref=f8e169] [cursor=pointer]
+        - generic [ref=f8e175]:
+          - generic [ref=f8e176]: Finance
+          - button "Accounts" [ref=f8e177] [cursor=pointer]
+          - button "Insurance & Claims" [ref=f8e183] [cursor=pointer]
+        - generic [ref=f8e188]:
+          - generic [ref=f8e189]: Analytics
+          - button "Reports" [ref=f8e190] [cursor=pointer]
+        - generic [ref=f8e195]:
+          - generic [ref=f8e196]: Administration
+          - button "HR & Payroll" [ref=f8e197] [cursor=pointer]
+          - button "Settings" [ref=f8e202] [cursor=pointer]
+      - generic [ref=f8e208]:
+        - generic [ref=f8e209]: JD
+        - generic [ref=f8e210]:
+          - generic [ref=f8e211]: Jane Doe
+          - generic [ref=f8e212]: Head Pharmacist
+    - generic [ref=f8e213]:
+      - banner [ref=f8e214]:
+        - generic [ref=f8e215]:
+          - generic [ref=f8e216]: PharmERP
+          - generic [ref=f8e217]: ›
+          - generic [ref=f8e218]: Stock Management
+        - generic [ref=f8e219]:
+          - generic [ref=f8e220]:
+            - textbox "Quick search..." [ref=f8e221]
+            - generic [ref=f8e222]: ⌕
+          - generic [ref=f8e223] [cursor=pointer]:
+            - text: 🔔
+            - generic [ref=f8e224]: "5"
+          - generic [ref=f8e225]: 28 Jul 2025
+          - generic [ref=f8e227]:
+            - generic [ref=f8e228]: RK
+            - generic [ref=f8e230]:
+              - generic [ref=f8e231]: Rajesh Kumar
+              - generic [ref=f8e232]: Pharmacist
+            - button "Logout" [ref=f8e233] [cursor=pointer]
+      - main [ref=f8e234]:
+        - generic [ref=f8e235]:
+          - generic [ref=f8e236]:
+            - generic [ref=f8e237]:
+              - heading "Stock Management" [level=1] [ref=f8e238]
+              - generic [ref=f8e239]: Stock levels, expiry, and inventory health across all SKUs
+            - button "Export" [ref=f8e240] [cursor=pointer]
+          - generic [ref=f8e242]:
+            - generic [ref=f8e243]:
+              - generic [ref=f8e244]: Total SKUs
+              - generic [ref=f8e245]: "12"
+            - generic [ref=f8e246]:
+              - generic [ref=f8e247]: Stock Value
+              - generic [ref=f8e248]: ₹1.9K
+            - generic [ref=f8e249]:
+              - generic [ref=f8e250]: Stock Alerts
+              - generic [ref=f8e251]: "4"
+            - generic [ref=f8e252]:
+              - generic [ref=f8e253]: Critical Expiry
+              - generic [ref=f8e254]: "0"
+            - generic [ref=f8e255]:
+              - generic [ref=f8e256]: Adjustments / Mo
+              - generic [ref=f8e257]: "5"
+          - generic [ref=f8e258]:
+            - button "Stock Overview" [ref=f8e259] [cursor=pointer]
+            - button "Adjustments" [ref=f8e260] [cursor=pointer]
+            - button "Batch Tracking" [ref=f8e261] [cursor=pointer]
+            - button "Expiry Management" [ref=f8e262] [cursor=pointer]
+            - button "Stock Transfer" [ref=f8e263] [cursor=pointer]
+            - button "Investigation" [ref=f8e264] [cursor=pointer]
+          - generic [ref=f8e266]:
+            - generic [ref=f8e267]:
+              - button "Insights 4 alerts" [ref=f8e268] [cursor=pointer]:
+                - text: Insights
+                - generic [ref=f8e269]: 4 alerts
+              - button "Inventory 12 SKUs" [ref=f8e270] [cursor=pointer]:
+                - text: Inventory
+                - generic [ref=f8e271]: 12 SKUs
+              - button "Location Map 12 zones" [ref=f8e272] [cursor=pointer]:
+                - text: Location Map
+                - generic [ref=f8e273]: 12 zones
+              - button "Movement Heatmap Sep" [ref=f8e274] [cursor=pointer]:
+                - text: Movement Heatmap
+                - generic [ref=f8e275]: Sep
+            - generic [ref=f8e276]:
+              - generic [ref=f8e277]:
+                - generic [ref=f8e278]:
+                  - generic [ref=f8e280]: Stock Risk Center
+                  - generic [ref=f8e281]: 10 at risk
+                - table [ref=f8e282]:
+                  - rowgroup [ref=f8e283]:
+                    - row [ref=f8e284]:
+                      - columnheader "Drug" [ref=f8e285]
+                      - columnheader "Risk" [ref=f8e286]
+                      - columnheader "Factors" [ref=f8e287]
+                      - columnheader [ref=f8e288]
+                  - rowgroup [ref=f8e289]:
+                    - row [ref=f8e290]:
+                      - cell "Lisinopril 10mg" [ref=f8e291]
+                      - cell "50" [ref=f8e292]
+                      - cell "Stockout, No Count" [ref=f8e297]
+                      - cell [ref=f8e298]:
+                        - button "View" [ref=f8e299] [cursor=pointer]
+                    - row [ref=f8e300]:
+                      - cell "Metformin 1000mg" [ref=f8e301]
+                      - cell "35" [ref=f8e302]
+                      - cell "Low Stock, No Count" [ref=f8e307]
+                      - cell [ref=f8e308]:
+                        - button "View" [ref=f8e309] [cursor=pointer]
+                    - row [ref=f8e310]:
+                      - cell "Ciprofloxacin 500mg" [ref=f8e311]
+                      - cell "35" [ref=f8e312]
+                      - cell "Low Stock, No Count" [ref=f8e317]
+                      - cell [ref=f8e318]:
+                        - button "View" [ref=f8e319] [cursor=pointer]
+                    - row [ref=f8e320]:
+                      - cell "Atorvastatin 20mg" [ref=f8e321]
+                      - cell "20" [ref=f8e322]
+                      - cell "No Count" [ref=f8e327]
+                      - cell [ref=f8e328]:
+                        - button "View" [ref=f8e329] [cursor=pointer]
+                    - row [ref=f8e330]:
+                      - cell "Omeprazole 20mg" [ref=f8e331]
+                      - cell "20" [ref=f8e332]
+                      - cell "No Count" [ref=f8e337]
+                      - cell [ref=f8e338]:
+                        - button "View" [ref=f8e339] [cursor=pointer]
+              - generic [ref=f8e340]:
+                - generic [ref=f8e341]:
+                  - generic [ref=f8e343]: Capital Locked
+                  - generic [ref=f8e344]: ₹0 HV
+                - generic [ref=f8e345]:
+                  - generic [ref=f8e346]:
+                    - generic [ref=f8e347]:
+                      - generic [ref=f8e348]: Total
+                      - generic [ref=f8e349]: ₹1892
+                    - generic [ref=f8e350]:
+                      - generic [ref=f8e351]: High-Value
+                      - generic [ref=f8e352]: ₹0
+                    - generic [ref=f8e353]:
+                      - generic [ref=f8e354]: Gap
+                      - generic [ref=f8e355]: ₹44
+                  - generic [ref=f8e356]:
+                    - generic [ref=f8e357]:
+                      - generic [ref=f8e358]: "1"
+                      - generic [ref=f8e359]: Insulin Glargine
+                      - generic [ref=f8e362]: ₹1260
+                    - generic [ref=f8e363]:
+                      - generic [ref=f8e364]: "2"
+                      - generic [ref=f8e365]: Atorvastatin 20mg
+                      - generic [ref=f8e368]: ₹119
+                    - generic [ref=f8e369]:
+                      - generic [ref=f8e370]: "3"
+                      - generic [ref=f8e371]: Salbutamol Inhaler
+                      - generic [ref=f8e374]: ₹118
+                    - generic [ref=f8e375]:
+                      - generic [ref=f8e376]: "4"
+                      - generic [ref=f8e377]: Amoxicillin 500mg
+                      - generic [ref=f8e380]: ₹108
+                    - generic [ref=f8e381]:
+                      - generic [ref=f8e382]: "5"
+                      - generic [ref=f8e383]: Sertraline 50mg
+                      - generic [ref=f8e386]: ₹97
+              - generic [ref=f8e387]:
+                - generic [ref=f8e388]:
+                  - generic [ref=f8e390]: Stock Exceptions
+                  - generic [ref=f8e391]: 21 total
+                - generic [ref=f8e392]:
+                  - generic [ref=f8e393]:
+                    - generic [ref=f8e394]:
+                      - generic [ref=f8e395]: Stockouts
+                      - generic [ref=f8e396]: "1"
+                    - generic [ref=f8e397]:
+                      - generic [ref=f8e398]: Low Stock
+                      - generic [ref=f8e399]: "3"
+                    - generic [ref=f8e400]:
+                      - generic [ref=f8e401]: No Movement >30d
+                      - generic [ref=f8e402]: "12"
+                    - generic [ref=f8e403]:
+                      - generic [ref=f8e404]: Overstock
+                      - generic [ref=f8e405]: "5"
+                  - generic [ref=f8e406]:
+                    - generic [ref=f8e407]: Critical Stockouts
+                    - button "Lisinopril 10mg" [ref=f8e409] [cursor=pointer]
+              - generic [ref=f8e410]:
+                - generic [ref=f8e411]:
+                  - generic [ref=f8e413]: Stock Accuracy
+                  - generic [ref=f8e414]: 17% accurate
+                - generic [ref=f8e415]:
+                  - generic [ref=f8e416]:
+                    - generic [ref=f8e417]: 17%
+                    - generic [ref=f8e423]:
+                      - generic [ref=f8e424]:
+                        - generic [ref=f8e425]: SKUs Counted
+                        - generic [ref=f8e426]: 2/12
+                      - generic [ref=f8e427]:
+                        - generic [ref=f8e428]: Discrepancy
+                        - generic [ref=f8e429]: "5"
+                      - generic [ref=f8e430]:
+                        - generic [ref=f8e431]: Not Counted
+                        - generic [ref=f8e432]: "10"
+                  - generic [ref=f8e433]: Target 95% — 78% gap, 10 SKUs uncounted
+              - generic [ref=f8e437]:
+                - generic [ref=f8e438]:
+                  - generic [ref=f8e440]: Recovery Actions
+                  - generic [ref=f8e441]: 3 critical
+                - generic [ref=f8e442]:
+                  - generic [ref=f8e443]: Critical
+                  - generic [ref=f8e444]: Lisinopril 10mg
+                  - generic [ref=f8e445]: Raise Emergency PO
+                  - button "View" [ref=f8e446] [cursor=pointer]
+                - generic [ref=f8e447]:
+                  - generic [ref=f8e448]: Critical
+                  - generic [ref=f8e449]: Metformin 1000mg
+                  - generic [ref=f8e450]: Reorder Now
+                  - button "View" [ref=f8e451] [cursor=pointer]
+                - generic [ref=f8e452]:
+                  - generic [ref=f8e453]: Critical
+                  - generic [ref=f8e454]: Ciprofloxacin 500mg
+                  - generic [ref=f8e455]: Reorder Now
+                  - button "View" [ref=f8e456] [cursor=pointer]
+                - generic [ref=f8e457]:
+                  - generic [ref=f8e458]: High
+                  - generic [ref=f8e459]: Atorvastatin 20mg
+                  - generic [ref=f8e460]: Schedule Count
+                  - button "View" [ref=f8e461] [cursor=pointer]
+                - generic [ref=f8e462]:
+                  - generic [ref=f8e463]: High
+                  - generic [ref=f8e464]: Omeprazole 20mg
+                  - generic [ref=f8e465]: Schedule Count
+                  - button "View" [ref=f8e466] [cursor=pointer]
+              - generic [ref=f8e467]:
+                - generic [ref=f8e468]:
+                  - generic [ref=f8e470]: Action Queue
+                  - generic [ref=f8e471]: 8 needed
+                - generic [ref=f8e472]:
+                  - generic [ref=f8e473]: "#1"
+                  - generic [ref=f8e474]: Stockout
+                  - generic [ref=f8e475]: Lisinopril 10mg
+                  - generic [ref=f8e476]: Raise Emergency PO
+                - generic [ref=f8e477]:
+                  - generic [ref=f8e478]: "#2"
+                  - generic [ref=f8e479]: Low Stock
+                  - generic [ref=f8e480]: Metformin 1000mg
+                  - generic [ref=f8e481]: Reorder
+                - generic [ref=f8e482]:
+                  - generic [ref=f8e483]: "#2"
+                  - generic [ref=f8e484]: Low Stock
+                  - generic [ref=f8e485]: Ciprofloxacin 500mg
+                  - generic [ref=f8e486]: Reorder
+                - generic [ref=f8e487]:
+                  - generic [ref=f8e488]: "#2"
+                  - generic [ref=f8e489]: Low Stock
+                  - generic [ref=f8e490]: Warfarin 5mg
+                  - generic [ref=f8e491]: Reorder
+                - generic [ref=f8e492]:
+                  - generic [ref=f8e493]: "#3"
+                  - generic [ref=f8e494]: No Movement
+                  - generic [ref=f8e495]: Amoxicillin 500mg
+                  - generic [ref=f8e496]: Physical Count
+                - generic [ref=f8e497]:
+                  - generic [ref=f8e498]: "#3"
+                  - generic [ref=f8e499]: No Movement
+                  - generic [ref=f8e500]: Metformin 1000mg
+                  - generic [ref=f8e501]: Physical Count
+                - generic [ref=f8e502]:
+                  - generic [ref=f8e503]: "#3"
+                  - generic [ref=f8e504]: No Movement
+                  - generic [ref=f8e505]: Lisinopril 10mg
+                  - generic [ref=f8e506]: Physical Count
+                - generic [ref=f8e507]:
+                  - generic [ref=f8e508]: "#4"
+                  - generic [ref=f8e509]: Overstock
+                  - generic [ref=f8e510]: Amoxicillin 500mg
+                  - generic [ref=f8e511]: Review Reorder Point
+  - generic [aria-hidden] [ref=f8e512]: ₹0k
